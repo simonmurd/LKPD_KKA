@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LKPD Interaktif: Modul 7 Snake Game</title>
+    <style>
+        /* Import Font Modern, Minimalis & Futuristik */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Space+Grotesk:wght@500;700&family=Fira+Code:wght@400;500&display=swap');
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9fa;
+            color: #212529;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background-color: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            padding: 15px 30px;
+            border-bottom: 1px solid #e9ecef;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+
+        header h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #28a745, #20c997);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .badge {
+            background: #ffffff;
+            color: #28a745;
+            border: 1px solid #20c997;
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            box-shadow: 0 4px 10px rgba(40, 167, 69, 0.1);
+            letter-spacing: 0.5px;
+        }
+
+        .workspace {
+            display: flex;
+            flex: 1;
+            padding: 20px;
+            gap: 20px;
+            overflow: hidden;
+            background-image: radial-gradient(#dee2e6 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        /* Responsive Workspace untuk Mobile */
+        @media (max-width: 768px) {
+            .workspace {
+                flex-direction: column;
+                overflow-y: auto;
+            }
+            .panel {
+                min-height: 400px;
+            }
+        }
+
+        .panel {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid #e9ecef;
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+
+        .panel:hover {
+            box-shadow: 0 12px 40px rgba(40, 167, 69, 0.08);
+            border-color: #80bdff;
+        }
+
+        .panel-header {
+            padding: 15px 25px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            font-weight: 700;
+            font-size: 1.05rem;
+            font-family: 'Space Grotesk', sans-serif;
+            color: #495057;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .instruction-panel {
+            flex: 1;
+            overflow-y: auto;
+        }
+        
+        .instruction-content {
+            padding: 25px;
+            font-size: 0.95rem;
+            line-height: 1.7;
+            color: #495057;
+        }
+
+        .instruction-content h3 {
+            margin-bottom: 15px;
+            color: #28a745;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .instruction-content p {
+            margin-bottom: 15px;
+        }
+
+        .task-box {
+            background: rgba(40, 167, 69, 0.05);
+            border-left: 4px solid #28a745;
+            border-radius: 0 8px 8px 0;
+            padding: 15px;
+            margin-top: 20px;
+            color: #212529;
+            font-size: 0.9rem;
+        }
+
+        .editor-panel {
+            flex: 1.2;
+        }
+
+        textarea {
+            flex: 1;
+            width: 100%;
+            border: none;
+            resize: none;
+            padding: 20px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+            background-color: #f1f3f5;
+            color: #212529;
+            outline: none;
+            line-height: 1.6;
+            white-space: pre;
+            overflow-x: auto;
+            transition: background-color 0.2s ease;
+        }
+
+        textarea:focus {
+            background-color: #ffffff;
+            box-shadow: inset 0 0 0 2px #28a745;
+        }
+
+        .action-bar {
+            padding: 12px 25px;
+            background: #ffffff;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        button.btn-run {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: #ffffff;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+        }
+
+        button.btn-run:hover {
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .preview-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Pengaturan saat mode Fullscreen aktif */
+        .preview-panel:fullscreen {
+            background: #ffffff;
+            border-radius: 0;
+            border: none;
+        }
+        .preview-panel:-webkit-full-screen {
+            background: #ffffff;
+        }
+
+        /* Tombol Fullscreen */
+        .btn-fullscreen {
+            background: transparent;
+            color: #495057;
+            border: 1px solid #ced4da;
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .btn-fullscreen:hover {
+            background: #e9ecef;
+            color: #212529;
+            border-color: #adb5bd;
+        }
+
+        iframe {
+            flex: 1;
+            width: 100%;
+            border: none;
+            background-color: #ffffff;
+        }
+        
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f8f9fa; }
+        ::-webkit-scrollbar-thumb { background: #ced4da; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #adb5bd; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>⚡ CodeQuest: NEXUS</h1>
+        <div class="badge">🐍 Misi: Snake Game State Machine (Modul 7)</div>
+    </header>
+
+    <div class="workspace">
+        
+        <div class="panel instruction-panel">
+            <div class="panel-header" style="justify-content: flex-start;">📜 Modul Instruksi</div>
+            <div class="instruction-content">
+                <h3>Sistem Kontrol Ekosistem Ular!</h3>
+                <p>Halo, Operator! ⚡ Pada misi kali ini, terdapat <strong>20 Tugas</strong> yang harus diselesaikan untuk merakit game <em>Snake</em> dari nol secara fungsional.</p>
+                <p>Misi ini akan melatih pemahamanmu terkait <strong>Variabel State</strong>, <strong>Manipulasi CSS</strong>, <strong>Percabangan Event (If/Else)</strong>, serta <strong>Deteksi Tabrakan (Collision)</strong>.</p>
+                
+                <div class="task-box">
+                    <strong>🎯 Cara Mengerjakan:</strong><br>
+                    Cari tulisan <strong>🎯 TUGAS 1</strong> sampai <strong>TUGAS 20</strong> di dalam editor kode sebelah kanan. Baca komentar instruksinya, lalu edit kodenya. <br><br>
+                    Setelah selesai, klik <strong>"✨ Sinkronisasi Kode"</strong>. Kamu bisa menggunakan <strong>Panah Keyboard</strong> di PC, atau klik <strong>"🔲 Layar Penuh"</strong> lalu gunakan <strong>Tombol Virtual D-Pad</strong> jika menggunakan HP/Android!
+                </div>
+
+                <div style="margin-top:20px; font-size:0.85rem; background:#f8f9fa; padding:10px; border-radius:8px;">
+                    <strong>💡 Tips Bug Prevention (Tugas 9-12):</strong><br>
+                    Ular tidak boleh berputar balik 180 derajat secara langsung. Gunakan logika operator tidak sama dengan (<code>!==</code>) untuk menguncinya!
+                </div>
+            </div>
+        </div>
+
+        <div class="panel editor-panel">
+            <div class="panel-header" style="justify-content: flex-start;">💻 Terminal Interface</div>
+<textarea id="code-editor" spellcheck="false" wrap="off">
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <!-- 🎯 TUGAS 1: Ubah judul tab browser di bawah ini dengan namamu -->
+    <title>Modul 7 - Snake Game [NAMA SISWA]</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: #212529;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding-top: 20px;
+            touch-action: manipulation; /* Mencegah zoom saat double tap di Android */
+        }
+        
+        #gameInfo {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 400px;
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+            padding: 0 10px;
+            box-sizing: border-box;
+        }
+
+        /* 🎯 TUGAS 2: Ganti warna background kanvas dari hitam (#000000) menjadi warna lain, misal: '#2d3436' */
+        #gameCanvas {
+            background-color: #000000;
+            
+            /* 🎯 TUGAS 3: Ubah ketebalan border dari 4px menjadi 8px */
+            border: 4px solid #20c997;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(32, 201, 151, 0.3);
+            max-width: 100%;
+            height: auto;
+        }
+
+        .btn-start {
+            margin-top: 15px;
+            padding: 12px 24px;
+            /* 🎯 TUGAS 4: Ganti warna tombol dari #20c997 menjadi warna kesukaanmu */
+            background-color: #20c997;
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 1.1rem;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 4px 0 #158c68;
+        }
+        .btn-start:active {
+            transform: translateY(4px);
+            box-shadow: none;
+        }
+
+        /* Styling D-Pad Virtual untuk Android/Mobile */
+        #dpad {
+            display: grid;
+            grid-template-columns: repeat(3, 70px);
+            grid-template-rows: repeat(3, 70px);
+            gap: 15px;
+            margin-top: 30px;
+            justify-content: center;
+        }
+        .dpad-btn {
+            background-color: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            color: white;
+            font-size: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            user-select: none;
+            transition: 0.1s;
+        }
+        .dpad-btn:active {
+            background-color: #20c997;
+            transform: scale(0.9);
+        }
+        #btn-up { grid-column: 2; grid-row: 1; }
+        #btn-left { grid-column: 1; grid-row: 2; }
+        #btn-right { grid-column: 3; grid-row: 2; }
+        #btn-down { grid-column: 2; grid-row: 3; }
+    </style>
+</head>
+<body>
+
+    <!-- 🎯 TUGAS 5: Ganti nama game pada judul H2 di bawah ini -->
+    <h2>🐍 Snake Simulator</h2>
+    <div id="gameInfo">
+        <span>Skor: <span id="scoreVal">0</span></span>
+        <span>Status: <span id="statusVal" style="color:#ffc107;">IDLE</span></span>
+    </div>
+    
+    <canvas id="gameCanvas" width="300" height="300"></canvas>
+    
+    <button class="btn-start" onclick="startGame()">▶ Mulai / Restart</button>
+
+    <!-- D-Pad Virtual Kontrol -->
+    <div id="dpad">
+        <div id="btn-up" class="dpad-btn" onclick="handleInput('UP')">⬆️</div>
+        <div id="btn-left" class="dpad-btn" onclick="handleInput('LEFT')">⬅️</div>
+        <div id="btn-right" class="dpad-btn" onclick="handleInput('RIGHT')">➡️</div>
+        <div id="btn-down" class="dpad-btn" onclick="handleInput('DOWN')">⬇️</div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('scoreVal');
+        const statusEl = document.getElementById('statusVal');
+        
+        // 🎯 TUGAS 6: Ubah ukuran grid dari 15 menjadi 20. 
+        // (Perhatian: Ular dan makanan akan terlihat lebih kecil jika grid diperbesar!)
+        const gridSize = 15; 
+        const gridCols = canvas.width / gridSize;
+        const gridRows = canvas.height / gridSize;
+
+        // ==========================================
+        // MANAJEMEN STATUS (STATE MANAGEMENT)
+        // ==========================================
+        let gameState = {
+            snake: [{x: 10, y: 10}],
+            food: {x: 5, y: 5},
+            dx: 1, 
+            dy: 0, 
+            
+            // 🎯 TUGAS 7: Setel nilai skor awal menjadi 0
+            score: 0,
+            
+            // 🎯 TUGAS 8: Tentukan status awal menjadi 'IDLE' (huruf besar semua)
+            status: 'IDLE'
+        };
+
+        let gameLoopTimer;
+
+        // ==========================================
+        // FUNGSI KONTROL ARAH (Keyboard & D-Pad)
+        // ==========================================
+        function handleInput(direction) {
+            if (gameState.status !== 'PLAYING') return;
+
+            // 🎯 TUGAS 9: Logika Arah Atas
+            // Ular hanya boleh ke ATAS jika tidak sedang melaju ke BAWAH.
+            // Lengkapi dengan mengganti '?' dengan 0.
+            if (direction === 'UP' && gameState.dy === '?') {
+                gameState.dx = 0;
+                gameState.dy = -1;
+            } 
+            
+            // 🎯 TUGAS 10: Logika Arah Bawah
+            // Ular hanya boleh ke BAWAH jika tidak sedang melaju ke ATAS.
+            // Lengkapi dengan mengganti '?' dengan 0.
+            else if (direction === 'DOWN' && gameState.dy === '?') {
+                gameState.dx = 0;
+                gameState.dy = 1;
+            } 
+            
+            // 🎯 TUGAS 11: Logika Arah Kiri
+            // Ular hanya boleh ke KIRI jika TIDAK sedang melaju ke KANAN (dx !== 1)
+            // Hapus tanda kutip dan tanda tanya '?' lalu ubah menjadi: !== 1
+            else if (direction === 'LEFT' && gameState.dx '?') {
+                gameState.dx = -1;
+                gameState.dy = 0;
+            } 
+            
+            // 🎯 TUGAS 12: Logika Arah Kanan
+            // Ular hanya boleh ke KANAN jika TIDAK sedang melaju ke KIRI (dx !== -1)
+            // Hapus tanda kutip dan tanda tanya '?' lalu ubah menjadi: !== -1
+            else if (direction === 'RIGHT' && gameState.dx '?') { 
+                gameState.dx = 1;
+                gameState.dy = 0;
+            }
+        }
+
+        // Listener Keyboard PC
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowUp') handleInput('UP');
+            if (e.key === 'ArrowDown') handleInput('DOWN');
+            if (e.key === 'ArrowLeft') handleInput('LEFT');
+            if (e.key === 'ArrowRight') handleInput('RIGHT');
+            
+            // Mencegah scroll layar saat main pakai keyboard
+            if(["Space","ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].indexOf(e.code) > -1) {
+                e.preventDefault();
+            }
+        });
+
+        // ==========================================
+        // LOGIKA UTAMA (GAME LOOP)
+        // ==========================================
+        function updateGame() {
+            if (gameState.status !== 'PLAYING') return;
+
+            // 🎯 TUGAS 13: Tentukan variabel X baru dengan menambahkan dx
+            // Hapus tanda '?' dan ganti dengan: gameState.dx
+            let newX = gameState.snake[0].x + '?';
+            
+            // 🎯 TUGAS 14: Tentukan variabel Y baru dengan menambahkan dy
+            // Hapus tanda '?' dan ganti dengan: gameState.dy
+            let newY = gameState.snake[0].y + '?';
+            
+            const head = { x: newX, y: newY };
+
+            // 🎯 TUGAS 15: Deteksi Tabrakan Dinding (Wall Collision)
+            // Hapus tanda komentar (/* dan */) di bawah untuk mengaktifkannya!
+            /*
+            if (head.x < 0 || head.x >= gridCols || head.y < 0 || head.y >= gridRows) {
+                setGameOver();
+                return;
+            }
+            */
+
+            // 🎯 TUGAS 16: Deteksi Tabrakan Badan Sendiri (Self Collision)
+            // Hapus tanda komentar (/* dan */) pada blok for di bawah!
+            /*
+            for (let i = 0; i < gameState.snake.length; i++) {
+                if (head.x === gameState.snake[i].x && head.y === gameState.snake[i].y) {
+                    setGameOver();
+                    return;
+                }
+            }
+            */
+
+            // 🎯 TUGAS 17: Masukkan kepala ular baru ke dalam array
+            // Hapus tanda (//) di baris bawah ini:
+            // gameState.snake.unshift(head);
+
+
+            // Logika Makan Makanan (Food Collision)
+            if (head.x === gameState.food.x && head.y === gameState.food.y) {
+                
+                // 🎯 TUGAS 18: Ubah penambahan skor dari 10 menjadi 25 setiap memakan makanan!
+                gameState.score += 10;
+                
+                spawnFood(); 
+            } else {
+                // 🎯 TUGAS 19: Hapus ekor terakhir ular jika ular tidak sedang makan
+                // Hapus tanda (//) di baris bawah ini:
+                // gameState.snake.pop();
+            }
+        }
+
+        // ==========================================
+        // FUNGSI PENDUKUNG GAMBAR & RESTART
+        // ==========================================
+        function drawGame() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Gambar Ular
+            gameState.snake.forEach((segmen, index) => {
+                ctx.fillStyle = (index === 0) ? '#ffffff' : '#20c997'; // Kepala vs Badan
+                ctx.fillRect(segmen.x * gridSize, segmen.y * gridSize, gridSize - 1, gridSize - 1);
+            });
+
+            // Gambar Makanan
+            ctx.fillStyle = '#ff4757';
+            ctx.fillRect(gameState.food.x * gridSize, gameState.food.y * gridSize, gridSize - 1, gridSize - 1);
+
+            // Update UI Teks
+            scoreEl.innerText = gameState.score;
+            statusEl.innerText = gameState.status;
+            statusEl.style.color = (gameState.status === 'PLAYING') ? '#20c997' : '#ff4757';
+        }
+
+        function spawnFood() {
+            gameState.food = {
+                x: Math.floor(Math.random() * gridCols),
+                y: Math.floor(Math.random() * gridRows)
+            };
+        }
+
+        function setGameOver() {
+            gameState.status = 'GAME_OVER';
+            clearInterval(gameLoopTimer);
+            drawGame();
+            
+            ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#ff4757";
+            ctx.font = "bold 20px Space Grotesk";
+            ctx.textAlign = "center";
+            ctx.fillText("CRITICAL SYSTEM FAILURE", canvas.width/2, canvas.height/2 - 10);
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "12px Space Grotesk";
+            ctx.fillText("Tabrakan terdeteksi. Game Over.", canvas.width/2, canvas.height/2 + 25);
+        }
+
+        function startGame() {
+            gameState = {
+                snake: [{x: 10, y: 10}, {x: 9, y: 10}, {x: 8, y: 10}], // Panjang awal 3 kotak
+                food: {x: 15, y: 10},
+                dx: 1, dy: 0,
+                score: 0,
+                status: 'PLAYING'
+            };
+            if(gameLoopTimer) clearInterval(gameLoopTimer);
+            
+            window.focus(); // Auto-focus agar panah keyboard jalan
+            
+            // 🎯 TUGAS 20: Ubah interval waktu pergerakan game dari 150 menjadi 100 agar ular bergerak lebih cepat!
+            gameLoopTimer = setInterval(() => {
+                updateGame();
+                drawGame();
+            }, 150);
+        }
+
+        // Gambar perdana saat web dimuat
+        drawGame();
+    </script>
+</body>
+</html>
+</textarea>
+            <div class="action-bar">
+                <button class="btn-run" onclick="runCode()">✨ Sinkronisasi Kode</button>
+            </div>
+        </div>
+
+        <div class="panel preview-panel" id="preview-panel">
+            <div class="panel-header">
+                <div>🎮 Output Sistem</div>
+                <button class="btn-fullscreen" id="fs-btn" onclick="toggleFullscreen()" title="Buka Mode Layar Penuh">🔲 Layar Penuh</button>
+            </div>
+            <iframe id="preview-frame"></iframe>
+        </div>
+
+    </div>
+
+    <script>
+        let urlAktif = null;
+
+        function runCode() {
+            const htmlCode = document.getElementById('code-editor').value;
+            const iframe = document.getElementById('preview-frame');
+            
+            const blob = new Blob([htmlCode], { type: 'text/html;charset=utf-8' });
+            
+            if (urlAktif) {
+                URL.revokeObjectURL(urlAktif);
+            }
+            
+            urlAktif = URL.createObjectURL(blob);
+            iframe.src = urlAktif;
+            
+            // Auto focus ke iframe setelah sinkronisasi supaya event keyboard (panah) bisa langsung jalan di game
+            iframe.onload = () => {
+                iframe.contentWindow.focus();
+            };
+        }
+
+        // Logika Mode Fullscreen
+        function toggleFullscreen() {
+            const panel = document.getElementById('preview-panel');
+            const btn = document.getElementById('fs-btn');
+            
+            if (!document.fullscreenElement) {
+                // Minta akses fullscreen
+                if (panel.requestFullscreen) {
+                    panel.requestFullscreen();
+                } else if (panel.webkitRequestFullscreen) { /* Safari */
+                    panel.webkitRequestFullscreen();
+                } else if (panel.msRequestFullscreen) { /* IE11 */
+                    panel.msRequestFullscreen();
+                }
+                btn.innerHTML = "🔳 Perkecil Layar";
+            } else {
+                // Keluar dari fullscreen
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) { /* Safari */
+                    document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) { /* IE11 */
+                    document.msExitFullscreen();
+                }
+                btn.innerHTML = "🔲 Layar Penuh";
+            }
+        }
+
+        // Event listener saat user keluar dari fullscreen menggunakan tombol "ESC" atau tombol "Back" di HP
+        document.addEventListener('fullscreenchange', () => {
+            const btn = document.getElementById('fs-btn');
+            if (!document.fullscreenElement) {
+                btn.innerHTML = "🔲 Layar Penuh";
+            }
+        });
+
+        const editor = document.getElementById('code-editor');
+        editor.addEventListener('keydown', function(e) {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const start = this.selectionStart;
+                const end = this.selectionEnd;
+
+                this.value = this.value.substring(0, start) + "    " + this.value.substring(end);
+                this.selectionStart = this.selectionEnd = start + 4;
+            }
+        });
+
+        window.onload = runCode;
+    </script>
+
+</body>
+</html>

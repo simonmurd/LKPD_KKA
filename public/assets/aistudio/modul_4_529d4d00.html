@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LKPD Interaktif: Modul 4 Memory Match Game</title>
+    <style>
+        /* Import Font Modern, Minimalis & Futuristik */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Space+Grotesk:wght@500;700&family=Fira+Code:wght@400;500&display=swap');
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9fa;
+            color: #212529;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background-color: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            padding: 15px 30px;
+            border-bottom: 1px solid #e9ecef;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+
+        header h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #ffcc00, #ff0055);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .badge {
+            background: #ffffff;
+            color: #d4a000;
+            border: 1px solid #ffcc00;
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            box-shadow: 0 4px 10px rgba(255, 204, 0, 0.15);
+            letter-spacing: 0.5px;
+        }
+
+        .workspace {
+            display: flex;
+            flex: 1;
+            padding: 20px;
+            gap: 20px;
+            overflow: hidden;
+            background-image: radial-gradient(#dee2e6 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        /* Responsive Workspace untuk Mobile */
+        @media (max-width: 768px) {
+            .workspace {
+                flex-direction: column;
+                overflow-y: auto;
+            }
+            .panel {
+                min-height: 400px;
+            }
+        }
+
+        .panel {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid #e9ecef;
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+
+        .panel:hover {
+            box-shadow: 0 12px 40px rgba(255, 204, 0, 0.12);
+            border-color: #ffd633;
+        }
+
+        .panel-header {
+            padding: 15px 25px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            font-weight: 700;
+            font-size: 1.05rem;
+            font-family: 'Space Grotesk', sans-serif;
+            color: #495057;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .instruction-panel {
+            flex: 1;
+            overflow-y: auto;
+        }
+        
+        .instruction-content {
+            padding: 25px;
+            font-size: 0.95rem;
+            line-height: 1.7;
+            color: #495057;
+        }
+
+        .instruction-content h3 {
+            margin-bottom: 15px;
+            color: #d4a000;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .instruction-content p {
+            margin-bottom: 15px;
+        }
+
+        .task-box {
+            background: rgba(255, 204, 0, 0.08);
+            border-left: 4px solid #ffcc00;
+            border-radius: 0 8px 8px 0;
+            padding: 15px;
+            margin-top: 20px;
+            color: #212529;
+            font-size: 0.9rem;
+        }
+
+        .editor-panel {
+            flex: 1.2;
+        }
+
+        textarea {
+            flex: 1;
+            width: 100%;
+            border: none;
+            resize: none;
+            padding: 20px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+            background-color: #f1f3f5;
+            color: #212529;
+            outline: none;
+            line-height: 1.6;
+            white-space: pre;
+            overflow-x: auto;
+            transition: background-color 0.2s ease;
+        }
+
+        textarea:focus {
+            background-color: #ffffff;
+            box-shadow: inset 0 0 0 2px #ffcc00;
+        }
+
+        .action-bar {
+            padding: 12px 25px;
+            background: #ffffff;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        button.btn-run {
+            background: linear-gradient(135deg, #ffcc00 0%, #ff0055 100%);
+            color: #ffffff;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(255, 204, 0, 0.3);
+        }
+
+        button.btn-run:hover {
+            box-shadow: 0 6px 20px rgba(255, 0, 85, 0.35);
+            transform: translateY(-2px);
+        }
+
+        .preview-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Pengaturan saat mode Fullscreen aktif */
+        .preview-panel:fullscreen {
+            background: #ffffff;
+            border-radius: 0;
+            border: none;
+        }
+        .preview-panel:-webkit-full-screen {
+            background: #ffffff;
+        }
+
+        /* Tombol Fullscreen */
+        .btn-fullscreen {
+            background: transparent;
+            color: #495057;
+            border: 1px solid #ced4da;
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .btn-fullscreen:hover {
+            background: #e9ecef;
+            color: #212529;
+            border-color: #adb5bd;
+        }
+
+        iframe {
+            flex: 1;
+            width: 100%;
+            border: none;
+            background-color: #ffffff;
+        }
+        
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f8f9fa; }
+        ::-webkit-scrollbar-thumb { background: #ced4da; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #adb5bd; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>⚡ CodeQuest: NEXUS</h1>
+        <div class="badge">🚀 Modul 4: Pairs / Memory Match Game (DOM & State Focus)</div>
+    </header>
+
+    <div class="workspace">
+        
+        <div class="panel instruction-panel">
+            <div class="panel-header" style="justify-content: flex-start;">📜 Modul Instruksi</div>
+            <div class="instruction-content">
+                <h3>Memory Match: DOM & State Management Engine!</h3>
+                <p>Selamat datang di Modul 4, Web Developer! 🧠 Game Memory Match (Pairs) adalah proyek ideal untuk menguasai <strong>manipulasi DOM</strong>, <strong>manajemen status (State Management)</strong>, dan <strong>animasi CSS 3D</strong> tanpa kompleksitas elemen Canvas.</p>
+                <p>Misi ini melatih kemampuanmu dalam event handling, memvalidasi pencocokan dua kartu, serta mengunci layar secara temporer melalui <strong>20 Tugas Terstruktur</strong> pada editor kode.</p>
+                
+                <div class="task-box">
+                    <strong>🎯 Cara Mengerjakan:</strong><br>
+                    Cari petunjuk <strong>🎯 TUGAS 1</strong> sampai <strong>TUGAS 20</strong> pada editor kode di tengah. Baca komentar instruksi, lalu ganti tanda tanya (<code>'?'</code>) dengan nilai atau ekspresi JavaScript/CSS yang tepat.<br><br>
+                    Setelah selesai, klik <strong>"✨ Sinkronisasi Kode"</strong> untuk melihat hasil simulasi game di panel sebelah kanan!
+                </div>
+
+                <div style="margin-top:20px; font-size:0.85rem; background:#f8f9fa; padding:12px; border-radius:8px; border-left:3px solid #ffcc00;">
+                    <strong>💡 Konsep Kunci Modul 4:</strong><br>
+                    • <strong>Event Handling (addEventListener):</strong> Menangkap event klik pengguna pada setiap elemen kartu untuk memicu aksi pembalikan kartu secara dinamis.<br>
+                    • <strong>State Management (Status Aplikasi):</strong> Melacak kartu pertama (<code>firstCard</code>), kartu kedua (<code>secondCard</code>), penguncian layar (<code>isLocked</code>), serta jumlah pasangan tercocokkan.<br>
+                    • <strong>Logika Percabangan (if/else):</strong> Menentukan apakah kartu cocok (<code>dataset.icon === dataset.icon</code>) atau harus dibalik kembali setelah delay <code>setTimeout</code>.<br>
+                    • <strong>Animasi CSS 3D:</strong> Menggunakan <code>transform: rotateY(180deg)</code> dan <code>backface-visibility: hidden</code> untuk efek balik kartu yang mulus.
+                </div>
+            </div>
+        </div>
+
+        <div class="panel editor-panel">
+            <div class="panel-header" style="justify-content: flex-start;">💻 Terminal Interface</div>
+<textarea id="code-editor" spellcheck="false" wrap="off">
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- 🎯 TUGAS 1: Mengubah Judul Tab Browser
+         Cara Mengerjakan: Ganti tanda '[?]' di dalam tag <title> di bawah ini dengan nama lengkap Anda sendiri. Contoh: [Budi Santoso] -->
+    <title>Modul 4 - Pairs Memory Match Game [?]</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: #121214;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            padding: 20px 10px;
+            touch-action: manipulation;
+        }
+
+        h2 {
+            margin-bottom: 12px;
+            color: #ffcc00;
+            text-align: center;
+            font-size: 1.4rem;
+        }
+
+        #gameInfo {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            max-width: 380px;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+            padding: 10px;
+            background: #1e1e24;
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+
+        .memory-game {
+            width: 100%;
+            max-width: 380px;
+            height: 380px;
+            display: grid;
+            
+            /* 🎯 TUGAS 2: Mengatur Jumlah Kolom Grid Game
+               Cara Mengerjakan: Ubah tanda '?' di dalam fungsi repeat(?, 1fr) menjadi angka 4 agar tata letak kartu tersusun rapi menjadi 4 kolom. */
+            grid-template-columns: repeat(?, 1fr);
+            
+            gap: 10px;
+            perspective: 1000px;
+        }
+
+        .card {
+            background-color: transparent;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.5s;
+            cursor: pointer;
+            border-radius: 8px;
+        }
+
+        .card:active {
+            transform: scale(0.95);
+            transition: transform 0.2s;
+        }
+
+        /* 🎯 TUGAS 3: Efek Putar Kartu (Flip)
+           Cara Mengerjakan: Ganti tanda '?' pada 'rotateY(?)' menjadi '180deg' agar kartu berputar 180 derajat saat status kelas 'flip' aktif. */
+        .card.flip {
+            transform: rotateY(?);
+        }
+
+        .front-face,
+        .back-face {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2rem;
+            
+            /* 🎯 TUGAS 4: Menyembunyikan Sisi Belakang Kartu
+               Cara Mengerjakan: Ubah tanda '?' menjadi 'hidden' pada properti backface-visibility agar gambar di balik kartu tidak tembus pandang sebelum dibuka. */
+            backface-visibility: ?;
+            
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            user-select: none;
+        }
+
+        .front-face {
+            background-color: #2a2a36;
+            border: 2px solid #ffcc00;
+            transform: rotateY(180deg);
+        }
+
+        .back-face {
+            background: linear-gradient(135deg, #ffcc00, #ff0055);
+            color: #ffffff;
+            border: 2px solid #ffffff;
+            font-weight: bold;
+        }
+
+        .btn-restart {
+            margin-top: 18px;
+            padding: 10px 22px;
+            
+            /* 🎯 TUGAS 5: Mengubah Warna Tombol Reset
+               Cara Mengerjakan: Ganti kode '#??????' dengan kode warna heksadesimal pilihan Anda sendiri (contoh: #00ff66 atau #3399ff). */
+            background-color: #??????;
+            
+            border: none;
+            border-radius: 8px;
+            color: #000000;
+            font-size: 0.95rem;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 4px 0 #009933;
+            transition: all 0.1s;
+        }
+
+        .btn-restart:active {
+            transform: translateY(3px);
+            box-shadow: none;
+        }
+
+        .win-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            display: none;
+        }
+
+        .win-overlay h3 {
+            color: #00ff66;
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 🎯 TUGAS 6: Mengubah Judul Utama Game (H2)
+         Cara Mengerjakan: Ganti teks di dalam tag <h2> dengan judul game kreasi Anda yang menarik dan unik. -->
+    <h2>🚀 [Judul Game Kamu] 🎮</h2>
+
+    <div id="gameInfo">
+        <span>Langkah: <span id="movesVal" style="color:#ffcc00;">0</span></span>
+        <span>Pasangan: <span id="pairsVal" style="color:#00f0ff;">0 / 6</span></span>
+    </div>
+
+    <div class="memory-game" id="memory-game">
+        <!-- Elemen Kartu Dihasilkan Secara Dinamis Menggunakan JS -->
+    </div>
+
+    <button class="btn-restart" onclick="restartGame()">🔄 Acak & Reset Game</button>
+
+    <div class="win-overlay" id="winOverlay">
+        <h3>🎉 SELAMAT! 🎉</h3>
+        <p>Kamu berhasil mencocokkan semua kartu!</p>
+        <button class="btn-restart" style="margin-top:15px;" onclick="restartGame()">Main Lagi</button>
+    </div>
+
+    <script>
+        const cardIcons = ['🚀', '🎮', '👾', '⚡', '💎', '🔥'];
+        let cardsData = [...cardIcons, ...cardIcons]; // 12 kartu (6 pasang)
+        
+        // ==========================================
+        // 1. MANAJEMEN STATUS (STATE MANAGEMENT)
+        // ==========================================
+        // 🎯 TUGAS 7: Status Kartu Terbuka Pertama
+        // Cara Mengerjakan: Ganti '?' dengan nilai 'false' karena saat game dimulai, belum ada kartu yang dibuka.
+        let hasFlippedCard = ?;   
+        
+        // 🎯 TUGAS 8: Status Pengunci Papan Game
+        // Cara Mengerjakan: Ganti '?' dengan nilai 'false' agar papan tidak terkunci saat awal permainan.
+        let isLocked = ?;             
+        
+        let firstCard = null;
+        let secondCard = null;
+        let moves = 0;
+        
+        // 🎯 TUGAS 9: Penghitung Pasangan yang Cocok
+        // Cara Mengerjakan: Ganti '?' dengan angka '0' karena awal permainan belum ada pasangan kartu yang ditemukan.
+        let matchedPairs = ?;             
+
+        const gameContainer = document.getElementById('memory-game');
+        const movesEl = document.getElementById('movesVal');
+        const pairsEl = document.getElementById('pairsVal');
+        const winOverlay = document.getElementById('winOverlay');
+
+        // ==========================================
+        // 2. INISIALISASI & PEMBUATAN ELEMEN DOM
+        // ==========================================
+        function createBoard() {
+            gameContainer.innerHTML = '';
+            
+            // 🎯 TUGAS 20: Mengacak Urutan Kartu
+            // Cara Mengerjakan: Ganti '?' dengan fungsi pengacak '0.5 - Math.random()' di dalam .sort().
+            cardsData.sort(() => ?);
+
+            cardsData.forEach((icon, index) => {
+                const card = document.createElement('div');
+                card.classList.add('card');
+                card.dataset.icon = icon;
+                card.dataset.index = index;
+
+                card.innerHTML = `
+                    <div class="front-face">${icon}</div>
+                    <div class="back-face">❓</div>
+                `;
+
+                // 🎯 TUGAS 10: Menambahkan Event Listener Klik pada Kartu
+                // Cara Mengerjakan: Ganti '?' kedua dengan fungsi 'flipCard' agar kartu bisa merespons klik.
+                card.addEventListener('click', ?);
+
+                gameContainer.appendChild(card);
+            });
+        }
+
+        // ==========================================
+        // 3. LOGIKA FLIP KARTU & EVENT HANDLING
+        // ==========================================
+        function flipCard() {
+            if (isLocked) return;
+            
+            // 🎯 TUGAS 11: Mencegah Klik Kartu yang Sama Persis
+            // Cara Mengerjakan: Ganti '?' dengan variabel 'firstCard' agar pemain tidak bisa mengklik kartu yang sama dua kali berturut-turut.
+            if (this === ?) return;
+
+            // 🎯 TUGAS 12: Menambahkan Kelas CSS 'flip'
+            // Cara Mengerjakan: Ganti '?' dengan string 'flip' untuk memicu animasi buka kartu.
+            this.classList.add('?');
+
+            if (!hasFlippedCard) {
+                // Klik Kartu Pertama
+                // 🎯 TUGAS 13: Menandai Kartu Pertama Telah Dibuka
+                // Cara Mengerjakan: Ganti '?' dengan nilai 'true'.
+                hasFlippedCard = ?; 
+                
+                // 🎯 TUGAS 14: Menyimpan Referensi Kartu Pertama
+                // Cara Mengerjakan: Ganti '?' dengan nilai 'this'.
+                firstCard = ?;      
+                return;
+            }
+
+            // Klik Kartu Kedua
+            secondCard = this;
+            moves++;
+            movesEl.innerText = moves;
+            
+            checkForMatch();
+        }
+
+        // ==========================================
+        // 4. LOGIKA PERCABANGAN PENCOCOKAN (CHECK MATCH)
+        // ==========================================
+        function checkForMatch() {
+            // 🎯 TUGAS 15: Membandingkan Ikon Dua Kartu
+            // Cara Mengerjakan: Ganti '?' dengan 'secondCard.dataset.icon' untuk mencocokkan ikon kartu pertama dan kedua.
+            let isMatch = firstCard.dataset.icon === ?;
+
+            if (isMatch) {
+                disableCards();
+            } else {
+                unflipCards();
+            }
+        }
+
+        function disableCards() {
+            firstCard.removeEventListener('click', flipCard);
+            secondCard.removeEventListener('click', flipCard);
+
+            matchedPairs++;
+            pairsEl.innerText = matchedPairs + " / " + cardIcons.length;
+
+            resetBoard();
+
+            // 🎯 TUGAS 19: Deteksi Kemenangan Permainan
+            // Cara Mengerjakan: Ganti '?' dengan 'cardIcons.length' untuk mengecek apakah semua pasangan sudah ditemukan.
+            if (matchedPairs === ?) {
+                setTimeout(() => {
+                    winOverlay.style.display = 'flex';
+                }, 500);
+            }
+        }
+
+        function unflipCards() {
+            // 🎯 TUGAS 16: Mengunci Papan Sementara
+            // Cara Mengerjakan: Ganti '?' dengan nilai 'true' agar papan terkunci saat salah.
+            isLocked = ?;
+
+            // 🎯 TUGAS 18: Mengatur Durasi Timer Tampilan Kartu Salah (Dalam Milidetik)
+            // Cara Mengerjakan: Ganti '?' dengan angka '1000' (artinya 1 detik).
+            setTimeout(() => {
+                // 🎯 TUGAS 17: Menghapus Kelas 'flip' untuk Menutup Kembali Kartu
+                // Cara Mengerjakan: Ganti '?' dengan string 'flip' untuk menghapus kelas putar kartu.
+                firstCard.classList.remove('?');
+                secondCard.classList.remove('?');
+
+                resetBoard();
+            }, ?); 
+        }
+
+        function resetBoard() {
+            [hasFlippedCard, isLocked] = [false, false];
+            [firstCard, secondCard] = [null, null];
+        }
+
+        function restartGame() {
+            winOverlay.style.display = 'none';
+            moves = 0;
+            matchedPairs = 0;
+            movesEl.innerText = moves;
+            pairsEl.innerText = "0 / " + cardIcons.length;
+            resetBoard();
+            createBoard();
+        }
+
+        // Jalankan pembuat papan game saat halaman pertama kali dimuat
+        createBoard();
+    </script>
+</body>
+</html>
+</textarea>
+            <div class="action-bar">
+                <button class="btn-run" onclick="runCode()">✨ Sinkronisasi Kode</button>
+            </div>
+        </div>
+
+        <div class="panel preview-panel" id="preview-panel">
+            <div class="panel-header">
+                <div>🎮 Output Sistem</div>
+                <button class="btn-fullscreen" id="fs-btn" onclick="toggleFullscreen()" title="Buka Mode Layar Penuh">🔲 Layar Penuh</button>
+            </div>
+            <iframe id="preview-frame"></iframe>
+        </div>
+
+    </div>
+
+    <script>
+        let urlAktif = null;
+
+        function runCode() {
+            const htmlCode = document.getElementById('code-editor').value;
+            const iframe = document.getElementById('preview-frame');
+            
+            const blob = new Blob([htmlCode], { type: 'text/html;charset=utf-8' });
+            
+            if (urlAktif) {
+                URL.revokeObjectURL(urlAktif);
+            }
+            
+            urlAktif = URL.createObjectURL(blob);
+            iframe.src = urlAktif;
+            
+            iframe.onload = () => {
+                iframe.contentWindow.focus();
+            };
+        }
+
+        // Logika Mode Fullscreen
+        function toggleFullscreen() {
+            const panel = document.getElementById('preview-panel');
+            const btn = document.getElementById('fs-btn');
+            
+            if (!document.fullscreenElement) {
+                if (panel.requestFullscreen) {
+                    panel.requestFullscreen();
+                } else if (panel.webkitRequestFullscreen) { /* Safari */
+                    panel.webkitRequestFullscreen();
+                } else if (panel.msRequestFullscreen) { /* IE11 */
+                    panel.msRequestFullscreen();
+                }
+                btn.innerHTML = "🔳 Perkecil Layar";
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) { /* Safari */
+                    document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) { /* IE11 */
+                    document.msExitFullscreen();
+                }
+                btn.innerHTML = "🔲 Layar Penuh";
+            }
+        }
+
+        document.addEventListener('fullscreenchange', () => {
+            const btn = document.getElementById('fs-btn');
+            if (!document.fullscreenElement) {
+                btn.innerHTML = "🔲 Layar Penuh";
+            }
+        });
+
+        // Pengaturan tombol Tab pada textarea
+        const editor = document.getElementById('code-editor');
+        editor.addEventListener('keydown', function(e) {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const start = this.selectionStart;
+                const end = this.selectionEnd;
+
+                this.value = this.value.substring(0, start) + "    " + this.value.substring(end);
+                this.selectionStart = this.selectionEnd = start + 4;
+            }
+        });
+
+        window.onload = runCode;
+    </script>
+
+</body>
+</html>

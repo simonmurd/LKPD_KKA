@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LKPD Interaktif: Modul 15 Contra (Run & Gun Side-Scroller)</title>
+    <style>
+        /* Import Font Modern, Minimalis & Futuristik */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Space+Grotesk:wght@500;700&family=Fira+Code:wght@400;500&display=swap');
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9fa;
+            color: #212529;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background-color: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            padding: 15px 30px;
+            border-bottom: 1px solid #e9ecef;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+
+        header h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #00f0ff, #ff0055);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .badge {
+            background: #ffffff;
+            color: #ff0055;
+            border: 1px solid #ff0055;
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            box-shadow: 0 4px 10px rgba(255, 0, 85, 0.15);
+            letter-spacing: 0.5px;
+        }
+
+        .workspace {
+            display: flex;
+            flex: 1;
+            padding: 20px;
+            gap: 20px;
+            overflow: hidden;
+            background-image: radial-gradient(#dee2e6 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        /* Responsive Workspace untuk Mobile */
+        @media (max-width: 768px) {
+            .workspace {
+                flex-direction: column;
+                overflow-y: auto;
+            }
+            .panel {
+                min-height: 400px;
+            }
+        }
+
+        .panel {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid #e9ecef;
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+
+        .panel:hover {
+            box-shadow: 0 12px 40px rgba(255, 0, 85, 0.12);
+            border-color: #ff80a6;
+        }
+
+        .panel-header {
+            padding: 15px 25px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            font-weight: 700;
+            font-size: 1.05rem;
+            font-family: 'Space Grotesk', sans-serif;
+            color: #495057;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .instruction-panel {
+            flex: 1;
+            overflow-y: auto;
+        }
+        
+        .instruction-content {
+            padding: 25px;
+            font-size: 0.95rem;
+            line-height: 1.7;
+            color: #495057;
+        }
+
+        .instruction-content h3 {
+            margin-bottom: 15px;
+            color: #ff0055;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .instruction-content p {
+            margin-bottom: 15px;
+        }
+
+        .task-box {
+            background: rgba(255, 0, 85, 0.08);
+            border-left: 4px solid #ff0055;
+            border-radius: 0 8px 8px 0;
+            padding: 15px;
+            margin-top: 20px;
+            color: #212529;
+            font-size: 0.9rem;
+        }
+
+        .editor-panel {
+            flex: 1.2;
+        }
+
+        textarea {
+            flex: 1;
+            width: 100%;
+            border: none;
+            resize: none;
+            padding: 20px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+            background-color: #f1f3f5;
+            color: #212529;
+            outline: none;
+            line-height: 1.6;
+            white-space: pre;
+            overflow-x: auto;
+            transition: background-color 0.2s ease;
+        }
+
+        textarea:focus {
+            background-color: #ffffff;
+            box-shadow: inset 0 0 0 2px #ff0055;
+        }
+
+        .action-bar {
+            padding: 12px 25px;
+            background: #ffffff;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        button.btn-run {
+            background: linear-gradient(135deg, #00f0ff 0%, #ff0055 100%);
+            color: #ffffff;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(255, 0, 85, 0.3);
+        }
+
+        button.btn-run:hover {
+            box-shadow: 0 6px 20px rgba(0, 240, 255, 0.35);
+            transform: translateY(-2px);
+        }
+
+        .preview-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Pengaturan saat mode Fullscreen aktif */
+        .preview-panel:fullscreen {
+            background: #ffffff;
+            border-radius: 0;
+            border: none;
+        }
+        .preview-panel:-webkit-full-screen {
+            background: #ffffff;
+        }
+
+        /* Tombol Fullscreen */
+        .btn-fullscreen {
+            background: transparent;
+            color: #495057;
+            border: 1px solid #ced4da;
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .btn-fullscreen:hover {
+            background: #e9ecef;
+            color: #212529;
+            border-color: #adb5bd;
+        }
+
+        iframe {
+            flex: 1;
+            width: 100%;
+            border: none;
+            background-color: #ffffff;
+        }
+        
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f8f9fa; }
+        ::-webkit-scrollbar-thumb { background: #ced4da; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #adb5bd; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>⚡ CodeQuest: NEXUS</h1>
+        <div class="badge">🎖️ Modul 15: Contra (Run and Gun Side-Scroller & Platform Physics)</div>
+    </header>
+
+    <div class="workspace">
+        
+        <div class="panel instruction-panel">
+            <div class="panel-header" style="justify-content: flex-start;">📜 Modul Instruksi</div>
+            <div class="instruction-content">
+                <h3>Contra: Run and Gun Side-Scroller & Platform Physics Engine!</h3>
+                <p>Selamat datang di Modul Puncak 15, Developer Game! 🎖️ Game aksi klasik bergenre <i>run and gun</i> ini menggabungkan seluruh kompleksitas pemrograman game 2D: <strong>fisika gravitasi & pijakan platform</strong>, <strong>penanganan input multi-arah</strong>, serta <strong>manajemen entitas ganda (pemain, musuh, dan peluru)</strong>.</p>
+                <p>Misi ini dikemas dalam <strong>20 Tugas Terstruktur</strong> yang harus kamu selesaikan pada kode di editor tengah.</p>
+                
+                <div class="task-box">
+                    <strong>🎯 Cara Mengerjakan:</strong><br>
+                    Cari petunjuk <strong>🎯 TUGAS 1</strong> sampai <strong>TUGAS 20</strong> pada editor kode. Baca instruksi komentar, lalu isi nilai atau hapus tanda tanya (<code>'?'</code>) dengan ekspresi JavaScript yang tepat.<br><br>
+                    Setelah selesai, klik <strong>"✨ Sinkronisasi Kode"</strong>. Gunakan tombol keyboard (Panah Kiri/Kanan/Atas, Spasi untuk Lompat, X untuk Tembak) atau tombol kontrol virtual pada layar pratinjau!
+                </div>
+
+                <div style="margin-top:20px; font-size:0.85rem; background:#f8f9fa; padding:12px; border-radius:8px; border-left:3px solid #ff0055;">
+                    <strong>💡 Konsep Kunci Modul 15:</strong><br>
+                    • <strong>Penanganan Multi-Key Input:</strong> Menggunakan <code>addEventListener('keydown')</code> dan <code>keyup</code> untuk mendukung kombinasi tombol bergerak sambil melompat dan menembak.<br>
+                    • <strong>Fisika Gravitasi & Platform Collision:</strong> Menambahkan akselerasi gravitasi (<code>dy += gravity</code>) serta pemeriksaan batas platform untuk menghentikan jatuh dan mengizinkan lompatan ulang.<br>
+                    • <strong>Manajemen Array Entitas Terpusat:</strong> Mengelola siklus hidup peluru pemain (<code>playerBullets[]</code>) dan musuh (<code>enemies[]</code>) secara dinamis.<br>
+                    • <strong>AABB Collision Detection:</strong> Menguji tabrakan kotak (Axis-Aligned Bounding Box) antara peluru dengan musuh dan musuh dengan pemain.
+                </div>
+            </div>
+        </div>
+
+        <div class="panel editor-panel">
+            <div class="panel-header" style="justify-content: flex-start;">💻 Terminal Interface</div>
+<textarea id="code-editor" spellcheck="false" wrap="off">
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <!-- 🎯 TUGAS 1: Ubah judul tab browser di bawah ini dengan namamu -->
+    <title>Modul 15 - Contra Run and Gun [NAMA SISWA]</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: #121214;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding-top: 15px;
+            touch-action: manipulation;
+        }
+        
+        #gameInfo {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 480px;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            padding: 8px 15px;
+            box-sizing: border-box;
+            background: #1e1e24;
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+
+        /* 🎯 TUGAS 2: Ganti warna background kanvas dari #0b0c10 menjadi warna lain, misal: '#0f111a' */
+        #gameCanvas {
+            background-color: #0b0c10;
+            
+            /* 🎯 TUGAS 3: Ubah ketebalan border dari 3px menjadi 4px atau ganti warnanya */
+            border: 3px solid #ff0055;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(255, 0, 85, 0.25);
+            max-width: 100%;
+            height: auto;
+        }
+
+        .btn-start {
+            margin-top: 12px;
+            padding: 10px 20px;
+            /* 🎯 TUGAS 4: Ganti warna tombol dari #ff0055 menjadi warna favoritmu */
+            background-color: #ff0055;
+            border: none;
+            border-radius: 8px;
+            color: #ffffff;
+            font-size: 0.95rem;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 4px 0 #cc0044;
+            transition: all 0.1s;
+        }
+        .btn-start:active {
+            transform: translateY(3px);
+            box-shadow: none;
+        }
+
+        .controls-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            margin-top: 10px;
+            max-width: 480px;
+        }
+        .nav-btn {
+            padding: 8px 14px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: white;
+            font-size: 13px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .nav-btn:active {
+            background-color: #ff0055;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 🎯 TUGAS 5: Ganti nama judul game H2 di bawah ini -->
+    <h2>🎖️ Contra: Action Side-Scroller</h2>
+    
+    <div id="gameInfo">
+        <span>Skor: <span id="scoreVal" style="color:#00f0ff;">0</span></span>
+        <span>Nyawa: <span id="livesVal" style="color:#ff0055;">3</span></span>
+        <span>Status: <span id="statusVal" style="color:#ffcc00;">PLAYING</span></span>
+    </div>
+    
+    <canvas id="gameCanvas" width="480" height="360"></canvas>
+    
+    <button class="btn-start" onclick="startGame()">▶ Mulai / Restart</button>
+
+    <div class="controls-container">
+        <button class="nav-btn" onmousedown="keys['ArrowLeft']=true" onmouseup="keys['ArrowLeft']=false" ontouchstart="keys['ArrowLeft']=true" ontouchend="keys['ArrowLeft']=false">⬅️ Kiri</button>
+        <button class="nav-btn" onmousedown="keys['ArrowRight']=true" onmouseup="keys['ArrowRight']=false" ontouchstart="keys['ArrowRight']=true" ontouchend="keys['ArrowRight']=false">➡️ Kanan</button>
+        <button class="nav-btn" onmousedown="keys['ArrowUp']=true" onmouseup="keys['ArrowUp']=false" ontouchstart="keys['ArrowUp']=true" ontouchend="keys['ArrowUp']=false">⬆️ Atas</button>
+        <button class="nav-btn" onclick="triggerJump()">🪂 Lompat [Space]</button>
+        <button class="nav-btn" onclick="fireBullet()">💥 Tembak [X]</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('scoreVal');
+        const livesEl = document.getElementById('livesVal');
+        const statusEl = document.getElementById('statusVal');
+
+        // ==========================================
+        // 1. MANAJEMEN STATUS TERPUSAT & ENTITAS
+        // ==========================================
+        const gameState = {
+            // 🎯 TUGAS 6: Setel skor awal pemain menjadi 0
+            score: '?',
+            
+            // 🎯 TUGAS 7: Setel nyawa awal pemain menjadi 3
+            lives: '?',
+            
+            status: 'PLAYING' // PLAYING, GAME_OVER
+        };
+
+        const player = {
+            x: 50,
+            y: 200,
+            width: 28,
+            height: 40,
+            dx: 0,
+            dy: 0,
+            
+            // 🎯 TUGAS 8: Setel kecepatan berjalan pemain (speed) menjadi 4
+            speed: '?',
+            
+            // 🎯 TUGAS 9: Setel kekuatan lompatan (jumpForce) menjadi -10 (ke atas)
+            jumpForce: '?',
+            
+            // 🎯 TUGAS 10: Setel gravitasi bumi (gravity) menjadi 0.5
+            gravity: '?',
+            
+            isGrounded: false,
+            facing: 'RIGHT' // LEFT, RIGHT, UP
+        };
+
+        let playerBullets = [];
+        let enemies = [];
+        let spawnTimer = 0;
+        let animationFrameId = null;
+
+        // Ground Level (Lantai Dasar)
+        const groundLevel = 300;
+
+        // Platform Melayang
+        const platforms = [
+            { x: 120, y: 220, width: 100, height: 12 },
+            { x: 260, y: 160, width: 120, height: 12 }
+        ];
+
+        // ==========================================
+        // 2. CONTROLLER MULTI-KEY INPUT
+        // ==========================================
+        const keys = {};
+
+        window.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+
+            // 🎯 TUGAS 11: Pemicu lompatan ketika menekan tombol ' ' (spasi) saat player.isGrounded bernilai true
+            // Ubah '?' menjadi: player.jumpForce
+            if (e.key === ' ' && player.isGrounded) {
+                player.dy = '?';
+                player.isGrounded = false;
+            }
+
+            // Aksi menembak dengan tombol 'x' atau 'X'
+            if (e.key === 'x' || e.key === 'X') {
+                fireBullet();
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+        });
+
+        function triggerJump() {
+            if (player.isGrounded) {
+                player.dy = player.jumpForce;
+                player.isGrounded = false;
+            }
+        }
+
+        function fireBullet() {
+            if (gameState.status !== 'PLAYING') return;
+
+            let bDx = 0;
+            let bDy = 0;
+
+            // 🎯 TUGAS 12: Setel kecepatan peluru pemain (bulletSpeed) menjadi 8
+            const bulletSpeed = '?';
+
+            if (keys['ArrowUp'] || keys['w'] || keys['W']) {
+                bDy = -bulletSpeed;
+                player.facing = 'UP';
+            } else if (player.facing === 'LEFT') {
+                bDx = -bulletSpeed;
+            } else {
+                bDx = bulletSpeed;
+            }
+
+            playerBullets.push({
+                x: player.x + player.width / 2 - 4,
+                y: player.facing === 'UP' ? player.y : player.y + 12,
+                width: 8,
+                height: 8,
+                dx: bDx,
+                dy: bDy
+            });
+        }
+
+        // ==========================================
+        // 3. LOGIKA FISIKA GRAVITASI & GERAKAN
+        // ==========================================
+        function updatePlayerPhysics() {
+            if (gameState.status !== 'PLAYING') return;
+
+            // 🎯 TUGAS 13: Gerakan ke kiri saat tombol ArrowLeft ditekan -> player.dx = -player.speed
+            // Ubah '?' menjadi: -player.speed
+            if (keys['ArrowLeft']) {
+                player.dx = '?';
+                player.facing = 'LEFT';
+            } 
+            // 🎯 TUGAS 14: Gerakan ke kanan saat tombol ArrowRight ditekan -> player.dx = player.speed
+            // Ubah '?' menjadi: player.speed
+            else if (keys['ArrowRight']) {
+                player.dx = '?';
+                player.facing = 'RIGHT';
+            } else {
+                player.dx = 0;
+            }
+
+            // 🎯 TUGAS 15: Terapkan gravitasi pada kecepatan jatuh Y (player.dy += player.gravity)
+            // Ubah '?' menjadi: player.gravity
+            player.dy += '?';
+
+            player.x += player.dx;
+            player.y += player.dy;
+
+            // Batas Dinding Layar
+            if (player.x < 0) player.x = 0;
+            if (player.x + player.width > canvas.width) player.x = canvas.width - player.width;
+
+            // Deteksi Lantai Dasar (Floor Collision)
+            // 🎯 TUGAS 16: Jika player.y + player.height >= groundLevel, posisikan pemain tepat di atas lantai (groundLevel - player.height)
+            // Ubah '?' menjadi: groundLevel - player.height
+            if (player.y + player.height >= groundLevel) {
+                player.y = '?';
+                player.dy = 0;
+                player.isGrounded = true;
+            } else {
+                player.isGrounded = false;
+            }
+
+            // Deteksi Pijakan Platform Melayang
+            platforms.forEach(plat => {
+                if (
+                    player.dy > 0 &&
+                    player.y + player.height >= plat.y &&
+                    player.y + player.height <= plat.y + 12 &&
+                    player.x + player.width > plat.x &&
+                    player.x < plat.x + plat.width
+                ) {
+                    player.y = plat.y - player.height;
+                    player.dy = 0;
+                    player.isGrounded = true;
+                }
+            });
+        }
+
+        // ==========================================
+        // 4. MANAJEMEN ENTITAS MUSUH & PROYEKTIL
+        // ==========================================
+        function updateEntities() {
+            if (gameState.status !== 'PLAYING') return;
+
+            // Spawn Musuh Bertahap
+            spawnTimer++;
+            if (spawnTimer > 120) {
+                enemies.push({
+                    x: canvas.width,
+                    y: groundLevel - 36,
+                    width: 24,
+                    height: 36,
+                    speed: 1.5 + Math.random()
+                });
+                spawnTimer = 0;
+            }
+
+            // Update Peluru Pemain
+            for (let i = playerBullets.length - 1; i >= 0; i--) {
+                let b = playerBullets[i];
+                
+                // 🎯 TUGAS 17: Update posisi peluru (b.x += b.dx dan b.y += b.dy)
+                // Ubah '?' pertama menjadi: b.dx  dan '?' kedua menjadi: b.dy
+                b.x += '?';
+                b.y += '?';
+
+                // Hapus peluru yang keluar layar
+                if (b.x < 0 || b.x > canvas.width || b.y < 0 || b.y > canvas.height) {
+                    playerBullets.splice(i, 1);
+                    continue;
+                }
+
+                // Cek Benturan Peluru dengan Musuh (AABB Collision)
+                for (let j = enemies.length - 1; j >= 0; j--) {
+                    let e = enemies[j];
+                    
+                    // 🎯 TUGAS 18: Lengkapi logika tabrakan AABB antara peluru (b) dan musuh (e)
+                    // Ubah '?' menjadi: e.x + e.width
+                    if (
+                        b.x < '?' &&
+                        b.x + b.width > e.x &&
+                        b.y < e.y + e.height &&
+                        b.y + b.height > e.y
+                    ) {
+                        enemies.splice(j, 1);
+                        playerBullets.splice(i, 1);
+
+                        // 🎯 TUGAS 19: Tambahkan skor sebesar 100 poin setiap musuh hancur
+                        // Ubah '?' menjadi: 100
+                        gameState.score += '?';
+                        break;
+                    }
+                }
+            }
+
+            // Update Gerakan Musuh
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                let e = enemies[i];
+                e.x -= e.speed;
+
+                // Tabrakan Musuh dengan Pemain
+                if (
+                    player.x < e.x + e.width &&
+                    player.x + player.width > e.x &&
+                    player.y < e.y + e.height &&
+                    player.y + player.height > e.y
+                ) {
+                    enemies.splice(i, 1);
+                    gameState.lives--;
+
+                    if (gameState.lives <= 0) {
+                        gameState.status = 'GAME_OVER';
+                    }
+                } else if (e.x < -e.width) {
+                    enemies.splice(i, 1);
+                }
+            }
+        }
+
+        // ==========================================
+        // 5. RENDERING VISUAL
+        // ==========================================
+        function drawGame() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // A. Gambar Pemandangan & Lantai
+            ctx.fillStyle = '#222533';
+            ctx.fillRect(0, groundLevel, canvas.width, canvas.height - groundLevel);
+            ctx.fillStyle = '#00f0ff';
+            ctx.fillRect(0, groundLevel, canvas.width, 4);
+
+            // B. Gambar Platform Melayang
+            ctx.fillStyle = '#3a3f58';
+            platforms.forEach(p => {
+                ctx.fillRect(p.x, p.y, p.width, p.height);
+                ctx.fillStyle = '#ff0055';
+                ctx.fillRect(p.x, p.y, p.width, 3);
+                ctx.fillStyle = '#3a3f58';
+            });
+
+            // C. Gambar Karakter Pemain
+            ctx.fillStyle = '#00f0ff';
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+            
+            // Senjata Pemain
+            ctx.fillStyle = '#ffffff';
+            if (player.facing === 'UP') {
+                ctx.fillRect(player.x + player.width / 2 - 3, player.y - 10, 6, 12);
+            } else if (player.facing === 'LEFT') {
+                ctx.fillRect(player.x - 8, player.y + 12, 12, 6);
+            } else {
+                ctx.fillRect(player.x + player.width - 4, player.y + 12, 12, 6);
+            }
+
+            // D. Gambar Peluru Pemain
+            ctx.fillStyle = '#ffcc00';
+            playerBullets.forEach(b => {
+                ctx.fillRect(b.x, b.y, b.width, b.height);
+            });
+
+            // E. Gambar Musuh
+            ctx.fillStyle = '#ff0055';
+            enemies.forEach(e => {
+                ctx.fillRect(e.x, e.y, e.width, e.height);
+                // Detail Mata Musuh
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(e.x + 4, e.y + 6, 4, 4);
+                ctx.fillStyle = '#ff0055';
+            });
+
+            // Update Informasi Header UI
+            scoreEl.innerText = gameState.score;
+            livesEl.innerText = gameState.lives;
+            statusEl.innerText = gameState.status;
+
+            // Overlay Layar Game Over
+            if (gameState.status === 'GAME_OVER') {
+                ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                ctx.textAlign = "center";
+                ctx.fillStyle = "#ff0055";
+                ctx.font = "bold 24px Space Grotesk";
+                ctx.fillText("MISSION FAILED", canvas.width / 2, canvas.height / 2 - 10);
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "14px Space Grotesk";
+                ctx.fillText("Klik Mulai / Restart untuk mencoba lagi", canvas.width / 2, canvas.height / 2 + 20);
+            }
+        }
+
+        // ==========================================
+        // 6. MAIN ENGINE LOOP
+        // ==========================================
+        function gameLoop() {
+            updatePlayerPhysics();
+            updateEntities();
+            drawGame();
+
+            if (gameState.status === 'PLAYING') {
+                // 🎯 TUGAS 20: Panggil requestAnimationFrame(gameLoop) untuk memperbarui frame animasi berulang
+                // Ubah '?' menjadi: gameLoop
+                animationFrameId = requestAnimationFrame('?');
+            }
+        }
+
+        function startGame() {
+            gameState.score = 0;
+            gameState.lives = 3;
+            gameState.status = 'PLAYING';
+
+            player.x = 50;
+            player.y = 200;
+            player.dx = 0;
+            player.dy = 0;
+            player.isGrounded = false;
+
+            playerBullets = [];
+            enemies = [];
+            spawnTimer = 0;
+
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+
+            window.focus();
+            gameLoop();
+        }
+
+        // Tampilan Awal
+        drawGame();
+    </script>
+</body>
+</html>
+</textarea>
+            <div class="action-bar">
+                <button class="btn-run" onclick="runCode()">✨ Sinkronisasi Kode</button>
+            </div>
+        </div>
+
+        <div class="panel preview-panel" id="preview-panel">
+            <div class="panel-header">
+                <div>🎮 Output Sistem</div>
+                <button class="btn-fullscreen" id="fs-btn" onclick="toggleFullscreen()" title="Buka Mode Layar Penuh">🔲 Layar Penuh</button>
+            </div>
+            <iframe id="preview-frame"></iframe>
+        </div>
+
+    </div>
+
+    <script>
+        let urlAktif = null;
+
+        function runCode() {
+            const htmlCode = document.getElementById('code-editor').value;
+            const iframe = document.getElementById('preview-frame');
+            
+            const blob = new Blob([htmlCode], { type: 'text/html;charset=utf-8' });
+            
+            if (urlAktif) {
+                URL.revokeObjectURL(urlAktif);
+            }
+            
+            urlAktif = URL.createObjectURL(blob);
+            iframe.src = urlAktif;
+            
+            iframe.onload = () => {
+                iframe.contentWindow.focus();
+            };
+        }
+
+        function toggleFullscreen() {
+            const panel = document.getElementById('preview-panel');
+            const btn = document.getElementById('fs-btn');
+            
+            if (!document.fullscreenElement) {
+                if (panel.requestFullscreen) {
+                    panel.requestFullscreen();
+                } else if (panel.webkitRequestFullscreen) {
+                    panel.webkitRequestFullscreen();
+                } else if (panel.msRequestFullscreen) {
+                    panel.msRequestFullscreen();
+                }
+                btn.innerHTML = "🔳 Perkecil Layar";
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) {
+                    document.msExitFullscreen();
+                }
+                btn.innerHTML = "🔲 Layar Penuh";
+            }
+        }
+
+        document.addEventListener('fullscreenchange', () => {
+            const btn = document.getElementById('fs-btn');
+            if (!document.fullscreenElement) {
+                btn.innerHTML = "🔲 Layar Penuh";
+            }
+        });
+
+        const editor = document.getElementById('code-editor');
+        editor.addEventListener('keydown', function(e) {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const start = this.selectionStart;
+                const end = this.selectionEnd;
+
+                this.value = this.value.substring(0, start) + "    " + this.value.substring(end);
+                this.selectionStart = this.selectionEnd = start + 4;
+            }
+        });
+
+        window.onload = runCode;
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LKPD Interaktif: Modul 11 Brick Breaker Game</title>
+    <style>
+        /* Import Font Modern, Minimalis & Futuristik */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Space+Grotesk:wght@500;700&family=Fira+Code:wght@400;500&display=swap');
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9fa;
+            color: #212529;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background-color: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            padding: 15px 30px;
+            border-bottom: 1px solid #e9ecef;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+
+        header h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #7000ff, #00f0ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .badge {
+            background: #ffffff;
+            color: #7000ff;
+            border: 1px solid #7000ff;
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            box-shadow: 0 4px 10px rgba(112, 0, 255, 0.1);
+            letter-spacing: 0.5px;
+        }
+
+        .workspace {
+            display: flex;
+            flex: 1;
+            padding: 20px;
+            gap: 20px;
+            overflow: hidden;
+            background-image: radial-gradient(#dee2e6 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        /* Responsive Workspace untuk Mobile */
+        @media (max-width: 768px) {
+            .workspace {
+                flex-direction: column;
+                overflow-y: auto;
+            }
+            .panel {
+                min-height: 400px;
+            }
+        }
+
+        .panel {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid #e9ecef;
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+
+        .panel:hover {
+            box-shadow: 0 12px 40px rgba(112, 0, 255, 0.08);
+            border-color: #80bdff;
+        }
+
+        .panel-header {
+            padding: 15px 25px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            font-weight: 700;
+            font-size: 1.05rem;
+            font-family: 'Space Grotesk', sans-serif;
+            color: #495057;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .instruction-panel {
+            flex: 1;
+            overflow-y: auto;
+        }
+        
+        .instruction-content {
+            padding: 25px;
+            font-size: 0.95rem;
+            line-height: 1.7;
+            color: #495057;
+        }
+
+        .instruction-content h3 {
+            margin-bottom: 15px;
+            color: #7000ff;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .instruction-content p {
+            margin-bottom: 15px;
+        }
+
+        .task-box {
+            background: rgba(112, 0, 255, 0.05);
+            border-left: 4px solid #7000ff;
+            border-radius: 0 8px 8px 0;
+            padding: 15px;
+            margin-top: 20px;
+            color: #212529;
+            font-size: 0.9rem;
+        }
+
+        .editor-panel {
+            flex: 1.2;
+        }
+
+        textarea {
+            flex: 1;
+            width: 100%;
+            border: none;
+            resize: none;
+            padding: 20px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+            background-color: #f1f3f5;
+            color: #212529;
+            outline: none;
+            line-height: 1.6;
+            white-space: pre;
+            overflow-x: auto;
+            transition: background-color 0.2s ease;
+        }
+
+        textarea:focus {
+            background-color: #ffffff;
+            box-shadow: inset 0 0 0 2px #7000ff;
+        }
+
+        .action-bar {
+            padding: 12px 25px;
+            background: #ffffff;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        button.btn-run {
+            background: linear-gradient(135deg, #7000ff 0%, #00f0ff 100%);
+            color: #ffffff;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(112, 0, 255, 0.3);
+        }
+
+        button.btn-run:hover {
+            box-shadow: 0 6px 20px rgba(112, 0, 255, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .preview-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Pengaturan saat mode Fullscreen aktif */
+        .preview-panel:fullscreen {
+            background: #ffffff;
+            border-radius: 0;
+            border: none;
+        }
+        .preview-panel:-webkit-full-screen {
+            background: #ffffff;
+        }
+
+        /* Tombol Fullscreen */
+        .btn-fullscreen {
+            background: transparent;
+            color: #495057;
+            border: 1px solid #ced4da;
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .btn-fullscreen:hover {
+            background: #e9ecef;
+            color: #212529;
+            border-color: #adb5bd;
+        }
+
+        iframe {
+            flex: 1;
+            width: 100%;
+            border: none;
+            background-color: #ffffff;
+        }
+        
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f8f9fa; }
+        ::-webkit-scrollbar-thumb { background: #ced4da; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #adb5bd; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>⚡ CodeQuest: NEXUS</h1>
+        <div class="badge">🚀 Misi: Physics & Array Grid - Brick Breaker (Modul 11)</div>
+    </header>
+
+    <div class="workspace">
+        
+        <div class="panel instruction-panel">
+            <div class="panel-header" style="justify-content: flex-start;">📜 Modul Instruksi</div>
+            <div class="instruction-content">
+                <h3>Physics & 2D Array Grid: Retro Brick Breaker Engine!</h3>
+                <p>Selamat datang di Modul 11, Developer Game! 🕹️ Di modul pengembangan game tingkat lanjut ini, kamu akan membangun studi kasus klasik <strong>Retro Brick Breaker Engine</strong> menggunakan JavaScript, Canvas HTML5, dan konsep <strong>2D Array Grid Management</strong>.</p>
+                <p>Misi ini menguji pemahaman fisika pantulan dan manipulasi array multi-dimensi melalui <strong>20 Tugas Terstruktur</strong> yang harus kamu selesaikan pada kode di editor tengah.</p>
+                
+                <div class="task-box">
+                    <strong>🎯 Cara Mengerjakan:</strong><br>
+                    Cari petunjuk <strong>🎯 TUGAS 1</strong> sampai <strong>TUGAS 20</strong> pada editor kode. Baca instruksi komentar, lalu isi nilai atau hapus tanda tanya (<code>'?'</code>) dengan ekspresi JavaScript yang tepat.<br><br>
+                    Setelah selesai, klik <strong>"✨ Sinkronisasi Kode"</strong>. Kamu dapat mengontrol papan (paddle) menggunakan <strong>Keyboard PC</strong> (Panah Kiri/Kanan atau A/D), <strong>Mouse</strong>, atau <strong>Tombol Virtual</strong>!
+                </div>
+
+                <div style="margin-top:20px; font-size:0.85rem; background:#f8f9fa; padding:12px; border-radius:8px; border-left:3px solid #7000ff;">
+                    <strong>💡 Konsep Kunci Modul 11:</strong><br>
+                    • <strong>2D Array Matrix Grid:</strong> Mengelola matriks balok dua dimensi (baris dan kolom) serta melacak status aktif/hancur (<code>status: 1 / 0</code>).<br>
+                    • <strong>Vektor & Fisika Pantulan:</strong> Mengubah arah gerak bola (<code>dx</code> &amp; <code>dy</code>) saat menabrak dinding, papan (paddle), atau balok.<br>
+                    • <strong>AABB & Circle Collision:</strong> Pengecekan tabrakan presisi antara koordinat bola bundar dan area balok kotak.<br>
+                    • <strong>State Management Terpusat:</strong> Melacak skor, sisa nyawa, serta status permainan (<code>PLAYING</code>, <code>GAME_OVER</code>, <code>WIN</code>).
+                </div>
+            </div>
+        </div>
+
+        <div class="panel editor-panel">
+            <div class="panel-header" style="justify-content: flex-start;">💻 Terminal Interface</div>
+<textarea id="code-editor" spellcheck="false" wrap="off">
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <!-- 🎯 TUGAS 1: Ubah judul tab browser di bawah ini dengan namamu -->
+    <title>Modul 11 - Brick Breaker Game [NAMA SISWA]</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: #121214;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding-top: 15px;
+            touch-action: manipulation;
+        }
+        
+        #gameInfo {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 400px;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            padding: 8px 12px;
+            box-sizing: border-box;
+            background: #1e1e24;
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+
+        /* 🎯 TUGAS 2: Ganti warna background kanvas dari #0b0f19 menjadi warna lain, misal: '#080d1a' */
+        #gameCanvas {
+            background-color: #0b0f19;
+            
+            /* 🎯 TUGAS 3: Ubah ketebalan border dari 3px menjadi 4px */
+            border: 3px solid #00f0ff;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.25);
+            max-width: 100%;
+            height: auto;
+        }
+
+        .btn-start {
+            margin-top: 12px;
+            padding: 10px 20px;
+            /* 🎯 TUGAS 4: Ganti warna tombol dari #00f0ff menjadi warna favoritmu */
+            background-color: #00f0ff;
+            border: none;
+            border-radius: 8px;
+            color: #000000;
+            font-size: 0.95rem;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 4px 0 #00a8b3;
+            transition: all 0.1s;
+        }
+        .btn-start:active {
+            transform: translateY(3px);
+            box-shadow: none;
+        }
+
+        /* Controls Virtual Paddle untuk Mobile & Touch */
+        .controls-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .nav-btn {
+            width: 80px;
+            height: 45px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: white;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            user-select: none;
+        }
+        .nav-btn:active {
+            background-color: #00f0ff;
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 🎯 TUGAS 5: Ganti nama judul game H2 di bawah ini -->
+    <h2>🧱 Retro Brick Breaker Engine</h2>
+    
+    <div id="gameInfo">
+        <span>Nyawa: <span id="livesVal" style="color:#ff0055;">❤️❤️❤️</span></span>
+        <span>Skor: <span id="scoreVal" style="color:#00f0ff;">0</span></span>
+        <span>Status: <span id="statusVal" style="color:#ffc107;">IDLE</span></span>
+    </div>
+    
+    <canvas id="gameCanvas" width="400" height="300"></canvas>
+    
+    <button class="btn-start" onclick="startGame()">▶ Mulai / Restart</button>
+
+    <!-- Controls Virtual Button untuk Pergerakan Paddle -->
+    <div class="controls-container">
+        <div class="nav-btn" onmousedown="keys['ArrowLeft']=true" onmouseup="keys['ArrowLeft']=false" ontouchstart="keys['ArrowLeft']=true" ontouchend="keys['ArrowLeft']=false">⬅️ Kiri</div>
+        <div class="nav-btn" onmousedown="keys['ArrowRight']=true" onmouseup="keys['ArrowRight']=false" ontouchstart="keys['ArrowRight']=true" ontouchend="keys['ArrowRight']=false">Kanan ➡️</div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('scoreVal');
+        const livesEl = document.getElementById('livesVal');
+        const statusEl = document.getElementById('statusVal');
+
+        // ==========================================
+        // MANAJEMEN STATUS & OBJEK GAME
+        // ==========================================
+        const gameState = {
+            score: 0,
+            
+            // 🎯 TUGAS 6: Setel nilai awal nyawa pemain (lives) menjadi 3
+            lives: '?',
+            status: 'IDLE' // IDLE, PLAYING, GAME_OVER, WIN
+        };
+
+        const ball = {
+            x: 200,
+            y: 250,
+            dx: 3,
+            
+            // 🎯 TUGAS 7: Setel kecepatan vertikal awal bola (dy) ke atas, yaitu -3
+            dy: '?',
+            radius: 7
+        };
+
+        const paddle = {
+            width: 80,
+            height: 12,
+            x: 160,
+            y: 275,
+            
+            // 🎯 TUGAS 8: Setel nilai kecepatan gerak papan (speed) menjadi 6
+            speed: '?'
+        };
+
+        // Konfigurasi Matriks Balok 2D Grid
+        const brickConfig = {
+            rowCount: 4,
+            columnCount: 5,
+            width: 62,
+            height: 18,
+            padding: 10,
+            offsetTop: 35,
+            offsetLeft: 22
+        };
+
+        // Inisialisasi Array 2D Matriks Balok
+        let bricks = [];
+        function initBricks() {
+            bricks = [];
+            for (let c = 0; c < brickConfig.columnCount; c++) {
+                bricks[c] = [];
+                for (let r = 0; r < brickConfig.rowCount; r++) {
+                    // 🎯 TUGAS 9: Setel status awal balok menjadi 1 (artinya balok aktif/belum hancur)
+                    // Ubah '?' menjadi: 1
+                    bricks[c][r] = { x: 0, y: 0, status: '?' };
+                }
+            }
+        }
+
+        const keys = {};
+        let animationFrameId = null;
+
+        // ==========================================
+        // EVENT LISTENERS (KONTROL MOUSE & KEYBOARD)
+        // ==========================================
+        window.addEventListener('keydown', (e) => {
+            // 🎯 TUGAS 10: Setel properti keys[e.key] menjadi true saat tombol ditekan
+            // Ubah '?' menjadi: true
+            keys[e.key] = '?';
+
+            if (["ArrowLeft", "ArrowRight", "Space"].includes(e.code)) {
+                e.preventDefault();
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+        });
+
+        // Kontrol Pergerakan Paddle Menggunakan Mouse
+        window.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const relativeX = e.clientX - rect.left;
+            if (relativeX > 0 && relativeX < canvas.width) {
+                paddle.x = relativeX - paddle.width / 2;
+            }
+        });
+
+        // ==========================================
+        // LOGIKA TABRAKAN BOLA & BALOK (COLLISION)
+        // ==========================================
+        function collisionDetection() {
+            let activeBricks = 0;
+            for (let c = 0; c < brickConfig.columnCount; c++) {
+                for (let r = 0; r < brickConfig.rowCount; r++) {
+                    let b = bricks[c][r];
+                    if (b.status === 1) {
+                        activeBricks++;
+                        // Deteksi Tabrakan AABB Bola dengan Area Balok
+                        if (
+                            ball.x > b.x && 
+                            ball.x < b.x + brickConfig.width && 
+                            ball.y > b.y && 
+                            ball.y < b.y + brickConfig.height
+                        ) {
+                            ball.dy = -ball.dy; // Pantulkan bola vertikal
+                            
+                            // 🎯 TUGAS 18: Ubah status balok menjadi 0 (balok hancur)
+                            // Ubah '?' menjadi: 0
+                            b.status = '?';
+                            
+                            // 🎯 TUGAS 19: Tambahkan skor sebesar 10 saat balok berhasil dihancurkan
+                            // Ubah '?' menjadi: 10
+                            gameState.score += '?';
+                        }
+                    }
+                }
+            }
+
+            // Cek kondisi Menang (Jika semua balok telah hancur)
+            if (activeBricks === 0 && gameState.status === 'PLAYING') {
+                gameState.status = 'WIN';
+            }
+        }
+
+        // ==========================================
+        // LOGIKA PEMBARUAN GAME (PHYSICS ENGINE)
+        // ==========================================
+        function updateGame() {
+            if (gameState.status !== 'PLAYING') return;
+
+            // 1. Pergerakan Paddle via Keyboard
+            if (keys['ArrowLeft'] || keys['a'] || keys['A']) {
+                // 🎯 TUGAS 11: Kurangi koordinat paddle.x sebesar paddle.speed
+                // Ubah '?' menjadi: paddle.speed
+                paddle.x -= '?';
+            }
+            if (keys['ArrowRight'] || keys['d'] || keys['D']) {
+                // 🎯 TUGAS 12: Tambahkan koordinat paddle.x sebesar paddle.speed
+                // Ubah '?' menjadi: paddle.speed
+                paddle.x += '?';
+            }
+
+            // Pembatasan Batas Layar untuk Paddle
+            if (paddle.x < 0) paddle.x = 0;
+            // 🎯 TUGAS 13: Batasi paddle agar tidak keluar dari batas kanan layar canvas
+            // Ubah '?' menjadi: canvas.width - paddle.width
+            if (paddle.x + paddle.width > canvas.width) {
+                paddle.x = '?';
+            }
+
+            // 2. Pergerakan Bola
+            ball.x += ball.dx;
+            // 🎯 TUGAS 14: Tambahkan koordinat ball.y dengan ball.dy untuk menggerakkan bola secara vertikal
+            // Ubah '?' menjadi: ball.dy
+            ball.y += '?';
+
+            // 3. Pantulan Bola pada Dinding Kiri & Kanan
+            if (ball.x + ball.dx > canvas.width - ball.radius || ball.x + ball.dx < ball.radius) {
+                // 🎯 TUGAS 15: Balikkan arah horizontal bola (dx)
+                // Ubah '?' menjadi: -ball.dx
+                ball.dx = '?';
+            }
+
+            // 4. Pantulan Bola pada Dinding Atas
+            if (ball.y + ball.dy < ball.radius) {
+                // 🎯 TUGAS 16: Balikkan arah vertikal bola (dy)
+                // Ubah '?' menjadi: -ball.dy
+                ball.dy = '?';
+            } 
+            // 5. Pantulan Bola pada Papan (Paddle) & Kena Dasar Layar
+            else if (ball.y + ball.dy > canvas.height - ball.radius - paddle.height) {
+                // Jika bola menyentuh area lebar paddle
+                if (ball.x > paddle.x && ball.x < paddle.x + paddle.width) {
+                    // 🎯 TUGAS 17: Pantulkan bola ke atas dengan membalikkan arah ball.dy
+                    // Ubah '?' menjadi: -ball.dy
+                    ball.dy = '?';
+                } else if (ball.y + ball.dy > canvas.width) {
+                    // Bola jatuh melebihi papan / kena lantai
+                    gameState.lives--;
+                    if (gameState.lives <= 0) {
+                        gameState.status = 'GAME_OVER';
+                    } else {
+                        // Reset posisi bola & paddle untuk nyawa berikutnya
+                        ball.x = canvas.width / 2;
+                        ball.y = canvas.height - 50;
+                        ball.dx = 3;
+                        ball.dy = -3;
+                        paddle.x = (canvas.width - paddle.width) / 2;
+                    }
+                }
+            }
+
+            // 6. Jalankan Deteksi Tabrakan Bola vs Balok Grid
+            collisionDetection();
+        }
+
+        // ==========================================
+        // RENDERING / VISUALISASI KANVAS
+        // ==========================================
+        function drawBricks() {
+            for (let c = 0; c < brickConfig.columnCount; c++) {
+                for (let r = 0; r < brickConfig.rowCount; r++) {
+                    if (bricks[c][r].status === 1) {
+                        let brickX = c * (brickConfig.width + brickConfig.padding) + brickConfig.offsetLeft;
+                        let brickY = r * (brickConfig.height + brickConfig.padding) + brickConfig.offsetTop;
+                        
+                        bricks[c][r].x = brickX;
+                        bricks[c][r].y = brickY;
+
+                        // Warna gradasi berdasar baris balok
+                        const colors = ["#ff0055", "#ff7700", "#ffcc00", "#00f0ff"];
+                        ctx.fillStyle = colors[r % colors.length];
+                        ctx.fillRect(brickX, brickY, brickConfig.width, brickConfig.height);
+                        
+                        // Highlight border balok
+                        ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
+                        ctx.strokeRect(brickX, brickY, brickConfig.width, brickConfig.height);
+                    }
+                }
+            }
+        }
+
+        function drawGame() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Bintang/Grid Background
+            ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
+            for (let i = 0; i < canvas.width; i += 20) {
+                ctx.fillRect(i, 0, 1, canvas.height);
+            }
+
+            // Gambar Matriks Balok
+            drawBricks();
+
+            // Gambar Papan (Paddle)
+            ctx.fillStyle = "#00f0ff";
+            ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
+
+            // Gambar Bola (Circle Glow)
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+            ctx.fillStyle = "#ffffff";
+            ctx.fill();
+            ctx.closePath();
+
+            // Update UI Status Bar
+            scoreEl.innerText = gameState.score;
+            livesEl.innerText = "❤️".repeat(Math.max(0, gameState.lives));
+            statusEl.innerText = gameState.status;
+            statusEl.style.color = (gameState.status === 'PLAYING') ? '#00f0ff' : ((gameState.status === 'WIN') ? '#00ff66' : '#ff0055');
+
+            // Tampilan Game Over / Win Overlay
+            if (gameState.status === 'GAME_OVER' || gameState.status === 'WIN') {
+                ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                ctx.textAlign = "center";
+                if (gameState.status === 'GAME_OVER') {
+                    ctx.fillStyle = "#ff0055";
+                    ctx.font = "bold 22px Space Grotesk";
+                    ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - 10);
+                    ctx.fillStyle = "#ffffff";
+                    ctx.font = "12px Space Grotesk";
+                    ctx.fillText("Bola jatuh! Klik Mulai untuk coba lagi.", canvas.width / 2, canvas.height / 2 + 15);
+                } else {
+                    ctx.fillStyle = "#00ff66";
+                    ctx.font = "bold 22px Space Grotesk";
+                    ctx.fillText("VICTORY! YOU WIN! 🎉", canvas.width / 2, canvas.height / 2 - 10);
+                    ctx.fillStyle = "#ffffff";
+                    ctx.font = "12px Space Grotesk";
+                    ctx.fillText("Semua balok berhasil dihancurkan!", canvas.width / 2, canvas.height / 2 + 15);
+                }
+            }
+        }
+
+        // ==========================================
+        // MAIN ENGINE LOOP
+        // ==========================================
+        function gameLoop() {
+            updateGame();
+            drawGame();
+
+            if (gameState.status === 'PLAYING') {
+                // 🎯 TUGAS 20: Panggil requestAnimationFrame(gameLoop) untuk memperbarui animasi frame secara berulang
+                // Ubah '?' menjadi: gameLoop
+                animationFrameId = requestAnimationFrame('?');
+            }
+        }
+
+        function startGame() {
+            gameState.score = 0;
+            gameState.lives = 3;
+            gameState.status = 'PLAYING';
+
+            paddle.x = (canvas.width - paddle.width) / 2;
+            ball.x = canvas.width / 2;
+            ball.y = canvas.height - 50;
+            ball.dx = 3;
+            ball.dy = -3;
+
+            initBricks();
+
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+
+            window.focus();
+            gameLoop();
+        }
+
+        initBricks();
+        drawGame();
+    </script>
+</body>
+</html>
+</textarea>
+            <div class="action-bar">
+                <button class="btn-run" onclick="runCode()">✨ Sinkronisasi Kode</button>
+            </div>
+        </div>
+
+        <div class="panel preview-panel" id="preview-panel">
+            <div class="panel-header">
+                <div>🎮 Output Sistem</div>
+                <button class="btn-fullscreen" id="fs-btn" onclick="toggleFullscreen()" title="Buka Mode Layar Penuh">🔲 Layar Penuh</button>
+            </div>
+            <iframe id="preview-frame"></iframe>
+        </div>
+
+    </div>
+
+    <script>
+        let urlAktif = null;
+
+        function runCode() {
+            const htmlCode = document.getElementById('code-editor').value;
+            const iframe = document.getElementById('preview-frame');
+            
+            const blob = new Blob([htmlCode], { type: 'text/html;charset=utf-8' });
+            
+            if (urlAktif) {
+                URL.revokeObjectURL(urlAktif);
+            }
+            
+            urlAktif = URL.createObjectURL(blob);
+            iframe.src = urlAktif;
+            
+            // Auto focus ke iframe setelah sinkronisasi agar event keyboard langsung berfungsi
+            iframe.onload = () => {
+                iframe.contentWindow.focus();
+            };
+        }
+
+        // Logika Mode Fullscreen
+        function toggleFullscreen() {
+            const panel = document.getElementById('preview-panel');
+            const btn = document.getElementById('fs-btn');
+            
+            if (!document.fullscreenElement) {
+                if (panel.requestFullscreen) {
+                    panel.requestFullscreen();
+                } else if (panel.webkitRequestFullscreen) { /* Safari */
+                    panel.webkitRequestFullscreen();
+                } else if (panel.msRequestFullscreen) { /* IE11 */
+                    panel.msRequestFullscreen();
+                }
+                btn.innerHTML = "🔳 Perkecil Layar";
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) { /* Safari */
+                    document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) { /* IE11 */
+                    document.msExitFullscreen();
+                }
+                btn.innerHTML = "🔲 Layar Penuh";
+            }
+        }
+
+        // Event listener saat user keluar dari fullscreen
+        document.addEventListener('fullscreenchange', () => {
+            const btn = document.getElementById('fs-btn');
+            if (!document.fullscreenElement) {
+                btn.innerHTML = "🔲 Layar Penuh";
+            }
+        });
+
+        // Pengaturan tombol Tab pada textarea
+        const editor = document.getElementById('code-editor');
+        editor.addEventListener('keydown', function(e) {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const start = this.selectionStart;
+                const end = this.selectionEnd;
+
+                this.value = this.value.substring(0, start) + "    " + this.value.substring(end);
+                this.selectionStart = this.selectionEnd = start + 4;
+            }
+        });
+
+        window.onload = runCode;
+    </script>
+
+</body>
+</html>

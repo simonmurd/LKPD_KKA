@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LKPD Interaktif: Modul 13 Nitro Street Racing</title>
+    <style>
+        /* Import Font Modern, Minimalis & Futuristik */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Space+Grotesk:wght@500;700&family=Fira+Code:wght@400;500&display=swap');
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9fa;
+            color: #212529;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background-color: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            padding: 15px 30px;
+            border-bottom: 1px solid #e9ecef;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+
+        header h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #ff0055, #ff6600);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .badge {
+            background: #ffffff;
+            color: #ff0055;
+            border: 1px solid #ff0055;
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            box-shadow: 0 4px 10px rgba(255, 0, 85, 0.15);
+            letter-spacing: 0.5px;
+        }
+
+        .workspace {
+            display: flex;
+            flex: 1;
+            padding: 20px;
+            gap: 20px;
+            overflow: hidden;
+            background-image: radial-gradient(#dee2e6 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        /* Responsive Workspace untuk Mobile */
+        @media (max-width: 768px) {
+            .workspace {
+                flex-direction: column;
+                overflow-y: auto;
+            }
+            .panel {
+                min-height: 400px;
+            }
+        }
+
+        .panel {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid #e9ecef;
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+
+        .panel:hover {
+            box-shadow: 0 12px 40px rgba(255, 0, 85, 0.12);
+            border-color: #ff3377;
+        }
+
+        .panel-header {
+            padding: 15px 25px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            font-weight: 700;
+            font-size: 1.05rem;
+            font-family: 'Space Grotesk', sans-serif;
+            color: #495057;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .instruction-panel {
+            flex: 1;
+            overflow-y: auto;
+        }
+        
+        .instruction-content {
+            padding: 25px;
+            font-size: 0.95rem;
+            line-height: 1.7;
+            color: #495057;
+        }
+
+        .instruction-content h3 {
+            margin-bottom: 15px;
+            color: #ff0055;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .instruction-content p {
+            margin-bottom: 15px;
+        }
+
+        .task-box {
+            background: rgba(255, 0, 85, 0.08);
+            border-left: 4px solid #ff0055;
+            border-radius: 0 8px 8px 0;
+            padding: 15px;
+            margin-top: 20px;
+            color: #212529;
+            font-size: 0.9rem;
+        }
+
+        .editor-panel {
+            flex: 1.2;
+        }
+
+        textarea {
+            flex: 1;
+            width: 100%;
+            border: none;
+            resize: none;
+            padding: 20px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+            background-color: #f1f3f5;
+            color: #212529;
+            outline: none;
+            line-height: 1.6;
+            white-space: pre;
+            overflow-x: auto;
+            transition: background-color 0.2s ease;
+        }
+
+        textarea:focus {
+            background-color: #ffffff;
+            box-shadow: inset 0 0 0 2px #ff0055;
+        }
+
+        .action-bar {
+            padding: 12px 25px;
+            background: #ffffff;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        button.btn-run {
+            background: linear-gradient(135deg, #ff0055 0%, #ff6600 100%);
+            color: #ffffff;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(255, 0, 85, 0.3);
+        }
+
+        button.btn-run:hover {
+            box-shadow: 0 6px 20px rgba(255, 102, 0, 0.35);
+            transform: translateY(-2px);
+        }
+
+        .preview-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Pengaturan saat mode Fullscreen aktif */
+        .preview-panel:fullscreen {
+            background: #ffffff;
+            border-radius: 0;
+            border: none;
+        }
+        .preview-panel:-webkit-full-screen {
+            background: #ffffff;
+        }
+
+        /* Tombol Fullscreen */
+        .btn-fullscreen {
+            background: transparent;
+            color: #495057;
+            border: 1px solid #ced4da;
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .btn-fullscreen:hover {
+            background: #e9ecef;
+            color: #212529;
+            border-color: #adb5bd;
+        }
+
+        iframe {
+            flex: 1;
+            width: 100%;
+            border: none;
+            background-color: #ffffff;
+        }
+        
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f8f9fa; }
+        ::-webkit-scrollbar-thumb { background: #ced4da; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #adb5bd; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>⚡ CodeQuest: NEXUS</h1>
+        <div class="badge">🏎️ Modul 13: Nitro Street Racing / Asphalt (Top-Down Racing)</div>
+    </header>
+
+    <div class="workspace">
+        
+        <div class="panel instruction-panel">
+            <div class="panel-header" style="justify-content: flex-start;">📜 Modul Instruksi</div>
+            <div class="instruction-content">
+                <h3>🏎️ Nitro Street Racing: Top-Down Scrolling & Nitro Boost Engine!</h3>
+                <p>Selamat datang di Modul 13, Developer Game! Modul balapan jalanan bergaya <em>top-down 2D</em> ini mengajarkan cara menciptakan <strong>ilusi kecepatan (scrolling movement)</strong>, <strong>manajemen akselerasi Nitro Boost</strong>, dan <strong>deteksi tabrakan kendaraan (AABB Collision)</strong>.</p>
+                <p>Misi ini menguji logika percabangan kompleks, input keyboard multi-tombol, dan manajemen sumber daya bahan bakar melalui <strong>20 Tugas Terstruktur</strong> yang harus kamu selesaikan pada editor di tengah.</p>
+                
+                <div class="task-box">
+                    <strong>🎯 Cara Mengerjakan:</strong><br>
+                    Cari petunjuk <strong>🎯 TUGAS 1</strong> sampai <strong>TUGAS 20</strong> pada editor kode. Baca instruksi komentar, lalu isi nilai atau hapus tanda tanya (<code>'?'</code>) dengan ekspresi JavaScript yang tepat.<br><br>
+                    Setelah selesai, klik <strong>"✨ Sinkronisasi Kode"</strong>. Kamu dapat mengontrol mobil balap menggunakan <strong>Keyboard PC</strong> (Panah/WASD + Spasi/Shift untuk Nitro) atau <strong>Tombol Virtual</strong> pada layar!
+                </div>
+
+                <div style="margin-top:20px; font-size:0.85rem; background:#f8f9fa; padding:12px; border-radius:8px; border-left:3px solid #ff0055;">
+                    <strong>💡 Konsep Kunci Modul 13:</strong><br>
+                    • <strong>Ilusi Gerakan & Game Loop (Scrolling Movement):</strong> Menggerakkan elemen garis jalanan dan mobil musuh ke arah bawah secara terus-menerus untuk memberi kesan visual mobil pemain sedang melaju kencang.<br>
+                    • <strong>Event Listener Multi-Key:</strong> Menggunakan <code>keydown</code> & <code>keyup</code> untuk mengontrol kemudi (ArrowLeft, ArrowRight) dan aktivasi Nitro Boost (Spasi / Shift).<br>
+                    • <strong>Mekanika Nitro & Resource Management:</strong> Saat Nitro aktif (<code>isNitroActive</code>), kecepatan maksimal digandakan dan bahan bakar (<code>nitroFuel</code>) berkurang. Saat mati, bahan bakar akan teregenerasi perlahan.<br>
+                    • <strong>Deteksi Tabrakan (AABB Collision):</strong> Mengukur tumpang-tindih area bounding box antara mobil pemain dan rintangan mobil lawan di lintasan.<br>
+                    • <strong>State Management Terpusat:</strong> Melacak skor (jarak tempuh), kecepatan (<code>speed</code>), bahan bakar nitro (<code>nitroFuel</code>), dan nyawa pemain.
+                </div>
+            </div>
+        </div>
+
+        <div class="panel editor-panel">
+            <div class="panel-header" style="justify-content: flex-start;">💻 Terminal Interface</div>
+<textarea id="code-editor" spellcheck="false" wrap="off">
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <!-- 🎯 TUGAS 1: Ubah judul tab browser di bawah ini dengan namamu -->
+    <title>Modul 13 - Nitro Street Racing [NAMA SISWA]</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: #0f0f13;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding-top: 15px;
+            touch-action: manipulation;
+        }
+        
+        #gameInfo {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 360px;
+            margin-bottom: 10px;
+            font-size: 0.85rem;
+            padding: 8px 12px;
+            box-sizing: border-box;
+            background: #181820;
+            border-radius: 8px;
+            border: 1px solid #2a2a35;
+        }
+
+        /* 🎯 TUGAS 2: Ganti warna background kanvas dari #181820 menjadi warna lintasan lain, misal: '#1e1e24' */
+        #gameCanvas {
+            background-color: #181820;
+            
+            /* 🎯 TUGAS 3: Ubah ketebalan border dari 3px menjadi 4px */
+            border: 3px solid #ff0055;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(255, 0, 85, 0.3);
+            max-width: 100%;
+            height: auto;
+        }
+
+        .btn-start {
+            margin-top: 12px;
+            padding: 10px 20px;
+            /* 🎯 TUGAS 4: Ganti warna tombol dari #ff0055 menjadi warna favoritmu */
+            background-color: #ff0055;
+            border: none;
+            border-radius: 8px;
+            color: #ffffff;
+            font-size: 0.95rem;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 4px 0 #b3003b;
+            transition: all 0.1s;
+        }
+        .btn-start:active {
+            transform: translateY(3px);
+            box-shadow: none;
+        }
+
+        /* Virtual Controls / Touchpad untuk Mobile */
+        .controls-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            width: 100%;
+            max-width: 360px;
+            justify-content: center;
+        }
+        .nav-btn {
+            flex: 1;
+            height: 45px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            user-select: none;
+        }
+        .nav-btn:active, .nav-btn.active {
+            background-color: #ff0055;
+            color: #fff;
+        }
+        .btn-nitro {
+            background: linear-gradient(135deg, #ff0055, #ff6600);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 🎯 TUGAS 5: Ganti nama judul game H2 di bawah ini -->
+    <h2>🏎️ Nitro Street Racing</h2>
+    
+    <div id="gameInfo">
+        <span>Nyawa: <span id="livesVal" style="color:#ff0055;">❤️❤️❤️</span></span>
+        <span>Skor: <span id="scoreVal" style="color:#ffcc00;">0</span> m</span>
+        <span>Nitro: <span id="nitroVal" style="color:#00f0ff;">100%</span></span>
+    </div>
+    
+    <canvas id="gameCanvas" width="360" height="450"></canvas>
+    
+    <button class="btn-start" onclick="startGame()">▶ Mulai / Restart</button>
+
+    <!-- Controls Virtual D-Pad -->
+    <div class="controls-container">
+        <div class="nav-btn" onmousedown="setKey('ArrowLeft', true)" onmouseup="setKey('ArrowLeft', false)" ontouchstart="setKey('ArrowLeft', true); event.preventDefault();" ontouchend="setKey('ArrowLeft', false);">⬅️ KIRI</div>
+        <div class="nav-btn btn-nitro" onmousedown="setKey(' ', true)" onmouseup="setKey(' ', false)" ontouchstart="setKey(' ', true); event.preventDefault();" ontouchend="setKey(' ', false);">🔥 NITRO</div>
+        <div class="nav-btn" onmousedown="setKey('ArrowRight', true)" onmouseup="setKey('ArrowRight', false)" ontouchstart="setKey('ArrowRight', true); event.preventDefault();" ontouchend="setKey('ArrowRight', false);">➡️ KANAN</div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('scoreVal');
+        const livesEl = document.getElementById('livesVal');
+        const nitroEl = document.getElementById('nitroVal');
+
+        // ==========================================
+        // 1. MANAJEMEN STATUS TERPUSAT (STATE MANAGEMENT)
+        // ==========================================
+        const gameState = {
+            score: 0,
+            speed: 5,
+            maxSpeed: 12,
+            
+            // 🎯 TUGAS 6: Setel kecepatan normal mobil (normalSpeed) menjadi 5
+            normalSpeed: '?',
+            
+            nitroActive: false,
+            
+            // 🎯 TUGAS 7: Setel kapasitas awal bahan bakar nitro (nitroFuel) menjadi 100
+            nitroFuel: '?',
+            
+            lives: 3,
+            status: 'IDLE' // IDLE, PLAYING, GAME_OVER
+        };
+
+        const playerCar = {
+            x: 160,
+            y: 350,
+            width: 40,
+            height: 70,
+            
+            // 🎯 TUGAS 8: Setel kecepatan kemudi mobil pemain (dx) menjadi 5
+            dx: '?'
+        };
+
+        let enemies = [];
+        let roadOffset = 0;
+        let animationFrameId = null;
+        const keys = {};
+
+        function setKey(key, isPressed) {
+            keys[key] = isPressed;
+            if (key === ' ') {
+                if (isPressed && gameState.nitroFuel > 0) {
+                    gameState.nitroActive = true;
+                    gameState.speed = gameState.maxSpeed;
+                } else {
+                    gameState.nitroActive = false;
+                    gameState.speed = gameState.normalSpeed;
+                }
+            }
+        }
+
+        // ==========================================
+        // 2. EVENT LISTENER MULTI-KEY & NITRO BOOST
+        // ==========================================
+        window.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+
+            // 🎯 TUGAS 9: Cek jika tombol Spasi atau Shift ditekan dan bahan bakar nitro (gameState.nitroFuel) lebih dari 0
+            // Ubah '?' menjadi: 0
+            if ((e.key === ' ' || e.key === 'Shift') && gameState.nitroFuel > '?') {
+                gameState.nitroActive = true;
+                
+                // 🎯 TUGAS 10: Setel kecepatan game (gameState.speed) menjadi kecepatan maksimal (gameState.maxSpeed)
+                // Ubah '?' menjadi: maxSpeed
+                gameState.speed = gameState.'?';
+            }
+
+            if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(e.code)) {
+                e.preventDefault();
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+
+            if (e.key === ' ' || e.key === 'Shift') {
+                gameState.nitroActive = false;
+                
+                // 🎯 TUGAS 11: Kembalikan kecepatan game (gameState.speed) ke kecepatan normal (gameState.normalSpeed)
+                // Ubah '?' menjadi: normalSpeed
+                gameState.speed = gameState.'?';
+            }
+        });
+
+        // ==========================================
+        // 3. LOGIKA KONTROL & FISIKA BALAPAN
+        // ==========================================
+        function updateGamePhysics() {
+            if (gameState.status !== 'PLAYING') return;
+
+            // A. Kontrol Setir Kiri / Kanan
+            if ((keys['ArrowLeft'] || keys['a'] || keys['A']) && playerCar.x > 45) {
+                // 🎯 TUGAS 12: Kurangi koordinat playerCar.x dengan kecepatan kemudi (playerCar.dx)
+                // Ubah '?' menjadi: dx
+                playerCar.x -= playerCar.'?';
+            } else if ((keys['ArrowRight'] || keys['d'] || keys['D']) && playerCar.x < 275) {
+                // 🎯 TUGAS 13: Tambahkan koordinat playerCar.x dengan kecepatan kemudi (playerCar.dx)
+                // Ubah '?' menjadi: dx
+                playerCar.x += playerCar.'?';
+            }
+
+            // B. Logika Konsumsi & Regenerasi Bahan Bakar Nitro
+            if (gameState.nitroActive) {
+                // 🎯 TUGAS 14: Kurangi bahan bakar nitro (gameState.nitroFuel) sebesar 1.5 saat Nitro aktif
+                // Ubah '?' menjadi: 1.5
+                gameState.nitroFuel -= '?';
+
+                // 🎯 TUGAS 15: Cek jika bahan bakar nitro (gameState.nitroFuel) habis (kurang dari atau sama dengan 0)
+                // Ubah '?' menjadi: 0
+                if (gameState.nitroFuel <= '?') {
+                    gameState.nitroActive = false;
+                    gameState.speed = gameState.normalSpeed;
+                }
+            } else {
+                // 🎯 TUGAS 16: Regenerasi bahan bakar nitro secara perlahan (tambahkan 0.2) saat tidak digunakan
+                // Ubah '?' menjadi: 0.2
+                if (gameState.nitroFuel < 100) gameState.nitroFuel += '?';
+            }
+
+            // C. Pergerakan Ilusi Kecepatan (Scrolling Background & Score)
+            // 🎯 TUGAS 17: Perbarui offset garis jalan dengan menambahkan kecepatan game (gameState.speed)
+            // Ubah '?' menjadi: speed
+            roadOffset = (roadOffset + gameState.'?') % 40;
+            gameState.score += Math.floor(gameState.speed / 2);
+
+            // D. Manajemen Mobil Lawan (Obstacles)
+            if (Math.random() < 0.02 && enemies.length < 3) {
+                let laneX = [60, 160, 260][Math.floor(Math.random() * 3)];
+                enemies.push({
+                    x: laneX,
+                    y: -80,
+                    width: 40,
+                    height: 70,
+                    speed: Math.random() * 2 + 2,
+                    color: ['#00f0ff', '#ffcc00', '#00ff66'][Math.floor(Math.random() * 3)]
+                });
+            }
+
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                let enemy = enemies[i];
+                // Mobil musuh bergerak ke bawah relatif terhadap kecepatan pemain
+                enemy.y += gameState.speed - enemy.speed + 2;
+
+                // E. Deteksi Tabrakan Mobil Lawan (AABB Collision)
+                // 🎯 TUGAS 18: Lengkapi rumus AABB collision dengan memeriksa batas bawah pemain (playerCar.y + playerCar.height > enemy.y)
+                // Ubah '?' menjadi: height
+                if (playerCar.x < enemy.x + enemy.width &&
+                    playerCar.x + playerCar.width > enemy.x &&
+                    playerCar.y < enemy.y + enemy.height &&
+                    playerCar.y + playerCar.'?' > enemy.y) {
+                    
+                    // 🎯 TUGAS 19: Kurangi nyawa pemain (gameState.lives) sebanyak 1 saat terjadi tabrakan
+                    // Ubah '?' menjadi: 1
+                    gameState.lives -= '?';
+                    
+                    enemies.splice(i, 1); // Hapus mobil musuh yang menabrak
+
+                    if (gameState.lives <= 0) {
+                        gameState.status = 'GAME_OVER';
+                    }
+                    continue;
+                }
+
+                // Hapus musuh jika sudah keluar layar bawah
+                if (enemy.y > canvas.height + 100) {
+                    enemies.splice(i, 1);
+                }
+            }
+        }
+
+        // ==========================================
+        // 4. RENDERING VISUAL KANVAS
+        // ==========================================
+        function drawGame() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // A. Gambar Jalan Raya & Pembatas Kerb
+            ctx.fillStyle = '#181820';
+            ctx.fillRect(40, 0, 280, canvas.height); // Lintasan Utama
+
+            // Rumput / Pinggir Jalan
+            ctx.fillStyle = '#103319';
+            ctx.fillRect(0, 0, 40, canvas.height);
+            ctx.fillRect(320, 0, 40, canvas.height);
+
+            // Pembatas Merah Putih (Kerb)
+            for (let y = -40 + (roadOffset % 40); y < canvas.height; y += 40) {
+                ctx.fillStyle = (Math.floor((y - roadOffset) / 40) % 2 === 0) ? '#ff0055' : '#ffffff';
+                ctx.fillRect(35, y, 5, 40);
+                ctx.fillRect(320, y, 5, 40);
+            }
+
+            // Garis Putus-Putus Pembagi Jalur (Scrolling Lines)
+            ctx.fillStyle = '#ffffff';
+            for (let y = -40 + roadOffset; y < canvas.height; y += 40) {
+                ctx.fillRect(133, y, 4, 20);
+                ctx.fillRect(223, y, 4, 20);
+            }
+
+            // B. Gambar Mobil Pemain (Player Car)
+            // Efek Visual Fire Nitro
+            if (gameState.nitroActive) {
+                ctx.fillStyle = '#ff6600';
+                ctx.beginPath();
+                ctx.moveTo(playerCar.x + 10, playerCar.y + playerCar.height);
+                ctx.lineTo(playerCar.x + 20, playerCar.y + playerCar.height + 25 + Math.random() * 10);
+                ctx.lineTo(playerCar.x + 30, playerCar.y + playerCar.height);
+                ctx.fill();
+
+                ctx.fillStyle = '#ffcc00';
+                ctx.beginPath();
+                ctx.moveTo(playerCar.x + 15, playerCar.y + playerCar.height);
+                ctx.lineTo(playerCar.x + 20, playerCar.y + playerCar.height + 15);
+                ctx.lineTo(playerCar.x + 25, playerCar.y + playerCar.height);
+                ctx.fill();
+            }
+
+            // Bodi Mobil Pemain
+            ctx.fillStyle = '#ff0055';
+            ctx.fillRect(playerCar.x, playerCar.y, playerCar.width, playerCar.height);
+            ctx.fillStyle = '#111'; // Kaca depan
+            ctx.fillRect(playerCar.x + 5, playerCar.y + 15, playerCar.width - 10, 15);
+            ctx.fillStyle = '#ff0000'; // Lampu belakang
+            ctx.fillRect(playerCar.x + 4, playerCar.y + playerCar.height - 4, 8, 4);
+            ctx.fillRect(playerCar.x + playerCar.width - 12, playerCar.y + playerCar.height - 4, 8, 4);
+
+            // C. Gambar Mobil Musuh (Enemies)
+            enemies.forEach(enemy => {
+                ctx.fillStyle = enemy.color;
+                ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+                ctx.fillStyle = '#111';
+                ctx.fillRect(enemy.x + 5, enemy.y + 35, enemy.width - 10, 15);
+            });
+
+            // Update UI Info Status
+            scoreEl.innerText = gameState.score;
+            livesEl.innerText = "❤️".repeat(Math.max(0, gameState.lives));
+            nitroEl.innerText = Math.max(0, Math.floor(gameState.nitroFuel)) + "%";
+
+            // Bar Indikator Nitro Tambahan di Atas Kanvas
+            ctx.fillStyle = "rgba(0,0,0,0.5)";
+            ctx.fillRect(10, 10, 100, 10);
+            ctx.fillStyle = gameState.nitroActive ? '#ff6600' : '#00f0ff';
+            ctx.fillRect(10, 10, Math.max(0, gameState.nitroFuel), 10);
+            ctx.strokeStyle = '#ffffff';
+            ctx.strokeRect(10, 10, 100, 10);
+
+            // Overlay Game Over
+            if (gameState.status === 'GAME_OVER') {
+                ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                ctx.textAlign = "center";
+                ctx.fillStyle = "#ff0055";
+                ctx.font = "bold 22px Space Grotesk";
+                ctx.fillText("CRASH! GAME OVER", canvas.width / 2, canvas.height / 2 - 10);
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "12px Space Grotesk";
+                ctx.fillText("Jarak Tempuh: " + gameState.score + " meter", canvas.width / 2, canvas.height / 2 + 15);
+                ctx.fillText("Klik Mulai / Restart untuk coba lagi.", canvas.width / 2, canvas.height / 2 + 35);
+            }
+        }
+
+        // ==========================================
+        // 5. MAIN ENGINE LOOP
+        // ==========================================
+        function gameLoop() {
+            updateGamePhysics();
+            drawGame();
+
+            if (gameState.status === 'PLAYING') {
+                // 🎯 TUGAS 20: Panggil requestAnimationFrame(gameLoop) untuk memperbarui animasi balapan
+                // Ubah '?' menjadi: gameLoop
+                animationFrameId = requestAnimationFrame('?');
+            }
+        }
+
+        function startGame() {
+            gameState.score = 0;
+            gameState.lives = 3;
+            gameState.nitroFuel = 100;
+            gameState.nitroActive = false;
+            gameState.speed = gameState.normalSpeed;
+            gameState.status = 'PLAYING';
+
+            playerCar.x = 160;
+            playerCar.y = 350;
+            enemies = [];
+
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+
+            window.focus();
+            gameLoop();
+        }
+
+        drawGame();
+    </script>
+</body>
+</html>
+</textarea>
+            <div class="action-bar">
+                <button class="btn-run" onclick="runCode()">✨ Sinkronisasi Kode</button>
+            </div>
+        </div>
+
+        <div class="panel preview-panel" id="preview-panel">
+            <div class="panel-header">
+                <div>🎮 Output Sistem</div>
+                <button class="btn-fullscreen" id="fs-btn" onclick="toggleFullscreen()" title="Buka Mode Layar Penuh">🔲 Layar Penuh</button>
+            </div>
+            <iframe id="preview-frame"></iframe>
+        </div>
+
+    </div>
+
+    <script>
+        let urlAktif = null;
+
+        function runCode() {
+            const htmlCode = document.getElementById('code-editor').value;
+            const iframe = document.getElementById('preview-frame');
+            
+            const blob = new Blob([htmlCode], { type: 'text/html;charset=utf-8' });
+            
+            if (urlAktif) {
+                URL.revokeObjectURL(urlAktif);
+            }
+            
+            urlAktif = URL.createObjectURL(blob);
+            iframe.src = urlAktif;
+            
+            // Auto focus ke iframe setelah sinkronisasi agar event keyboard langsung berfungsi
+            iframe.onload = () => {
+                iframe.contentWindow.focus();
+            };
+        }
+
+        // Logika Mode Fullscreen
+        function toggleFullscreen() {
+            const panel = document.getElementById('preview-panel');
+            const btn = document.getElementById('fs-btn');
+            
+            if (!document.fullscreenElement) {
+                if (panel.requestFullscreen) {
+                    panel.requestFullscreen();
+                } else if (panel.webkitRequestFullscreen) { /* Safari */
+                    panel.webkitRequestFullscreen();
+                } else if (panel.msRequestFullscreen) { /* IE11 */
+                    panel.msRequestFullscreen();
+                }
+                btn.innerHTML = "🔳 Perkecil Layar";
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) { /* Safari */
+                    document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) { /* IE11 */
+                    document.msExitFullscreen();
+                }
+                btn.innerHTML = "🔲 Layar Penuh";
+            }
+        }
+
+        // Event listener saat user keluar dari fullscreen
+        document.addEventListener('fullscreenchange', () => {
+            const btn = document.getElementById('fs-btn');
+            if (!document.fullscreenElement) {
+                btn.innerHTML = "🔲 Layar Penuh";
+            }
+        });
+
+        // Pengaturan tombol Tab pada textarea
+        const editor = document.getElementById('code-editor');
+        editor.addEventListener('keydown', function(e) {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const start = this.selectionStart;
+                const end = this.selectionEnd;
+
+                this.value = this.value.substring(0, start) + "    " + this.value.substring(end);
+                this.selectionStart = this.selectionEnd = start + 4;
+            }
+        });
+
+        window.onload = runCode;
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LKPD Interaktif: Modul 16 Zuma (Path Traversal & Chain Reaction Logic)</title>
+    <style>
+        /* Import Font Modern, Minimalis & Futuristik */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Space+Grotesk:wght@500;700&family=Fira+Code:wght@400;500&display=swap');
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9fa;
+            color: #212529;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background-color: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            padding: 15px 30px;
+            border-bottom: 1px solid #e9ecef;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+
+        header h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #00f0ff, #00ff88);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .badge {
+            background: #ffffff;
+            color: #00b377;
+            border: 1px solid #00ff88;
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            box-shadow: 0 4px 10px rgba(0, 255, 136, 0.15);
+            letter-spacing: 0.5px;
+        }
+
+        .workspace {
+            display: flex;
+            flex: 1;
+            padding: 20px;
+            gap: 20px;
+            overflow: hidden;
+            background-image: radial-gradient(#dee2e6 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        /* Responsive Workspace untuk Mobile */
+        @media (max-width: 768px) {
+            .workspace {
+                flex-direction: column;
+                overflow-y: auto;
+            }
+            .panel {
+                min-height: 400px;
+            }
+        }
+
+        .panel {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid #e9ecef;
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+
+        .panel:hover {
+            box-shadow: 0 12px 40px rgba(0, 240, 255, 0.12);
+            border-color: #80f0ff;
+        }
+
+        .panel-header {
+            padding: 15px 25px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            font-weight: 700;
+            font-size: 1.05rem;
+            font-family: 'Space Grotesk', sans-serif;
+            color: #495057;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .instruction-panel {
+            flex: 1;
+            overflow-y: auto;
+        }
+        
+        .instruction-content {
+            padding: 25px;
+            font-size: 0.95rem;
+            line-height: 1.7;
+            color: #495057;
+        }
+
+        .instruction-content h3 {
+            margin-bottom: 15px;
+            color: #00b377;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .instruction-content p {
+            margin-bottom: 15px;
+        }
+
+        .task-box {
+            background: rgba(0, 255, 136, 0.08);
+            border-left: 4px solid #00ff88;
+            border-radius: 0 8px 8px 0;
+            padding: 15px;
+            margin-top: 20px;
+            color: #212529;
+            font-size: 0.9rem;
+        }
+
+        .editor-panel {
+            flex: 1.2;
+        }
+
+        textarea {
+            flex: 1;
+            width: 100%;
+            border: none;
+            resize: none;
+            padding: 20px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+            background-color: #f1f3f5;
+            color: #212529;
+            outline: none;
+            line-height: 1.6;
+            white-space: pre;
+            overflow-x: auto;
+            transition: background-color 0.2s ease;
+        }
+
+        textarea:focus {
+            background-color: #ffffff;
+            box-shadow: inset 0 0 0 2px #00f0ff;
+        }
+
+        .action-bar {
+            padding: 12px 25px;
+            background: #ffffff;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        button.btn-run {
+            background: linear-gradient(135deg, #00f0ff 0%, #00b377 100%);
+            color: #ffffff;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(0, 240, 255, 0.3);
+        }
+
+        button.btn-run:hover {
+            box-shadow: 0 6px 20px rgba(0, 255, 136, 0.35);
+            transform: translateY(-2px);
+        }
+
+        .preview-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Pengaturan saat mode Fullscreen aktif */
+        .preview-panel:fullscreen {
+            background: #ffffff;
+            border-radius: 0;
+            border: none;
+        }
+        .preview-panel:-webkit-full-screen {
+            background: #ffffff;
+        }
+
+        /* Tombol Fullscreen */
+        .btn-fullscreen {
+            background: transparent;
+            color: #495057;
+            border: 1px solid #ced4da;
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .btn-fullscreen:hover {
+            background: #e9ecef;
+            color: #212529;
+            border-color: #adb5bd;
+        }
+
+        iframe {
+            flex: 1;
+            width: 100%;
+            border: none;
+            background-color: #ffffff;
+        }
+        
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f8f9fa; }
+        ::-webkit-scrollbar-thumb { background: #ced4da; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #adb5bd; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>⚡ CodeQuest: NEXUS</h1>
+        <div class="badge">🐸 Modul 16: Zuma (Path Traversal & Chain Reaction Logic)</div>
+    </header>
+
+    <div class="workspace">
+        
+        <div class="panel instruction-panel">
+            <div class="panel-header" style="justify-content: flex-start;">📜 Modul Instruksi</div>
+            <div class="instruction-content">
+                <h3>Zuma: Path Traversal, Rotasi Trigonometri & Chain Reaction Logic!</h3>
+                <p>Selamat datang di Babak Puncak 16, Expert Game Developer! 🐸 Game puzzle-aksi klasik ini menggabungkan <strong>lintasan melengkung (waypoint interpolation)</strong>, <strong>trigonometri rotasi objek terpusat</strong>, serta <strong>manajemen manipulasi rantai array (Match-3 & Sisipan Rantai)</strong>.</p>
+                <p>Misi ini dikemas dalam <strong>20 Tugas Terstruktur</strong> yang harus kamu selesaikan pada kode di editor tengah.</p>
+                
+                <div class="task-box">
+                    <strong>🎯 Cara Mengerjakan:</strong><br>
+                    Cari petunjuk <strong>🎯 TUGAS 1</strong> sampai <strong>TUGAS 20</strong> pada editor kode. Baca instruksi komentar, lalu isi nilai atau hapus tanda tanya (<code>'?'</code>) dengan ekspresi JavaScript yang tepat.<br><br>
+                    Setelah selesai, klik <strong>"✨ Sinkronisasi Kode"</strong>. Arahkan kursor mouse untuk memutar kodok dan klik kiri canvas untuk menembakkan bola!
+                </div>
+
+                <div style="margin-top:20px; font-size:0.85rem; background:#f8f9fa; padding:12px; border-radius:8px; border-left:3px solid #00ff88;">
+                    <strong>💡 Konsep Kunci Modul 16:</strong><br>
+                    • <strong>Path Traversal & Waypoint Interpolation:</strong> Mengatur pergerakan rantai bola secara berurutan mengikuti jalur melengkung parametrik (waypoint).<br>
+                    • <strong>Rotasi Karakter Trigonometri (<code>Math.atan2</code>):</strong> Menghitung sudut rotasi objek kodok agar terus melacak dan menghadap kursor mouse secara presisi.<br>
+                    • <strong>Vektor Lemparan Bola (<code>Math.cos</code> & <code>Math.sin</code>):</strong> Menembakkan bola dari titik pusat ke arah sudut hasil trigonometri dengan kecepatan konstan.<br>
+                    • <strong>Chain Reaction & Match-3 Logic:</strong> Menyisipkan bola baru ke dalam array rantai berdasarkan deteksi jarak terdekat, serta menghancurkan minimal 3 bola berwarna sama berturut-turut.
+                </div>
+            </div>
+        </div>
+
+        <div class="panel editor-panel">
+            <div class="panel-header" style="justify-content: flex-start;">💻 Terminal Interface</div>
+<textarea id="code-editor" spellcheck="false" wrap="off">
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <!-- 🎯 TUGAS 1: Ubah judul tab browser di bawah ini dengan namamu -->
+    <title>Modul 16 - Zuma Path Traversal [NAMA SISWA]</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: #0d1117;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding-top: 15px;
+            touch-action: manipulation;
+        }
+        
+        #gameInfo {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 480px;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            padding: 8px 15px;
+            box-sizing: border-box;
+            background: #161b22;
+            border-radius: 8px;
+            border: 1px solid #30363d;
+        }
+
+        /* 🎯 TUGAS 2: Ganti warna background kanvas dari #0d131a menjadi warna lain, misal: '#0f172a' */
+        #gameCanvas {
+            background-color: #0d131a;
+            
+            /* 🎯 TUGAS 3: Ubah ketebalan border dari 3px menjadi 4px atau ganti warnanya */
+            border: 3px solid #00f0ff;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.25);
+            max-width: 100%;
+            height: auto;
+            cursor: crosshair;
+        }
+
+        .btn-start {
+            margin-top: 12px;
+            padding: 10px 20px;
+            /* 🎯 TUGAS 4: Ganti warna tombol dari #00f0ff menjadi warna favoritmu */
+            background-color: #00f0ff;
+            border: none;
+            border-radius: 8px;
+            color: #000000;
+            font-size: 0.95rem;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 4px 0 #00b3cc;
+            transition: all 0.1s;
+        }
+        .btn-start:active {
+            transform: translateY(3px);
+            box-shadow: none;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 🎯 TUGAS 5: Ganti nama judul game H2 di bawah ini -->
+    <h2>🐸 Zuma: Path Traversal & Chain Reaction</h2>
+    
+    <div id="gameInfo">
+        <span>Skor: <span id="scoreVal" style="color:#00f0ff;">0</span></span>
+        <span>Bola Tersisa: <span id="ballsVal" style="color:#ffcc00;">0</span></span>
+        <span>Status: <span id="statusVal" style="color:#00ff88;">PLAYING</span></span>
+    </div>
+    
+    <canvas id="gameCanvas" width="480" height="400"></canvas>
+    
+    <button class="btn-start" onclick="startGame()">▶ Mulai / Restart</button>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('scoreVal');
+        const ballsEl = document.getElementById('ballsVal');
+        const statusEl = document.getElementById('statusVal');
+
+        const BALL_RADIUS = 12;
+        const COLORS = ['#ff0055', '#00f0ff', '#ffcc00', '#00ff88'];
+
+        // ==========================================
+        // 1. STATE MANAGEMENT TERPUSAT & KODOK
+        // ==========================================
+        const gameState = {
+            // 🎯 TUGAS 6: Setel skor awal menjadi 0
+            score: '?',
+            
+            // 🎯 TUGAS 7: Setel status awal game menjadi 'PLAYING'
+            status: '?'
+        };
+
+        const frog = {
+            // 🎯 TUGAS 8: Setel koordinat X pusat kodok di tengah canvas (240)
+            x: '?',
+            
+            // 🎯 TUGAS 9: Setel koordinat Y pusat kodok di tengah canvas (200)
+            y: '?',
+            
+            angle: 0,
+            currentColor: getRandomColor(),
+            nextColor: getRandomColor()
+        };
+
+        let ballChain = [];
+        let firedBalls = [];
+        let animationFrameId = null;
+
+        // Jalur Melengkung (Waypoints)
+        const waypoints = [
+            {x: 40, y: 40},
+            {x: 440, y: 40},
+            {x: 440, y: 360},
+            {x: 40, y: 360},
+            {x: 40, y: 120},
+            {x: 360, y: 120},
+            {x: 360, y: 280},
+            {x: 120, y: 280}
+        ];
+
+        function getRandomColor() {
+            return COLORS[Math.floor(Math.random() * COLORS.length)];
+        }
+
+        // Fungsi Menghitung posisi (x,y) pada jalur berdasarkan jarak (distance)
+        function getPointAtDistance(targetDist) {
+            let accumulated = 0;
+            for (let i = 0; i < waypoints.length - 1; i++) {
+                const p1 = waypoints[i];
+                const p2 = waypoints[i + 1];
+                const segDist = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+
+                if (accumulated + segDist >= targetDist) {
+                    const ratio = (targetDist - accumulated) / segDist;
+                    return {
+                        x: p1.x + (p2.x - p1.x) * ratio,
+                        y: p1.y + (p2.y - p1.y) * ratio
+                    };
+                }
+                accumulated += segDist;
+            }
+            const last = waypoints[waypoints.length - 1];
+            return { x: last.x, y: last.y };
+        }
+
+        function getMaxPathDistance() {
+            let total = 0;
+            for (let i = 0; i < waypoints.length - 1; i++) {
+                total += Math.hypot(waypoints[i+1].x - waypoints[i].x, waypoints[i+1].y - waypoints[i].y);
+            }
+            return total;
+        }
+
+        // ==========================================
+        // 2. MOUSE TRACKING & TEMBAKAN BOLA
+        // ==========================================
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            // 🎯 TUGAS 10: Hitung sudut rotasi kodok (Math.atan2) agar menghadap kursor mouse
+            // Ubah '?' menjadi: Math.atan2(mouseY - frog.y, mouseX - frog.x)
+            frog.angle = '?';
+        });
+
+        canvas.addEventListener('click', () => {
+            if (gameState.status !== 'PLAYING') return;
+
+            // 🎯 TUGAS 11: Setel kecepatan tembakan bola (shotSpeed) menjadi 9
+            const shotSpeed = '?';
+
+            // 🎯 TUGAS 12: Hitung kecepatan horizontal bola (dx) menggunakan Math.cos(frog.angle) * shotSpeed
+            // Ubah '?' menjadi: Math.cos(frog.angle) * shotSpeed
+            const dx = '?';
+
+            // 🎯 TUGAS 13: Hitung kecepatan vertikal bola (dy) menggunakan Math.sin(frog.angle) * shotSpeed
+            // Ubah '?' menjadi: Math.sin(frog.angle) * shotSpeed
+            const dy = '?';
+
+            firedBalls.push({
+                x: frog.x,
+                y: frog.y,
+                dx: dx,
+                dy: dy,
+                color: frog.currentColor
+            });
+
+            frog.currentColor = frog.nextColor;
+            frog.nextColor = getRandomColor();
+        });
+
+        // ==========================================
+        // 3. LOGIKA RANTAI BOLA & REAKSI BERANTAI
+        // ==========================================
+        function updateBallChain() {
+            if (gameState.status !== 'PLAYING') return;
+
+            const maxDist = getMaxPathDistance();
+
+            // 🎯 TUGAS 14: Gerakkan seluruh bola dalam rantai mendekati lubang akhir
+            // Ubah '?' menjadi: 0.8
+            ballChain.forEach(ball => {
+                ball.distance += '?';
+
+                // 🎯 TUGAS 15: Cek jika ada bola mencapai ujung jalur (ball.distance >= maxDist), set status menjadi 'GAME_OVER'
+                // Ubah '?' menjadi: 'GAME_OVER'
+                if (ball.distance >= maxDist) {
+                    gameState.status = '?';
+                }
+            });
+
+            // Update posisi bola tembak yang terbang
+            for (let i = firedBalls.length - 1; i >= 0; i--) {
+                let fb = firedBalls[i];
+                fb.x += fb.dx;
+                fb.y += fb.dy;
+
+                // Hapus bola jika keluar layar
+                if (fb.x < 0 || fb.x > canvas.width || fb.y < 0 || fb.y > canvas.height) {
+                    firedBalls.splice(i, 1);
+                    continue;
+                }
+
+                // Cek tabrakan bola tembak dengan bola di rantai
+                for (let j = 0; j < ballChain.length; j++) {
+                    // 🎯 TUGAS 16: Dapatkan koordinat (x,y) bola rantai menggunakan fungsi getPointAtDistance(ballChain[j].distance)
+                    // Ubah '?' menjadi: getPointAtDistance(ballChain[j].distance)
+                    let cbPos = '?';
+                    let dist = Math.hypot(fb.x - cbPos.x, fb.y - cbPos.y);
+
+                    // 🎯 TUGAS 17: Deteksi jika jarak bola tembak dan bola rantai kurang dari 2 * BALL_RADIUS (24)
+                    // Ubah '?' menjadi: 24
+                    if (dist < '?') {
+                        // Sisipkan bola baru ke dalam rantai (Insert into Chain)
+                        const insertDist = ballChain[j].distance;
+                        
+                        // Geser bola di belakangnya
+                        for (let k = j; k < ballChain.length; k++) {
+                            ballChain[k].distance += BALL_RADIUS * 2;
+                        }
+
+                        ballChain.splice(j, 0, { distance: insertDist, color: fb.color });
+                        firedBalls.splice(i, 1);
+
+                        // Panggil periksa Match-3
+                        checkMatchThree(j);
+                        break;
+                    }
+                }
+            }
+        }
+
+        function checkMatchThree(startIndex) {
+            if (startIndex < 0 || startIndex >= ballChain.length) return;
+
+            const color = ballChain[startIndex].color;
+            let left = startIndex;
+            let right = startIndex;
+
+            while (left > 0 && ballChain[left - 1].color === color) left--;
+            while (right < ballChain.length - 1 && ballChain[right + 1].color === color) right++;
+
+            const matchCount = right - left + 1;
+
+            // 🎯 TUGAS 18: Jika matchCount >= 3, hancurkan kelompok bola yang cocok tersebut
+            // Ubah '?' menjadi: 3
+            if (matchCount >= '?') {
+                ballChain.splice(left, matchCount);
+
+                // 🎯 TUGAS 19: Tambahkan skor pemain sebanyak 150 poin saat terjadi ledakan Match-3
+                // Ubah '?' menjadi: 150
+                gameState.score += '?';
+            }
+        }
+
+        // ==========================================
+        // 4. RENDERING VISUAL (DRAWING)
+        // ==========================================
+        function drawGame() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // A. Gambar Jalur (Waypoints Path)
+            ctx.beginPath();
+            ctx.strokeStyle = '#2d3748';
+            ctx.lineWidth = 26;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.moveTo(waypoints[0].x, waypoints[0].y);
+            for (let i = 1; i < waypoints.length; i++) {
+                ctx.lineTo(waypoints[i].x, waypoints[i].y);
+            }
+            ctx.stroke();
+
+            // Lubang Akhir (End Hole / Skull)
+            const endPt = waypoints[waypoints.length - 1];
+            ctx.fillStyle = '#ff0055';
+            ctx.beginPath();
+            ctx.arc(endPt.x, endPt.y, 18, 0, Math.PI * 2);
+            ctx.fill();
+
+            // B. Gambar Rantai Bola pada Jalur
+            ballChain.forEach(ball => {
+                const pos = getPointAtDistance(ball.distance);
+                ctx.beginPath();
+                ctx.arc(pos.x, pos.y, BALL_RADIUS, 0, Math.PI * 2);
+                ctx.fillStyle = ball.color;
+                ctx.fill();
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+            });
+
+            // C. Gambar Bola Tembak yang Sedang Melayang
+            firedBalls.forEach(fb => {
+                ctx.beginPath();
+                ctx.arc(fb.x, fb.y, BALL_RADIUS, 0, Math.PI * 2);
+                ctx.fillStyle = fb.color;
+                ctx.fill();
+            });
+
+            // D. Gambar Kodok Penembak (Center Frog)
+            ctx.save();
+            ctx.translate(frog.x, frog.y);
+            ctx.rotate(frog.angle);
+
+            // Badan Kodok
+            ctx.fillStyle = '#00f0ff';
+            ctx.beginPath();
+            ctx.arc(0, 0, 22, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Moncong / Arah Tembakan
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(5, -4, 16, 8);
+
+            // Bola di mulut kodok
+            ctx.beginPath();
+            ctx.arc(8, 0, BALL_RADIUS - 2, 0, Math.PI * 2);
+            ctx.fillStyle = frog.currentColor;
+            ctx.fill();
+
+            ctx.restore();
+
+            // Indikator Bola Berikutnya
+            ctx.fillStyle = '#aaaaaa';
+            ctx.font = '11px Space Grotesk';
+            ctx.fillText('Berikutnya:', frog.x - 25, frog.y + 38);
+            ctx.beginPath();
+            ctx.arc(frog.x + 32, frog.y + 35, 8, 0, Math.PI * 2);
+            ctx.fillStyle = frog.nextColor;
+            ctx.fill();
+
+            // Update UI Header
+            scoreEl.innerText = gameState.score;
+            ballsEl.innerText = ballChain.length;
+            statusEl.innerText = gameState.status;
+
+            // Overlay Layar Game Over / Victory
+            if (gameState.status === 'GAME_OVER') {
+                ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                ctx.textAlign = "center";
+                ctx.fillStyle = "#ff0055";
+                ctx.font = "bold 24px Space Grotesk";
+                ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - 10);
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "14px Space Grotesk";
+                ctx.fillText("Rantai bola telah mencapai lubang akhir!", canvas.width / 2, canvas.height / 2 + 20);
+            } else if (ballChain.length === 0 && gameState.status === 'PLAYING') {
+                ctx.fillStyle = "rgba(0, 0, 0, 0.75)";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                ctx.textAlign = "center";
+                ctx.fillStyle = "#00ff88";
+                ctx.font = "bold 24px Space Grotesk";
+                ctx.fillText("STAGE CLEARED!", canvas.width / 2, canvas.height / 2 - 10);
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "14px Space Grotesk";
+                ctx.fillText("Selamat! Kamu berhasil menghancurkan semua bola!", canvas.width / 2, canvas.height / 2 + 20);
+            }
+        }
+
+        // ==========================================
+        // 5. MAIN GAME LOOP
+        // ==========================================
+        function gameLoop() {
+            updateBallChain();
+            drawGame();
+
+            if (gameState.status === 'PLAYING' && ballChain.length > 0) {
+                // 🎯 TUGAS 20: Panggil requestAnimationFrame(gameLoop) untuk memperbarui animasi frame secara berulang
+                // Ubah '?' menjadi: gameLoop
+                animationFrameId = requestAnimationFrame('?');
+            }
+        }
+
+        function startGame() {
+            gameState.score = 0;
+            gameState.status = 'PLAYING';
+
+            firedBalls = [];
+            ballChain = [];
+
+            // Spawn awal 15 bola di rantai jalur
+            for (let i = 0; i < 15; i++) {
+                ballChain.push({
+                    distance: i * (BALL_RADIUS * 2 + 2),
+                    color: getRandomColor()
+                });
+            }
+
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+
+            gameLoop();
+        }
+
+        // Tampilan Awal
+        drawGame();
+    </script>
+</body>
+</html>
+</textarea>
+            <div class="action-bar">
+                <button class="btn-run" onclick="runCode()">✨ Sinkronisasi Kode</button>
+            </div>
+        </div>
+
+        <div class="panel preview-panel" id="preview-panel">
+            <div class="panel-header">
+                <div>🎮 Output Sistem</div>
+                <button class="btn-fullscreen" id="fs-btn" onclick="toggleFullscreen()" title="Buka Mode Layar Penuh">🔲 Layar Penuh</button>
+            </div>
+            <iframe id="preview-frame"></iframe>
+        </div>
+
+    </div>
+
+    <script>
+        let urlAktif = null;
+
+        function runCode() {
+            const htmlCode = document.getElementById('code-editor').value;
+            const iframe = document.getElementById('preview-frame');
+            
+            const blob = new Blob([htmlCode], { type: 'text/html;charset=utf-8' });
+            
+            if (urlAktif) {
+                URL.revokeObjectURL(urlAktif);
+            }
+            
+            urlAktif = URL.createObjectURL(blob);
+            iframe.src = urlAktif;
+            
+            iframe.onload = () => {
+                iframe.contentWindow.focus();
+            };
+        }
+
+        function toggleFullscreen() {
+            const panel = document.getElementById('preview-panel');
+            const btn = document.getElementById('fs-btn');
+            
+            if (!document.fullscreenElement) {
+                if (panel.requestFullscreen) {
+                    panel.requestFullscreen();
+                } else if (panel.webkitRequestFullscreen) {
+                    panel.webkitRequestFullscreen();
+                } else if (panel.msRequestFullscreen) {
+                    panel.msRequestFullscreen();
+                }
+                btn.innerHTML = "🔳 Perkecil Layar";
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) {
+                    document.msExitFullscreen();
+                }
+                btn.innerHTML = "🔲 Layar Penuh";
+            }
+        }
+
+        document.addEventListener('fullscreenchange', () => {
+            const btn = document.getElementById('fs-btn');
+            if (!document.fullscreenElement) {
+                btn.innerHTML = "🔲 Layar Penuh";
+            }
+        });
+
+        const editor = document.getElementById('code-editor');
+        editor.addEventListener('keydown', function(e) {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const start = this.selectionStart;
+                const end = this.selectionEnd;
+
+                this.value = this.value.substring(0, start) + "    " + this.value.substring(end);
+                this.selectionStart = this.selectionEnd = start + 4;
+            }
+        });
+
+        window.onload = runCode;
+    </script>
+
+</body>
+</html>

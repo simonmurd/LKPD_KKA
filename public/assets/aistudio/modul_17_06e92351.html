@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LKPD Interaktif: Modul 17 Super Mario Bros Game</title>
+    <style>
+        /* Import Font Modern, Minimalis & Futuristik */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Space+Grotesk:wght@500;700&family=Fira+Code:wght@400;500&display=swap');
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9fa;
+            color: #212529;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background-color: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            padding: 15px 30px;
+            border-bottom: 1px solid #e9ecef;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+
+        header h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #e52521, #f8d820);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .badge {
+            background: #ffffff;
+            color: #e52521;
+            border: 1px solid #e52521;
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            box-shadow: 0 4px 10px rgba(229, 37, 33, 0.15);
+            letter-spacing: 0.5px;
+        }
+
+        .workspace {
+            display: flex;
+            flex: 1;
+            padding: 20px;
+            gap: 20px;
+            overflow: hidden;
+            background-image: radial-gradient(#dee2e6 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        /* Responsive Workspace untuk Mobile */
+        @media (max-width: 768px) {
+            .workspace {
+                flex-direction: column;
+                overflow-y: auto;
+            }
+            .panel {
+                min-height: 400px;
+            }
+        }
+
+        .panel {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid #e9ecef;
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+
+        .panel:hover {
+            box-shadow: 0 12px 40px rgba(229, 37, 33, 0.12);
+            border-color: #ff8b88;
+        }
+
+        .panel-header {
+            padding: 15px 25px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            font-weight: 700;
+            font-size: 1.05rem;
+            font-family: 'Space Grotesk', sans-serif;
+            color: #495057;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .instruction-panel {
+            flex: 1;
+            overflow-y: auto;
+        }
+        
+        .instruction-content {
+            padding: 25px;
+            font-size: 0.95rem;
+            line-height: 1.7;
+            color: #495057;
+        }
+
+        .instruction-content h3 {
+            margin-bottom: 15px;
+            color: #e52521;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .instruction-content p {
+            margin-bottom: 15px;
+        }
+
+        .task-box {
+            background: rgba(229, 37, 33, 0.08);
+            border-left: 4px solid #e52521;
+            border-radius: 0 8px 8px 0;
+            padding: 15px;
+            margin-top: 20px;
+            color: #212529;
+            font-size: 0.9rem;
+        }
+
+        .editor-panel {
+            flex: 1.2;
+        }
+
+        textarea {
+            flex: 1;
+            width: 100%;
+            border: none;
+            resize: none;
+            padding: 20px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+            background-color: #f1f3f5;
+            color: #212529;
+            outline: none;
+            line-height: 1.6;
+            white-space: pre;
+            overflow-x: auto;
+            transition: background-color 0.2s ease;
+        }
+
+        textarea:focus {
+            background-color: #ffffff;
+            box-shadow: inset 0 0 0 2px #e52521;
+        }
+
+        .action-bar {
+            padding: 12px 25px;
+            background: #ffffff;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        button.btn-run {
+            background: linear-gradient(135deg, #e52521 0%, #f8d820 100%);
+            color: #ffffff;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(229, 37, 33, 0.3);
+        }
+
+        button.btn-run:hover {
+            box-shadow: 0 6px 20px rgba(229, 37, 33, 0.45);
+            transform: translateY(-2px);
+        }
+
+        .preview-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Pengaturan saat mode Fullscreen aktif */
+        .preview-panel:fullscreen {
+            background: #ffffff;
+            border-radius: 0;
+            border: none;
+        }
+        .preview-panel:-webkit-full-screen {
+            background: #ffffff;
+        }
+
+        /* Tombol Fullscreen */
+        .btn-fullscreen {
+            background: transparent;
+            color: #495057;
+            border: 1px solid #ced4da;
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .btn-fullscreen:hover {
+            background: #e9ecef;
+            color: #212529;
+            border-color: #adb5bd;
+        }
+
+        iframe {
+            flex: 1;
+            width: 100%;
+            border: none;
+            background-color: #ffffff;
+        }
+        
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f8f9fa; }
+        ::-webkit-scrollbar-thumb { background: #ced4da; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #adb5bd; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>⚡ CodeQuest: NEXUS</h1>
+        <div class="badge">🍄 Modul 17: Super Mario Bros (Side-Scrolling Platformer & Complex Collision Physics)</div>
+    </header>
+
+    <div class="workspace">
+        
+        <div class="panel instruction-panel">
+            <div class="panel-header" style="justify-content: flex-start;">📜 Modul Instruksi</div>
+            <div class="instruction-content">
+                <h3>🍄 Super Mario Bros: Side-Scrolling Platformer Engine!</h3>
+                <p>Selamat datang di Modul Puncak (Modul 17), Developer Game! 🍄 Super Mario Bros merangkum seluruh esensi rekayasa perangkat lunak game 2D: <strong>fisika gravitasi presisi</strong>, <strong>kamera viewport berjalan (side-scrolling world)</strong>, dan <strong>deteksi tabrakan bersyarat arah (directional collision detection)</strong>.</p>
+                <p>Misi ini menguji logika percepatan jatuh, pergerakan offset kamera dunia, dan logika percabangan tabrakan melalui <strong>20 Tugas Terstruktur</strong> yang harus kamu selesaikan pada kode di editor tengah.</p>
+                
+                <div class="task-box">
+                    <strong>🎯 Cara Mengerjakan:</strong><br>
+                    Cari petunjuk <strong>🎯 TUGAS 1</strong> sampai <strong>TUGAS 20</strong> pada editor kode. Baca instruksi komentar, lalu isi nilai atau hapus tanda tanya (<code>'?'</code>) dengan ekspresi JavaScript yang tepat.<br><br>
+                    Setelah selesai, klik <strong>"✨ Sinkronisasi Kode"</strong>. Kamu dapat mengontrol Mario menggunakan <strong>Keyboard PC</strong> (Panah/WASD + Z/Space) atau <strong>Tombol Virtual</strong> pada layar!
+                </div>
+
+                <div style="margin-top:20px; font-size:0.85rem; background:#f8f9fa; padding:12px; border-radius:8px; border-left:3px solid #e52521;">
+                    <strong>💡 Konsep Kunci Modul 17:</strong><br>
+                    • <strong>Fisika Gravitasi & Parabola:</strong> Mengatur <code>gravity</code> dan <code>jumpForce</code> agar gerakan melompat terasa natural.<br>
+                    • <strong>Kamera Scrolling Global (Viewport Offset):</strong> Menggeser <code>worldOffset</code> ketika koordinat Mario melewati batas tengah layar.<br>
+                    • <strong>Directional Collision Detection:</strong> Membedakan kondisi menginjak musuh dari atas (musuh kalah & Mario memantul) vs tersentuh musuh dari samping (Mario kehilangan nyawa).
+                </div>
+            </div>
+        </div>
+
+        <div class="panel editor-panel">
+            <div class="panel-header" style="justify-content: flex-start;">💻 Terminal Interface</div>
+<textarea id="code-editor" spellcheck="false" wrap="off">
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <!-- 🎯 TUGAS 1: Ubah judul tab browser di bawah ini dengan namamu -->
+    <title>Modul 17 - Super Mario Bros Game [NAMA SISWA]</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: #121214;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding-top: 15px;
+            touch-action: manipulation;
+        }
+        
+        #gameInfo {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 400px;
+            margin-bottom: 10px;
+            font-size: 0.85rem;
+            padding: 8px 12px;
+            box-sizing: border-box;
+            background: #1e1e24;
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+
+        /* 🎯 TUGAS 2: Ganti warna background kanvas dari #5c94fc menjadi warna langit pilihanmu (misal: '#5c94fc') */
+        #gameCanvas {
+            background-color: #5c94fc;
+            
+            /* 🎯 TUGAS 3: Ubah ketebalan border dari 3px menjadi 4px */
+            border: 3px solid #e69c24;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(230, 156, 36, 0.25);
+            max-width: 100%;
+            height: auto;
+        }
+
+        .btn-start {
+            margin-top: 12px;
+            padding: 10px 20px;
+            /* 🎯 TUGAS 4: Ganti warna tombol dari #e52521 menjadi warna favoritmu */
+            background-color: #e52521;
+            border: none;
+            border-radius: 8px;
+            color: #ffffff;
+            font-size: 0.95rem;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 4px 0 #99120f;
+            transition: all 0.1s;
+        }
+        .btn-start:active {
+            transform: translateY(3px);
+            box-shadow: none;
+        }
+
+        /* Controls Virtual Touch untuk Mobile */
+        .controls-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            margin-top: 10px;
+        }
+        .row-btn {
+            display: flex;
+            gap: 10px;
+        }
+        .nav-btn {
+            width: 60px;
+            height: 42px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: white;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            user-select: none;
+        }
+        .nav-btn.btn-jump {
+            width: 110px;
+            background-color: rgba(229, 37, 33, 0.3);
+            border-color: #e52521;
+            font-weight: bold;
+        }
+        .nav-btn:active {
+            background-color: #e52521;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 🎯 TUGAS 5: Ganti nama judul game H2 di bawah ini -->
+    <h2>🍄 Super Mario Bros Engine</h2>
+    
+    <div id="gameInfo">
+        <span>Nyawa: <span id="livesVal" style="color:#ff0055;">❤️ x 3</span></span>
+        <span>Koin: <span id="coinsVal" style="color:#f8d820;">🪙 0</span></span>
+        <span>Skor: <span id="scoreVal" style="color:#00ff66;">0</span></span>
+    </div>
+    
+    <canvas id="gameCanvas" width="400" height="260"></canvas>
+    
+    <button class="btn-start" onclick="startGame()">▶ Mulai / Restart</button>
+
+    <!-- Controls Virtual Touch -->
+    <div class="controls-container">
+        <div class="row-btn">
+            <div class="nav-btn" id="btn-left">⬅️</div>
+            <div class="nav-btn btn-jump" id="btn-jump">🦘 LOMPAT</div>
+            <div class="nav-btn" id="btn-right">➡️</div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('scoreVal');
+        const coinsEl = document.getElementById('coinsVal');
+        const livesEl = document.getElementById('livesVal');
+
+        // ==========================================
+        // 1. MANAJEMEN STATUS TERPUSAT (STATE MANAGEMENT)
+        // ==========================================
+        const gameState = {
+            score: 0,
+            coins: 0,
+            
+            // 🎯 TUGAS 6: Setel nilai awal nyawa pemain (lives) menjadi 3
+            lives: '?',
+            
+            worldOffset: 0, // Posisi Kamera Scrolling Horizontal
+            status: 'IDLE'   // IDLE, PLAYING, GAME_OVER, WIN
+        };
+
+        const mario = {
+            x: 50,
+            y: 180,
+            width: 24,
+            height: 32,
+            dx: 0,
+            dy: 0,
+            speed: 3.5,
+            
+            // 🎯 TUGAS 7: Setel nilai kekuatan lompatan (jumpForce) Mario menjadi -10.5
+            jumpForce: '?',
+            
+            // 🎯 TUGAS 8: Setel percepatan gravitasi (gravity) Mario menjadi 0.45
+            gravity: '?',
+            
+            isGrounded: false
+        };
+
+        // Peta Level Dunia (Platforms, Coins, Enemies, & Goal)
+        let platforms = [];
+        let coins = [];
+        let enemies = [];
+        let goal = { x: 1050, y: 90, width: 20, height: 150 };
+
+        let keys = {};
+        let animationFrameId = null;
+        let btnLeftPressed = false;
+        let btnRightPressed = false;
+
+        // ==========================================
+        // 2. EVENT LISTENER KONTROL DENGAN FISIKA GERAK
+        // ==========================================
+        window.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+
+            // Aksi Lompat dengan Tombol 'Space', 'Z', 'W', atau 'ArrowUp'
+            if ((e.key === ' ' || e.key === 'z' || e.key === 'Z' || e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') && mario.isGrounded) {
+                // 🎯 TUGAS 11: Setel mario.dy menjadi mario.jumpForce untuk dorongan melompat ke atas
+                mario.dy = '?';
+                
+                // 🎯 TUGAS 12: Setel mario.isGrounded menjadi false saat Mario melompat ke udara
+                mario.isGrounded = '?';
+            }
+
+            if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code)) {
+                e.preventDefault();
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+        });
+
+        // Kontrol Sentuh / Touch Virtual D-Pad
+        function setupTouchControls() {
+            const bLeft = document.getElementById('btn-left');
+            const bRight = document.getElementById('btn-right');
+            const bJump = document.getElementById('btn-jump');
+
+            const bindHold = (el, setFn) => {
+                el.addEventListener('touchstart', (e) => { e.preventDefault(); setFn(true); });
+                el.addEventListener('touchend', (e) => { e.preventDefault(); setFn(false); });
+                el.addEventListener('mousedown', () => setFn(true));
+                el.addEventListener('mouseup', () => setFn(false));
+                el.addEventListener('mouseleave', () => setFn(false));
+            };
+
+            bindHold(bLeft, (v) => btnLeftPressed = v);
+            bindHold(bRight, (v) => btnRightPressed = v);
+
+            const triggerJump = (e) => {
+                if (e) e.preventDefault();
+                if (mario.isGrounded && gameState.status === 'PLAYING') {
+                    mario.dy = mario.jumpForce;
+                    mario.isGrounded = false;
+                }
+            };
+
+            bJump.addEventListener('touchstart', triggerJump);
+            bJump.addEventListener('mousedown', triggerJump);
+        }
+
+        // ==========================================
+        // 3. LOGIKA FISIKA & DIRECTIONAL COLLISION ENGINE
+        // ==========================================
+        function updateGame() {
+            if (gameState.status !== 'PLAYING') return;
+
+            // A. Kontrol Arah Kiri / Kanan
+            if (keys['ArrowLeft'] || keys['a'] || keys['A'] || btnLeftPressed) {
+                // 🎯 TUGAS 9: Setel mario.dx menjadi -mario.speed untuk bergerak ke kiri
+                mario.dx = '?';
+            } else if (keys['ArrowRight'] || keys['d'] || keys['D'] || btnRightPressed) {
+                // 🎯 TUGAS 10: Setel mario.dx menjadi mario.speed untuk bergerak ke kanan
+                mario.dx = '?';
+            } else {
+                mario.dx = 0;
+            }
+
+            // B. Terapkan Gravitasi & Update Koordinat Mario
+            mario.dy += mario.gravity;
+            mario.x += mario.dx;
+            mario.y += mario.dy;
+
+            // Batas Kiri Dunia Game
+            if (mario.x < 0) mario.x = 0;
+
+            // C. Logika Kamera Scrolling Global (Viewport Management)
+            if (mario.x - gameState.worldOffset > 200) {
+                // 🎯 TUGAS 13: Geser kamera offset dunia mengikuti Mario (Ubah '?' menjadi: mario.x - 200)
+                gameState.worldOffset = '?';
+            }
+
+            // D. Deteksi Tabrakan Pijakan Platform (Ground Landing)
+            mario.isGrounded = false;
+            platforms.forEach(platform => {
+                if (
+                    mario.x < platform.x + platform.width &&
+                    mario.x + mario.width > platform.x &&
+                    mario.y + mario.height >= platform.y &&
+                    mario.y + mario.height - mario.dy <= platform.y + 10 &&
+                    mario.dy >= 0 // Memastikan Mario sedang jatuh ke bawah
+                ) {
+                    mario.y = platform.y - mario.height;
+                    
+                    // 🎯 TUGAS 14: Hentikan kecepatan jatuh dengan menyetel mario.dy menjadi 0
+                    mario.dy = '?';
+                    
+                    // 🎯 TUGAS 15: Setel mario.isGrounded menjadi true saat mendarat di platform
+                    mario.isGrounded = '?';
+                }
+            });
+
+            // Jatuh ke Jurang (Out of Bounds Bottom)
+            if (mario.y > canvas.height + 50) {
+                handleMarioHit();
+            }
+
+            // E. Deteksi Pengambilan Koin
+            coins.forEach(coin => {
+                if (!coin.collected &&
+                    mario.x < coin.x + coin.width &&
+                    mario.x + mario.width > coin.x &&
+                    mario.y < coin.y + coin.height &&
+                    mario.y + mario.height > coin.y
+                ) {
+                    coin.collected = true;
+                    
+                    // 🎯 TUGAS 19: Tambahkan koin pemain (gameState.coins) sebesar 1 (Ubah '?' menjadi: 1)
+                    gameState.coins += '?';
+                    gameState.score += 50;
+                }
+            });
+
+            // F. Logika Directional Collision Detection (Injak Musuh vs Kena Damage)
+            enemies.forEach(enemy => {
+                if (!enemy.alive) return;
+
+                // Gerakan Patroli Musuh
+                enemy.x += enemy.dx;
+                if (enemy.x <= enemy.minX || enemy.x >= enemy.maxX) {
+                    enemy.dx *= -1;
+                }
+
+                // Cek Tabrakan Kotak (AABB Collision)
+                if (
+                    mario.x < enemy.x + enemy.width &&
+                    mario.x + mario.width > enemy.x &&
+                    mario.y < enemy.y + enemy.height &&
+                    mario.y + mario.height > enemy.y
+                ) {
+                    // Percabangan Directional: Apakah Mario menginjak musuh dari atas?
+                    if (mario.dy > 0 && mario.y + mario.height - mario.dy <= enemy.y + 12) {
+                        enemy.alive = false;
+                        
+                        // 🎯 TUGAS 16: Beri pantulan ke atas saat menginjak musuh (Setel mario.dy menjadi -7)
+                        mario.dy = '?';
+                        
+                        // 🎯 TUGAS 17: Tambahkan skor sebesar 100 saat menginjak musuh (Ubah '?' menjadi: 100)
+                        gameState.score += '?';
+                    } else {
+                        // Terkena musuh dari samping / bawah
+                        handleMarioHit();
+                    }
+                }
+            });
+
+            // G. Cek Kondisi Menang (Mencapai Bendera Finish)
+            if (
+                mario.x < goal.x + goal.width &&
+                mario.x + mario.width > goal.x &&
+                mario.y < goal.y + goal.height &&
+                mario.y + mario.height > goal.y
+            ) {
+                gameState.status = 'WIN';
+            }
+        }
+
+        function handleMarioHit() {
+            // 🎯 TUGAS 18: Kurangi nyawa Mario saat terkena damage (Ubah '?' menjadi: gameState.lives--)
+            '?';
+
+            if (gameState.lives <= 0) {
+                gameState.status = 'GAME_OVER';
+            } else {
+                respawnMario();
+            }
+        }
+
+        function respawnMario() {
+            mario.x = 50;
+            mario.y = 180;
+            mario.dx = 0;
+            mario.dy = 0;
+            mario.isGrounded = false;
+            gameState.worldOffset = 0;
+        }
+
+        // ==========================================
+        // 4. RENDERING VISUAL KANVAS & VIEWPORT OFFSET
+        // ==========================================
+        function drawGame() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Geser Viewport Kamera berdasarkan worldOffset
+            ctx.save();
+            ctx.translate(-gameState.worldOffset, 0);
+
+            // A. Gambar Platform / Tanah
+            platforms.forEach(p => {
+                // Rumput atas
+                ctx.fillStyle = '#70b020';
+                ctx.fillRect(p.x, p.y, p.width, 6);
+                // Tanah bawah
+                ctx.fillStyle = '#c84c0c';
+                ctx.fillRect(p.x, p.y + 6, p.width, p.height - 6);
+                ctx.strokeStyle = '#000000';
+                ctx.strokeRect(p.x, p.y, p.width, p.height);
+            });
+
+            // B. Gambar Koin
+            coins.forEach(c => {
+                if (!c.collected) {
+                    ctx.beginPath();
+                    ctx.arc(c.x + c.width/2, c.y + c.height/2, c.width/2, 0, Math.PI * 2);
+                    ctx.fillStyle = '#f8d820';
+                    ctx.fill();
+                    ctx.strokeStyle = '#d89000';
+                    ctx.stroke();
+                }
+            });
+
+            // C. Gambar Musuh (Goomba)
+            enemies.forEach(e => {
+                if (e.alive) {
+                    ctx.fillStyle = '#a84000';
+                    ctx.beginPath();
+                    ctx.arc(e.x + e.width/2, e.y + e.height/2 - 2, e.width/2, Math.PI, 0, false);
+                    ctx.fillRect(e.x, e.y + e.height/2 - 2, e.width, e.height/2 + 2);
+                    ctx.fill();
+
+                    // Mata & Kaki Musuh
+                    ctx.fillStyle = '#000000';
+                    ctx.fillRect(e.x + 2, e.y + e.height - 4, 6, 4);
+                    ctx.fillRect(e.x + e.width - 8, e.y + e.height - 4, 6, 4);
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(e.x + 4, e.y + 6, 4, 5);
+                    ctx.fillRect(e.x + e.width - 8, e.y + 6, 4, 5);
+                }
+            });
+
+            // D. Gambar Tiang Bendera Finish Goal
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(goal.x + 8, goal.y, 4, goal.height);
+            ctx.fillStyle = '#e52521';
+            ctx.beginPath();
+            ctx.moveTo(goal.x + 8, goal.y);
+            ctx.lineTo(goal.x - 20, goal.y + 15);
+            ctx.lineTo(goal.x + 8, goal.y + 30);
+            ctx.fill();
+
+            // E. Gambar Karakter Mario
+            ctx.fillStyle = '#e52521'; // Topi & Baju Merah
+            ctx.fillRect(mario.x + 4, mario.y + 2, mario.width - 8, 8);
+            ctx.fillRect(mario.x + 2, mario.y + 12, mario.width - 4, 10);
+            ctx.fillStyle = '#0020c2'; // Celana Kodok Biru
+            ctx.fillRect(mario.x + 4, mario.y + 20, mario.width - 8, 10);
+            ctx.fillStyle = '#fcc088'; // Kulit Wajah
+            ctx.fillRect(mario.x + 6, mario.y + 6, mario.width - 12, 8);
+            ctx.fillStyle = '#6b3c00'; // Sepatu
+            ctx.fillRect(mario.x + 2, mario.y + mario.height - 4, 8, 4);
+            ctx.fillRect(mario.x + mario.width - 10, mario.y + mario.height - 4, 8, 4);
+
+            // Restore Kamera Translate Context
+            ctx.restore();
+
+            // Update UI Element
+            scoreEl.innerText = gameState.score;
+            coinsEl.innerText = "🪙 " + gameState.coins;
+            livesEl.innerText = "❤️ x " + Math.max(0, gameState.lives);
+
+            // Overlay Game Over / Win
+            if (gameState.status === 'GAME_OVER' || gameState.status === 'WIN') {
+                ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                ctx.textAlign = "center";
+                if (gameState.status === 'GAME_OVER') {
+                    ctx.fillStyle = "#ff0055";
+                    ctx.font = "bold 22px Space Grotesk";
+                    ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - 10);
+                    ctx.fillStyle = "#ffffff";
+                    ctx.font = "12px Space Grotesk";
+                    ctx.fillText("Mario kehabisan nyawa! Klik Mulai untuk restart.", canvas.width / 2, canvas.height / 2 + 15);
+                } else {
+                    ctx.fillStyle = "#00ff66";
+                    ctx.font = "bold 22px Space Grotesk";
+                    ctx.fillText("LEVEL CLEAR! 🎉", canvas.width / 2, canvas.height / 2 - 10);
+                    ctx.fillStyle = "#ffffff";
+                    ctx.font = "12px Space Grotesk";
+                    ctx.fillText("Selamat! Kamu berhasil mencapai bendera finish!", canvas.width / 2, canvas.height / 2 + 15);
+                }
+            }
+        }
+
+        // ==========================================
+        // 5. MAIN ENGINE LOOP & INISIALISASI
+        // ==========================================
+        function gameLoop() {
+            updateGame();
+            drawGame();
+
+            if (gameState.status === 'PLAYING') {
+                // 🎯 TUGAS 20: Panggil requestAnimationFrame(gameLoop) untuk memperbarui animasi frame berulang
+                // Ubah '?' menjadi: gameLoop
+                animationFrameId = requestAnimationFrame('?');
+            }
+        }
+
+        function initLevel() {
+            platforms = [
+                { x: 0, y: 220, width: 500, height: 40 },
+                { x: 220, y: 160, width: 80, height: 18 },
+                { x: 380, y: 120, width: 100, height: 18 },
+                { x: 560, y: 220, width: 600, height: 40 },
+                { x: 680, y: 160, width: 120, height: 18 }
+            ];
+
+            coins = [
+                { x: 235, y: 130, width: 14, height: 14, collected: false },
+                { x: 260, y: 130, width: 14, height: 14, collected: false },
+                { x: 400, y: 90, width: 14, height: 14, collected: false },
+                { x: 430, y: 90, width: 14, height: 14, collected: false },
+                { x: 700, y: 130, width: 14, height: 14, collected: false }
+            ];
+
+            enemies = [
+                { x: 300, y: 196, width: 24, height: 24, dx: -1, minX: 100, maxX: 480, alive: true },
+                { x: 720, y: 196, width: 24, height: 24, dx: 1, minX: 580, maxX: 900, alive: true }
+            ];
+        }
+
+        function startGame() {
+            gameState.score = 0;
+            gameState.coins = 0;
+            gameState.lives = 3;
+            gameState.status = 'PLAYING';
+
+            initLevel();
+            respawnMario();
+
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+
+            window.focus();
+            gameLoop();
+        }
+
+        setupTouchControls();
+        drawGame();
+    </script>
+</body>
+</html>
+</textarea>
+            <div class="action-bar">
+                <button class="btn-run" onclick="runCode()">✨ Sinkronisasi Kode</button>
+            </div>
+        </div>
+
+        <div class="panel preview-panel" id="preview-panel">
+            <div class="panel-header">
+                <div>🎮 Output Sistem</div>
+                <button class="btn-fullscreen" id="fs-btn" onclick="toggleFullscreen()" title="Buka Mode Layar Penuh">🔲 Layar Penuh</button>
+            </div>
+            <iframe id="preview-frame"></iframe>
+        </div>
+
+    </div>
+
+    <script>
+        let urlAktif = null;
+
+        function runCode() {
+            const htmlCode = document.getElementById('code-editor').value;
+            const iframe = document.getElementById('preview-frame');
+            
+            const blob = new Blob([htmlCode], { type: 'text/html;charset=utf-8' });
+            
+            if (urlAktif) {
+                URL.revokeObjectURL(urlAktif);
+            }
+            
+            urlAktif = URL.createObjectURL(blob);
+            iframe.src = urlAktif;
+            
+            // Auto focus ke iframe setelah sinkronisasi agar event keyboard langsung berfungsi
+            iframe.onload = () => {
+                iframe.contentWindow.focus();
+            };
+        }
+
+        // Logika Mode Fullscreen
+        function toggleFullscreen() {
+            const panel = document.getElementById('preview-panel');
+            const btn = document.getElementById('fs-btn');
+            
+            if (!document.fullscreenElement) {
+                if (panel.requestFullscreen) {
+                    panel.requestFullscreen();
+                } else if (panel.webkitRequestFullscreen) { /* Safari */
+                    panel.webkitRequestFullscreen();
+                } else if (panel.msRequestFullscreen) { /* IE11 */
+                    panel.msRequestFullscreen();
+                }
+                btn.innerHTML = "🔳 Perkecil Layar";
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) { /* Safari */
+                    document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) { /* IE11 */
+                    document.msExitFullscreen();
+                }
+                btn.innerHTML = "🔲 Layar Penuh";
+            }
+        }
+
+        // Event listener saat user keluar dari fullscreen
+        document.addEventListener('fullscreenchange', () => {
+            const btn = document.getElementById('fs-btn');
+            if (!document.fullscreenElement) {
+                btn.innerHTML = "🔲 Layar Penuh";
+            }
+        });
+
+        // Pengaturan tombol Tab pada textarea
+        const editor = document.getElementById('code-editor');
+        editor.addEventListener('keydown', function(e) {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const start = this.selectionStart;
+                const end = this.selectionEnd;
+
+                this.value = this.value.substring(0, start) + "    " + this.value.substring(end);
+                this.selectionStart = this.selectionEnd = start + 4;
+            }
+        });
+
+        window.onload = runCode;
+    </script>
+
+</body>
+</html>

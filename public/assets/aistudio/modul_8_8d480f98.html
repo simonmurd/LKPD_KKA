@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LKPD Interaktif: Modul 8 - Game Bounce (Mobile & Fullscreen)</title>
+    <style>
+        /* Import Font Modern, Minimalis & Futuristik */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Space+Grotesk:wght@500;700&family=Fira+Code:wght@400;500&display=swap');
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9fa;
+            color: #212529;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background-color: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            padding: 15px 20px;
+            border-bottom: 1px solid #e9ecef;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        header h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #FF416C, #FF4B2B);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .badge {
+            background: #ffffff;
+            color: #FF4B2B;
+            border: 1px solid #FF416C;
+            padding: 6px 14px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            box-shadow: 0 4px 10px rgba(255, 65, 108, 0.1);
+            letter-spacing: 0.5px;
+        }
+
+        .workspace {
+            display: flex;
+            flex: 1;
+            padding: 15px;
+            gap: 15px;
+            overflow: hidden;
+            background-image: radial-gradient(#dee2e6 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        .panel {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid #e9ecef;
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+
+        .panel:hover {
+            box-shadow: 0 12px 40px rgba(255, 75, 43, 0.08);
+            border-color: #ff9a9e;
+        }
+
+        .panel-header {
+            padding: 12px 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            font-weight: 700;
+            font-size: 1rem;
+            font-family: 'Space Grotesk', sans-serif;
+            color: #495057;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .instruction-panel {
+            flex: 1;
+            overflow-y: auto;
+        }
+        
+        .instruction-content {
+            padding: 20px;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: #495057;
+        }
+
+        .instruction-content h3 {
+            margin-bottom: 12px;
+            color: #FF4B2B;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .instruction-content p {
+            margin-bottom: 12px;
+        }
+
+        .task-box {
+            background: rgba(255, 65, 108, 0.05);
+            border-left: 4px solid #FF4B2B;
+            border-radius: 0 8px 8px 0;
+            padding: 12px;
+            margin-top: 15px;
+            color: #212529;
+            font-size: 0.85rem;
+        }
+
+        .editor-panel {
+            flex: 1.2;
+        }
+
+        textarea {
+            flex: 1;
+            width: 100%;
+            border: none;
+            resize: none;
+            padding: 15px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85rem;
+            background-color: #282a36;
+            color: #f8f8f2;
+            outline: none;
+            line-height: 1.5;
+            white-space: pre;
+            overflow-x: auto;
+            transition: background-color 0.2s ease;
+            min-height: 250px;
+        }
+
+        textarea:focus {
+            background-color: #1e1f29;
+            box-shadow: inset 0 0 0 2px #FF4B2B;
+        }
+
+        .action-bar {
+            padding: 10px 20px;
+            background: #ffffff;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        button.btn-run {
+            background: linear-gradient(135deg, #FF416C 0%, #FF4B2B 100%);
+            color: #ffffff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(255, 65, 108, 0.3);
+            min-height: 44px;
+        }
+
+        button.btn-run:hover {
+            box-shadow: 0 6px 20px rgba(255, 65, 108, 0.4);
+            transform: translateY(-2px);
+        }
+
+        /* TOMBOL LAYAR PENUH (FULLSCREEN BUTTON) */
+        button.btn-fullscreen {
+            background: rgba(255, 65, 108, 0.08);
+            color: #FF4B2B;
+            border: 1px solid #FF4B2B;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        button.btn-fullscreen:hover {
+            background: #FF4B2B;
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(255, 75, 43, 0.3);
+        }
+
+        .preview-panel {
+            flex: 1;
+            min-height: 380px;
+        }
+
+        iframe {
+            flex: 1;
+            width: 100%;
+            height: 100%;
+            border: none;
+            background-color: #ffffff;
+        }
+        
+        /* RESPONSIF UNTUK TAMPILAN ANDROID / MOBILE */
+        @media (max-width: 900px) {
+            body {
+                height: auto;
+                overflow-y: auto;
+            }
+
+            .workspace {
+                flex-direction: column;
+                overflow: visible;
+                padding: 10px;
+            }
+
+            .panel {
+                max-height: none;
+            }
+
+            .editor-panel {
+                height: 380px;
+            }
+
+            .preview-panel {
+                height: 420px;
+            }
+        }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f8f9fa; }
+        ::-webkit-scrollbar-thumb { background: #ced4da; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #adb5bd; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>🎮 CodeQuest: NEXUS</h1>
+        <div class="badge">🚀 Bounce Physics (Android & Fullscreen)</div>
+    </header>
+
+    <div class="workspace">
+        
+        <div class="panel instruction-panel">
+            <div class="panel-header">
+                <span>📜 Modul Instruksi</span>
+            </div>
+            <div class="instruction-content">
+                <h3>Sistem Inisiasi: Game Loop & Touch Control!</h3>
+                <p>Halo, Operator! 🚀 Di modul ini, kita akan membangun simulasi <strong>Bounce Game</strong> yang mendukung kontrol <strong>Layar Sentuh Android</strong> dan Mouse PC.</p>
+                <p>Fokus utama kita adalah mengelola <strong>Animasi Berbasis Frame (requestAnimationFrame)</strong>, logika <strong>Deteksi Tabrakan</strong>, serta penanganan event sentuhan jari (<em>Touch Events</em>).</p>
+                
+                <div class="task-box">
+                    <strong>🎯 Cara Mengerjakan:</strong><br>
+                    Selesaikan <strong>20 TUGAS (🎯 TUGAS 1 - 20)</strong> di dalam editor. Ubah angka atau hapus tanda komentar <code>//</code> untuk mengaktifkan logika gim.<br><br>
+                    Setelah selesai, klik tombol <strong>"✨ Sinkronisasi & Mainkan"</strong> di bawah editor!
+                </div>
+                
+                <p style="margin-top: 15px; font-size: 0.85rem; color:#6c757d;">
+                    📱 <strong>Kontrol Android:</strong> Geser jari di layar untuk menggerakkan Paddle. Ketuk layar untuk mulai / restart! Klik tombol <strong>"⛶ Layar Penuh"</strong> untuk kenyamanan bermain di HP.
+                </p>
+            </div>
+        </div>
+
+        <div class="panel editor-panel">
+            <div class="panel-header">
+                <span>💻 Terminal Interface</span>
+            </div>
+<textarea id="code-editor" spellcheck="false" wrap="off">
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <!-- 🎯 TUGAS 1: Ubah judul tab browser di bawah ini dengan namamu -->
+    <title>Game Bounce - [NAMA SISWA]</title>
+    
+    <style>
+        * { touch-action: manipulation; }
+        body { 
+            text-align: center; 
+            font-family: 'Space Grotesk', sans-serif; 
+            background: #1e1e24; 
+            color: #fff; 
+            margin: 0;
+            padding: 10px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        
+        /* 🎯 TUGAS 2: Ubah warna bingkai (border) canvas */
+        canvas { 
+            background: #2b2b36; 
+            border: 4px solid #FF4B2B; 
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(255, 75, 43, 0.4); 
+            max-width: 95%;
+            height: auto;
+            touch-action: none; /* Mencegah layar ter-scroll saat menggeser paddle di HP */
+        }
+        
+        #ui-hint { margin-top: 10px; font-size: 13px; color: #adb5bd; }
+    </style>
+</head>
+<body>
+
+    <h3 style="margin: 5px 0;">⚡ Bounce: Android Edition</h3>
+    
+    <!-- 🎯 TUGAS 3: Sesuaikan width (lebar) kanvas menjadi 480 dan height (tinggi) menjadi 320 -->
+    <canvas id="gameCanvas" width="0" height="0"></canvas>
+    
+    <div id="ui-hint">Geser Jari / Mouse untuk menggerakkan Paddle.<br>Ketuk Layar / Tekan Spasi untuk mulai!</div>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+
+        // ==========================================
+        // 1. STATE MANAGEMENT (STATUS GAME TERPUSAT)
+        // ==========================================
+        const gameState = {
+            // 🎯 TUGAS 4: Set status awal menjadi 'IDLE' (pilihan: 'IDLE', 'PLAYING', 'GAME_OVER')
+            status: '', 
+            
+            // 🎯 TUGAS 5: Set skor awal menjadi 0
+            score: 0,
+            
+            // 🎯 TUGAS 6: Set jumlah nyawa (lives) awal (misalnya 3)
+            lives: 0
+        };
+
+        // ==========================================
+        // 2. OBJEK BOLA & FISIKA PANTULAN
+        // ==========================================
+        const ball = {
+            x: canvas.width / 2,
+            y: canvas.height - 30,
+            
+            // 🎯 TUGAS 7: Kecepatan Horizontal (dx). Isi dengan angka 3!
+            dx: 0,
+            
+            // 🎯 TUGAS 8: Kecepatan Vertikal (dy). Isi dengan angka -3 (minus agar ke atas)!
+            dy: 0,
+            
+            // 🎯 TUGAS 9: Ukuran Jari-jari bola (radius). Isi dengan angka 10.
+            radius: 0
+        };
+
+        const paddle = {
+            height: 14,
+            // 🎯 TUGAS 10: Tentukan lebar papan pemantul (width). Coba angka 80 atau 90!
+            width: 0,
+            x: (canvas.width - 80) / 2
+        };
+
+        // ==========================================
+        // 3. EVENT LISTENER (KONTROL MOUSE & TOUCH ANDROID)
+        // ==========================================
+        
+        // 🎯 TUGAS 11: Hapus tanda komentar (//) pada 2 baris di bawah agar kontrol Mouse & Touch Sentuh aktif!
+        // document.addEventListener("mousemove", moveHandler, false);
+        // document.addEventListener("touchmove", moveHandler, { passive: false });
+
+        function moveHandler(e) {
+            const canvasRect = canvas.getBoundingClientRect();
+            let clientX = e.clientX;
+            
+            // Ambil koordinat sentuhan jari pertama jika dimainkan di Android
+            if (e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+            }
+            
+            // 🎯 TUGAS 12: Hitung posisi relatif X dengan penyesuaian skala layar. Hapus komentar di bawah!
+            // let scaleX = canvas.width / canvasRect.width;
+            // let relativeX = (clientX - canvasRect.left) * scaleX;
+            
+            if(typeof relativeX !== 'undefined' && relativeX > 0 && relativeX < canvas.width) {
+                paddle.x = relativeX - paddle.width / 2;
+            }
+            
+            if (e.type === "touchmove") e.preventDefault(); // Cegah geser halaman di HP
+        }
+
+        // Fungsi Memulai / Restart Gim (Bisa lewat Ketukan Layar HP atau Spasi)
+        function startGame() {
+            if (gameState.status !== 'PLAYING') {
+                // 🎯 TUGAS 13: Ubah status menjadi 'PLAYING'
+                gameState.status = 'PLAYING';
+                
+                if(gameState.lives <= 0) document.location.reload();
+            }
+        }
+
+        document.addEventListener("keydown", (e) => { if (e.key === " ") startGame(); });
+        document.addEventListener("touchstart", startGame, { passive: true });
+
+        // ==========================================
+        // 4. FUNGSI RENDER (MENGGAMBAR KE LAYAR)
+        // ==========================================
+        function drawBall() {
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI*2);
+            // 🎯 TUGAS 14: Beri warna pada bola kesukaanmu (misal: "#00d2ff")
+            ctx.fillStyle = "#ffffff";
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        function drawPaddle() {
+            ctx.beginPath();
+            ctx.rect(paddle.x, canvas.height - paddle.height, paddle.width, paddle.height);
+            // 🎯 TUGAS 15: Beri warna pada paddle (misal: "#FF4B2B")
+            ctx.fillStyle = "#ffffff";
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        function drawUI() {
+            ctx.font = "bold 15px Space Grotesk, sans-serif";
+            ctx.fillStyle = "#FF4B2B";
+            ctx.fillText("Score: " + gameState.score, 10, 25);
+            ctx.fillText("Nyawa: " + gameState.lives, canvas.width - 85, 25);
+            
+            ctx.fillStyle = "#ffffff";
+            if (gameState.status === 'IDLE') {
+                ctx.fillText("KETUK / SPASI UNTUK MULAI", canvas.width/2 - 110, canvas.height/2);
+            } else if (gameState.status === 'GAME_OVER') {
+                ctx.font = "bold 22px Space Grotesk, sans-serif";
+                ctx.fillText("GAME OVER", canvas.width/2 - 65, canvas.height/2);
+                ctx.font = "14px Space Grotesk, sans-serif";
+                ctx.fillText("Ketuk Layar untuk Restart", canvas.width/2 - 80, canvas.height/2 + 30);
+            }
+        }
+
+        // ==========================================
+        // 5. LOGIKA PERCABANGAN KOMPLEKS (FISIKA TABRAKAN)
+        // ==========================================
+        function updatePhysics() {
+            if (gameState.status !== 'PLAYING') return;
+
+            // Menggerakkan bola berdasarkan kecepatan X dan Y
+            ball.x += ball.dx;
+            ball.y += ball.dy;
+
+            // 🎯 TUGAS 16: Pantulan Dinding Kiri & Kanan (Hapus 3 baris komentar di bawah ini)
+            // if(ball.x + ball.dx > canvas.width - ball.radius || ball.x + ball.dx < ball.radius) {
+            //     ball.dx = -ball.dx;
+            // }
+
+            // 🎯 TUGAS 17: Pantulan Atap (Hapus 3 baris komentar di bawah ini)
+            // if(ball.y + ball.dy < ball.radius) {
+            //     ball.dy = -ball.dy;
+            // } 
+            
+            // Tabrakan dengan Papan (Paddle) atau Lantai
+            else if(ball.y + ball.dy > canvas.height - ball.radius) {
+                
+                // 🎯 TUGAS 18: Bounding Box Tabrakan. Hapus komentar di bawah ini!
+                // if(ball.x > paddle.x && ball.x < paddle.x + paddle.width) {
+                //     ball.dy = -ball.dy; // Memantul ke atas sukses
+                //     gameState.score += 10;
+                // } 
+                // else {
+                //     // 🎯 TUGAS 19: Mengurangi nyawa jika jatuh. Hapus komentar di bawah ini!
+                //     gameState.lives--;
+                //     
+                //     if(gameState.lives <= 0) {
+                //         gameState.status = 'GAME_OVER';
+                //     } else {
+                //         // Reset posisi bola dan paddle jika masih punya nyawa
+                //         ball.x = canvas.width/2;
+                //         ball.y = canvas.height-30;
+                //         ball.dx = 3; ball.dy = -3;
+                //         paddle.x = (canvas.width - paddle.width)/2;
+                //         gameState.status = 'IDLE';
+                //     }
+                // }
+            }
+        }
+
+        // ==========================================
+        // 6. GAME LOOP (Animasi 60 Frame Per Detik)
+        // ==========================================
+        function draw() {
+            // Menghapus frame layar sebelumnya
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            drawUI();
+            
+            // Gambar tidak akan muncul jika belum diatur tinggi/lebarnya (Tugas 3)
+            if(canvas.width > 0) {
+                drawBall();
+                drawPaddle();
+                updatePhysics();
+            }
+            
+            // 🎯 TUGAS 20: Aktifkan Animasi Game Loop dengan menghapus komentar di bawah ini!
+            // requestAnimationFrame(draw);
+        }
+
+        // Panggilan untuk menjalankan frame pertama
+        draw();
+    </script>
+</body>
+</html>
+</textarea>
+            <div class="action-bar">
+                <button class="btn-run" onclick="runCode()">✨ Sinkronisasi & Mainkan</button>
+            </div>
+        </div>
+
+        <div class="panel preview-panel">
+            <div class="panel-header">
+                <span>🎮 Output Layar Game</span>
+                <!-- TOMBOL UNTUK MODE LAYAR PENUH -->
+                <button class="btn-fullscreen" onclick="toggleFullscreen()">⛶ Layar Penuh</button>
+            </div>
+            <iframe id="preview-frame" sandbox="allow-scripts allow-same-origin" allowfullscreen></iframe>
+        </div>
+
+    </div>
+
+    <script>
+        let urlAktif = null;
+
+        function runCode() {
+            const htmlCode = document.getElementById('code-editor').value;
+            const iframe = document.getElementById('preview-frame');
+            
+            const blob = new Blob([htmlCode], { type: 'text/html;charset=utf-8' });
+            
+            if (urlAktif) {
+                URL.revokeObjectURL(urlAktif);
+            }
+            
+            urlAktif = URL.createObjectURL(blob);
+            iframe.src = urlAktif;
+            
+            setTimeout(() => {
+                iframe.contentWindow.focus();
+            }, 300);
+        }
+
+        // FUNGSI UNTUK MEMBUKA OUTPUT GAME DALAM MODE LAYAR PENUH (FULLSCREEN)
+        function toggleFullscreen() {
+            const iframe = document.getElementById('preview-frame');
+            if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+                if (iframe.requestFullscreen) {
+                    iframe.requestFullscreen();
+                } else if (iframe.webkitRequestFullscreen) { /* Safari & iOS */
+                    iframe.webkitRequestFullscreen();
+                } else if (iframe.msRequestFullscreen) { /* IE11 */
+                    iframe.msRequestFullscreen();
+                }
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                }
+            }
+        }
+
+        // Fitur pengetikan Tab di editor teks
+        const editor = document.getElementById('code-editor');
+        editor.addEventListener('keydown', function(e) {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const start = this.selectionStart;
+                const end = this.selectionEnd;
+
+                this.value = this.value.substring(0, start) + "    " + this.value.substring(end);
+                this.selectionStart = this.selectionEnd = start + 4;
+            }
+        });
+
+        window.onload = runCode;
+    </script>
+
+</body>
+</html>

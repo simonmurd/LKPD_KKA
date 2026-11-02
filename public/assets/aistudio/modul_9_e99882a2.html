@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LKPD Interaktif: Modul 9 Tetris Game</title>
+    <style>
+        /* Import Font Modern, Minimalis & Futuristik */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Space+Grotesk:wght@500;700&family=Fira+Code:wght@400;500&display=swap');
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9fa;
+            color: #212529;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background-color: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            padding: 15px 30px;
+            border-bottom: 1px solid #e9ecef;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+
+        header h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #7000ff, #00f0ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .badge {
+            background: #ffffff;
+            color: #7000ff;
+            border: 1px solid #7000ff;
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            box-shadow: 0 4px 10px rgba(112, 0, 255, 0.1);
+            letter-spacing: 0.5px;
+        }
+
+        .workspace {
+            display: flex;
+            flex: 1;
+            padding: 20px;
+            gap: 20px;
+            overflow: hidden;
+            background-image: radial-gradient(#dee2e6 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        /* Responsive Workspace untuk Mobile */
+        @media (max-width: 768px) {
+            .workspace {
+                flex-direction: column;
+                overflow-y: auto;
+            }
+            .panel {
+                min-height: 400px;
+            }
+        }
+
+        .panel {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid #e9ecef;
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+
+        .panel:hover {
+            box-shadow: 0 12px 40px rgba(112, 0, 255, 0.08);
+            border-color: #80bdff;
+        }
+
+        .panel-header {
+            padding: 15px 25px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            font-weight: 700;
+            font-size: 1.05rem;
+            font-family: 'Space Grotesk', sans-serif;
+            color: #495057;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .instruction-panel {
+            flex: 1;
+            overflow-y: auto;
+        }
+        
+        .instruction-content {
+            padding: 25px;
+            font-size: 0.95rem;
+            line-height: 1.7;
+            color: #495057;
+        }
+
+        .instruction-content h3 {
+            margin-bottom: 15px;
+            color: #7000ff;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .instruction-content p {
+            margin-bottom: 15px;
+        }
+
+        .task-box {
+            background: rgba(112, 0, 255, 0.05);
+            border-left: 4px solid #7000ff;
+            border-radius: 0 8px 8px 0;
+            padding: 15px;
+            margin-top: 20px;
+            color: #212529;
+            font-size: 0.9rem;
+        }
+
+        .editor-panel {
+            flex: 1.2;
+        }
+
+        textarea {
+            flex: 1;
+            width: 100%;
+            border: none;
+            resize: none;
+            padding: 20px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+            background-color: #f1f3f5;
+            color: #212529;
+            outline: none;
+            line-height: 1.6;
+            white-space: pre;
+            overflow-x: auto;
+            transition: background-color 0.2s ease;
+        }
+
+        textarea:focus {
+            background-color: #ffffff;
+            box-shadow: inset 0 0 0 2px #7000ff;
+        }
+
+        .action-bar {
+            padding: 12px 25px;
+            background: #ffffff;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        button.btn-run {
+            background: linear-gradient(135deg, #7000ff 0%, #00f0ff 100%);
+            color: #ffffff;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(112, 0, 255, 0.3);
+        }
+
+        button.btn-run:hover {
+            box-shadow: 0 6px 20px rgba(112, 0, 255, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .preview-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Pengaturan saat mode Fullscreen aktif */
+        .preview-panel:fullscreen {
+            background: #ffffff;
+            border-radius: 0;
+            border: none;
+        }
+        .preview-panel:-webkit-full-screen {
+            background: #ffffff;
+        }
+
+        /* Tombol Fullscreen */
+        .btn-fullscreen {
+            background: transparent;
+            color: #495057;
+            border: 1px solid #ced4da;
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .btn-fullscreen:hover {
+            background: #e9ecef;
+            color: #212529;
+            border-color: #adb5bd;
+        }
+
+        iframe {
+            flex: 1;
+            width: 100%;
+            border: none;
+            background-color: #ffffff;
+        }
+        
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f8f9fa; }
+        ::-webkit-scrollbar-thumb { background: #ced4da; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #adb5bd; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>⚡ CodeQuest: NEXUS</h1>
+        <div class="badge">🧱 Misi: Tetris Grid Matrix & Algoritma Rotasi (Modul 9)</div>
+    </header>
+
+    <div class="workspace">
+        
+        <div class="panel instruction-panel">
+            <div class="panel-header" style="justify-content: flex-start;">📜 Modul Instruksi</div>
+            <div class="instruction-content">
+                <h3>Sistem Engine Tetris & Algoritma Rotasi Matriks!</h3>
+                <p>Selamat datang di Tahap Mastery, Operator! 🧱 Pada Modul 9 ini, kamu akan membangun <strong>Modular JavaScript Tetris Engine</strong> menggunakan konsep <strong>Array 2D (Matriks)</strong>, <strong>Algoritma Rotasi Transformasi Matriks</strong>, serta <strong>Deteksi Benturan (Collision Detection)</strong>.</p>
+                <p>Misi ini akan menguji logika pemrogramandimu melalui <strong>20 Tugas Terstruktur</strong> yang harus kamu selesaikan pada kode di panel tengah.</p>
+                
+                <div class="task-box">
+                    <strong>🎯 Cara Mengerjakan:</strong><br>
+                    Cari petunjuk <strong>🎯 TUGAS 1</strong> sampai <strong>TUGAS 20</strong> pada editor kode di sebelah kanan. Baca komentar instruksi, lalu lengkapi atau perbaiki kodenya.<br><br>
+                    Setelah selesai, klik <strong>"✨ Sinkronisasi Kode"</strong>. Kamu bisa mengontrol game menggunakan **Keyboard PC** (Panah & Spasi) atau **D-Pad Virtual** di layar smartphone!
+                </div>
+
+                <div style="margin-top:20px; font-size:0.85rem; background:#f8f9fa; padding:12px; border-radius:8px; border-left:3px solid #7000ff;">
+                    <strong>💡 Konsep Kunci Modul 9:</strong><br>
+                    • <strong>Matriks Papan 2D:</strong> Representasi grid (20 baris &times; 10 kolom) dalam array multi-dimensi.<br>
+                    • <strong>Rotasi Matriks (90&deg; Clockwise):</strong> <code>result[r][c] = matrix[N - 1 - c][r]</code><br>
+                    • <strong>Line Clearing:</strong> Pengecekan <code>row.every(cell => cell !== 0)</code> untuk menghapus baris utuh dan menambah skor.
+                </div>
+            </div>
+        </div>
+
+        <div class="panel editor-panel">
+            <div class="panel-header" style="justify-content: flex-start;">💻 Terminal Interface</div>
+<textarea id="code-editor" spellcheck="false" wrap="off">
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <!-- 🎯 TUGAS 1: Ubah judul tab browser di bawah ini dengan namamu -->
+    <title>Modul 9 - Tetris Game [NAMA SISWA]</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: #121214;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding-top: 15px;
+            touch-action: manipulation;
+        }
+        
+        #gameInfo {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 280px;
+            margin-bottom: 10px;
+            font-size: 0.95rem;
+            padding: 8px 12px;
+            box-sizing: border-box;
+            background: #1e1e24;
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+
+        /* 🎯 TUGAS 2: Ganti warna background kanvas dari #0f0f15 menjadi warna lain, misal: '#181820' */
+        #gameCanvas {
+            background-color: #0f0f15;
+            
+            /* 🎯 TUGAS 3: Ubah ketebalan border dari 3px menjadi 6px */
+            border: 3px solid #00f0ff;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.25);
+            max-width: 100%;
+            height: auto;
+        }
+
+        .btn-start {
+            margin-top: 12px;
+            padding: 10px 20px;
+            /* 🎯 TUGAS 4: Ganti warna tombol dari #00f0ff menjadi warna favoritmu */
+            background-color: #00f0ff;
+            border: none;
+            border-radius: 8px;
+            color: #000000;
+            font-size: 0.95rem;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 4px 0 #00a8b3;
+            transition: all 0.1s;
+        }
+        .btn-start:active {
+            transform: translateY(3px);
+            box-shadow: none;
+        }
+
+        /* Styling Controls D-Pad Virtual untuk Mobile */
+        #dpad {
+            display: grid;
+            grid-template-columns: repeat(3, 65px);
+            grid-template-rows: repeat(2, 55px);
+            gap: 10px;
+            margin-top: 15px;
+            justify-content: center;
+        }
+        .dpad-btn {
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            color: white;
+            font-size: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            user-select: none;
+            transition: 0.1s;
+        }
+        .dpad-btn:active {
+            background-color: #00f0ff;
+            color: #000;
+            transform: scale(0.95);
+        }
+        #btn-rotate { grid-column: 2; grid-row: 1; }
+        #btn-left { grid-column: 1; grid-row: 2; }
+        #btn-down { grid-column: 2; grid-row: 2; }
+        #btn-right { grid-column: 3; grid-row: 2; }
+        
+        .hard-drop-container {
+            margin-top: 8px;
+        }
+        .btn-drop {
+            background: #ff0055;
+            color: white;
+            border: none;
+            padding: 8px 25px;
+            border-radius: 20px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: bold;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 🎯 TUGAS 5: Ganti nama judul game H2 di bawah ini -->
+    <h2>🧱 Modular Tetris Matrix</h2>
+    
+    <div id="gameInfo">
+        <span>Skor: <span id="scoreVal" style="color:#00f0ff;">0</span></span>
+        <span>Level: <span id="levelVal" style="color:#ff0055;">1</span></span>
+        <span>Status: <span id="statusVal" style="color:#ffc107;">IDLE</span></span>
+    </div>
+    
+    <canvas id="gameCanvas" width="200" height="400"></canvas>
+    
+    <button class="btn-start" onclick="startGame()">▶ Mulai / Restart</button>
+
+    <!-- Controls Virtual D-Pad -->
+    <div id="dpad">
+        <div id="btn-rotate" class="dpad-btn" onclick="handleInput('ROTATE')">🔄</div>
+        <div id="btn-left" class="dpad-btn" onclick="handleInput('LEFT')">⬅️</div>
+        <div id="btn-down" class="dpad-btn" onclick="handleInput('DOWN')">⬇️</div>
+        <div id="btn-right" class="dpad-btn" onclick="handleInput('RIGHT')">➡️</div>
+    </div>
+    <div class="hard-drop-container">
+        <button class="btn-drop" onclick="handleInput('DROP')">⚡ HARD DROP</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('scoreVal');
+        const levelEl = document.getElementById('levelVal');
+        const statusEl = document.getElementById('statusVal');
+
+        const BOARD_WIDTH = 10;
+        const BOARD_HEIGHT = 20;
+        
+        // 🎯 TUGAS 6: Ubah nilai BLOCK_SIZE dari 0 menjadi 20 (200px lebar canvas / 10 kolom = 20px)
+        const BLOCK_SIZE = 0;
+
+        // Definisi Bentuk Tetrimino & Matriks 2D
+        const SHAPES = {
+            'I': [[0,0,0,0], [1,1,1,1], [0,0,0,0], [0,0,0,0]],
+            'J': [[1,0,0], [1,1,1], [0,0,0]],
+            'L': [[0,0,1], [1,1,1], [0,0,0]],
+            'O': [[1,1], [1,1]],
+            'S': [[0,1,1], [1,1,0], [0,0,0]],
+            
+            // 🎯 TUGAS 7: Lengkapi matriks 3x3 untuk bentuk 'T' berikut ini:
+            // Ganti '?' dengan array: [[0,1,0], [1,1,1], [0,0,0]]
+            'T': '?',
+            
+            'Z': [[1,1,0], [0,1,1], [0,0,0]]
+        };
+
+        const COLORS = {
+            1: '#00f0ff', // Cyan (I)
+            2: '#0000ff', // Blue (J)
+            3: '#ffa500', // Orange (L)
+            4: '#ffff00', // Yellow (O)
+            5: '#00ff00', // Green (S)
+            6: '#a000f0', // Purple (T)
+            7: '#ff0000'  // Red (Z)
+        };
+
+        const PIECE_TYPES = ['I', 'J', 'L', 'O', 'S', 'T', 'Z'];
+
+        // ==========================================
+        // MANAJEMEN STATUS (STATE MANAGEMENT)
+        // ==========================================
+        let gameState = {
+            board: Array.from({ length: BOARD_HEIGHT }, () => Array(BOARD_WIDTH).fill(0)),
+            
+            // 🎯 TUGAS 8: Setel nilai skor awal ke 0 dan level awal ke 1
+            score: '?',
+            level: '?',
+            linesCleared: 0,
+            status: 'IDLE',
+            currentPiece: null
+        };
+
+        let gameLoopTimer = null;
+
+        // ==========================================
+        // ALGORITMA ROTASI MATRIKS 2D (90 Derajat Clockwise)
+        // ==========================================
+        function rotateMatrix(matrix) {
+            const N = matrix.length;
+            let result = Array.from({ length: N }, () => Array(N).fill(0));
+            for (let r = 0; r < N; r++) {
+                for (let c = 0; c < N; c++) {
+                    // 🎯 TUGAS 9: Lengkapi rumus pemetaan rotasi matriks 90 derajat searah jarum jam:
+                    // Ubah '?' menjadi: matrix[N - 1 - c][r]
+                    result[r][c] = '?';
+                }
+            }
+            return result;
+        }
+
+        // ==========================================
+        // ALGORITMA DETEKSI BENTURAN (COLLISION DETECTION)
+        // ==========================================
+        function isValidMove(piece, offsetX, offsetY, targetShape = piece.shape) {
+            for (let r = 0; r < targetShape.length; r++) {
+                for (let c = 0; c < targetShape[r].length; c++) {
+                    if (targetShape[r][c] !== 0) {
+                        let newX = piece.x + c + offsetX;
+                        let newY = piece.y + r + offsetY;
+
+                        // 🎯 TUGAS 10: Batas Dinding Kiri (Ubah '?' dengan 0)
+                        if (newX < '?') return false;
+
+                        // 🎯 TUGAS 11: Batas Dinding Kanan (Ubah '?' dengan BOARD_WIDTH)
+                        if (newX >= '?') return false;
+
+                        // 🎯 TUGAS 12: Batas Lantai/Dasar (Ubah '?' dengan BOARD_HEIGHT)
+                        if (newY >= '?') return false;
+
+                        // 🎯 TUGAS 13: Tabrakan dengan blok lain yang sudah terkunci di papan
+                        // Hapus tanda komentar (/* dan */) di blok percabangan if di bawah ini:
+                        /*
+                        if (newY >= 0 && gameState.board[newY][newX] !== 0) {
+                            return false;
+                        }
+                        */
+                    }
+                }
+            }
+            return true;
+        }
+
+        // ==========================================
+        // LOGIKA PERGERAKAN & ROTASI BLOK
+        // ==========================================
+        function movePiece(dx, dy) {
+            if (isValidMove(gameState.currentPiece, dx, dy)) {
+                // 🎯 TUGAS 14: Tambahkan dx ke koordinat x blok aktif
+                // Ubah '?' menjadi: dx
+                gameState.currentPiece.x += '?';
+                
+                // 🎯 TUGAS 15: Tambahkan dy ke koordinat y blok aktif
+                // Ubah '?' menjadi: dy
+                gameState.currentPiece.y += '?';
+                return true;
+            } else if (dy > 0) {
+                // Jika bentrok saat bergerak ke bawah, kunci blok ke papan
+                lockPieceToBoard();
+                clearLines();
+                spawnNewPiece();
+                return false;
+            }
+            return false;
+        }
+
+        function rotatePiece() {
+            const rotated = rotateMatrix(gameState.currentPiece.shape);
+            if (isValidMove(gameState.currentPiece, 0, 0, rotated)) {
+                gameState.currentPiece.shape = rotated;
+            }
+        }
+
+        function hardDrop() {
+            while (movePiece(0, 1)) {
+                // Turun cepat hingga menyentuh batas bawah / blok lain
+            }
+        }
+
+        // ==========================================
+        // PENGUNCIAN BLOK & PENGHAPUSAN BARIS (LINE CLEARING)
+        // ==========================================
+        function lockPieceToBoard() {
+            const piece = gameState.currentPiece;
+            for (let r = 0; r < piece.shape.length; r++) {
+                for (let c = 0; c < piece.shape[r].length; c++) {
+                    if (piece.shape[r][c] !== 0) {
+                        let boardY = piece.y + r;
+                        let boardX = piece.x + c;
+                        if (boardY >= 0) {
+                            // 🎯 TUGAS 16: Salin ID warna blok ke dalam matriks gameState.board
+                            // Hapus tanda (//) di baris bawah ini:
+                            // gameState.board[boardY][boardX] = piece.colorId;
+                        }
+                    }
+                }
+            }
+        }
+
+        function clearLines() {
+            let linesInThisTurn = 0;
+            
+            for (let r = BOARD_HEIGHT - 1; r >= 0; r--) {
+                // 🎯 TUGAS 17: Cek apakah seluruh sel dalam baris terisi penuh (bukan 0)
+                // Ubah '?' menjadi: cell !== 0
+                if (gameState.board[r].every(cell => '?')) {
+                    // Hapus baris r yang penuh
+                    gameState.board.splice(r, 1);
+                    // Tambahkan baris kosong baru di paling atas
+                    gameState.board.unshift(Array(BOARD_WIDTH).fill(0));
+                    linesInThisTurn++;
+                    r++; // Periksa ulang indeks r setelah pergeseran baris
+                }
+            }
+
+            if (linesInThisTurn > 0) {
+                // 🎯 TUGAS 18: Tambahkan skor sebesar 100 dikali jumlah baris yang hancur
+                // Ubah '?' menjadi: 100 * linesInThisTurn
+                gameState.score += '?';
+                
+                gameState.linesCleared += linesInThisTurn;
+                gameState.level = Math.floor(gameState.linesCleared / 10) + 1;
+            }
+        }
+
+        function spawnNewPiece() {
+            const randomType = PIECE_TYPES[Math.floor(Math.random() * PIECE_TYPES.length)];
+            const colorId = PIECE_TYPES.indexOf(randomType) + 1;
+            
+            gameState.currentPiece = {
+                shape: SHAPES[randomType],
+                colorId: colorId,
+                x: Math.floor((BOARD_WIDTH - SHAPES[randomType][0].length) / 2),
+                y: 0
+            };
+
+            // Deteksi Game Over saat blok baru yang dimunculkan langsung mengalami benturan
+            if (!isValidMove(gameState.currentPiece, 0, 0)) {
+                setGameOver();
+            }
+        }
+
+        // ==========================================
+        // INPUT HANDLER & PENGGAMBARAN (RENDER)
+        // ==========================================
+        function handleInput(action) {
+            if (gameState.status !== 'PLAYING') return;
+
+            if (action === 'LEFT') movePiece(-1, 0);
+            if (action === 'RIGHT') movePiece(1, 0);
+            if (action === 'DOWN') movePiece(0, 1);
+            if (action === 'ROTATE') rotatePiece();
+            if (action === 'DROP') hardDrop();
+            
+            drawGame();
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (gameState.status !== 'PLAYING') return;
+
+            if (e.key === 'ArrowLeft') handleInput('LEFT');
+            if (e.key === 'ArrowRight') handleInput('RIGHT');
+            if (e.key === 'ArrowDown') handleInput('DOWN');
+            if (e.key === 'ArrowUp') handleInput('ROTATE');
+            if (e.code === 'Space') handleInput('DROP');
+
+            if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code)) {
+                e.preventDefault();
+            }
+        });
+
+        function drawGame() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Gambar Matriks Papan Game
+            for (let r = 0; r < BOARD_HEIGHT; r++) {
+                for (let c = 0; c < BOARD_WIDTH; c++) {
+                    if (gameState.board[r][c] !== 0) {
+                        ctx.fillStyle = COLORS[gameState.board[r][c]] || '#ffffff';
+                        ctx.fillRect(c * BLOCK_SIZE, r * BLOCK_SIZE, BLOCK_SIZE - 1, BLOCK_SIZE - 1);
+                    } else {
+                        // Outline Grid Tipis
+                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+                        ctx.strokeRect(c * BLOCK_SIZE, r * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+                    }
+                }
+            }
+
+            // Gambar Blok Aktif yang Sedang Jatuh/Digerakkan
+            if (gameState.currentPiece) {
+                const { shape, colorId, x, y } = gameState.currentPiece;
+                ctx.fillStyle = COLORS[colorId];
+                for (let r = 0; r < shape.length; r++) {
+                    for (let c = 0; c < shape[r].length; c++) {
+                        if (shape[r][c] !== 0) {
+                            ctx.fillRect((x + c) * BLOCK_SIZE, (y + r) * BLOCK_SIZE, BLOCK_SIZE - 1, BLOCK_SIZE - 1);
+                        }
+                    }
+                }
+            }
+
+            // Update Teks Informasi Game
+            scoreEl.innerText = gameState.score;
+            levelEl.innerText = gameState.level;
+            statusEl.innerText = gameState.status;
+            statusEl.style.color = (gameState.status === 'PLAYING') ? '#00f0ff' : '#ff0055';
+        }
+
+        function setGameOver() {
+            gameState.status = 'GAME_OVER';
+            clearInterval(gameLoopTimer);
+            drawGame();
+
+            ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#ff0055";
+            ctx.font = "bold 18px Space Grotesk";
+            ctx.textAlign = "center";
+            ctx.fillText("SYSTEM OVERLOAD", canvas.width / 2, canvas.height / 2 - 10);
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "12px Space Grotesk";
+            ctx.fillText("Matriks Penuh! Game Over.", canvas.width / 2, canvas.height / 2 + 20);
+        }
+
+        function startGame() {
+            gameState.board = Array.from({ length: BOARD_HEIGHT }, () => Array(BOARD_WIDTH).fill(0));
+            gameState.score = 0;
+            gameState.level = 1;
+            gameState.linesCleared = 0;
+            gameState.status = 'PLAYING';
+
+            // 🎯 TUGAS 19: Panggil fungsi spawnNewPiece() di bawah ini untuk memunculkan blok pertama!
+            // Hapus tanda (//) di baris bawah ini:
+            // spawnNewPiece();
+
+            if (gameLoopTimer) clearInterval(gameLoopTimer);
+
+            window.focus();
+
+            // 🎯 TUGAS 20: Ubah interval waktu pergerakan otomatis blok dari 1000ms menjadi 400ms!
+            gameLoopTimer = setInterval(() => {
+                if (gameState.status === 'PLAYING') {
+                    movePiece(0, 1);
+                    drawGame();
+                }
+            }, 1000);
+
+            drawGame();
+        }
+
+        drawGame();
+    </script>
+</body>
+</html>
+</textarea>
+            <div class="action-bar">
+                <button class="btn-run" onclick="runCode()">✨ Sinkronisasi Kode</button>
+            </div>
+        </div>
+
+        <div class="panel preview-panel" id="preview-panel">
+            <div class="panel-header">
+                <div>🎮 Output Sistem</div>
+                <button class="btn-fullscreen" id="fs-btn" onclick="toggleFullscreen()" title="Buka Mode Layar Penuh">🔲 Layar Penuh</button>
+            </div>
+            <iframe id="preview-frame"></iframe>
+        </div>
+
+    </div>
+
+    <script>
+        let urlAktif = null;
+
+        function runCode() {
+            const htmlCode = document.getElementById('code-editor').value;
+            const iframe = document.getElementById('preview-frame');
+            
+            const blob = new Blob([htmlCode], { type: 'text/html;charset=utf-8' });
+            
+            if (urlAktif) {
+                URL.revokeObjectURL(urlAktif);
+            }
+            
+            urlAktif = URL.createObjectURL(blob);
+            iframe.src = urlAktif;
+            
+            // Auto focus ke iframe setelah sinkronisasi agar event keyboard (panah & spasi) langsung berfungsi
+            iframe.onload = () => {
+                iframe.contentWindow.focus();
+            };
+        }
+
+        // Logika Mode Fullscreen
+        function toggleFullscreen() {
+            const panel = document.getElementById('preview-panel');
+            const btn = document.getElementById('fs-btn');
+            
+            if (!document.fullscreenElement) {
+                if (panel.requestFullscreen) {
+                    panel.requestFullscreen();
+                } else if (panel.webkitRequestFullscreen) { /* Safari */
+                    panel.webkitRequestFullscreen();
+                } else if (panel.msRequestFullscreen) { /* IE11 */
+                    panel.msRequestFullscreen();
+                }
+                btn.innerHTML = "🔳 Perkecil Layar";
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) { /* Safari */
+                    document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) { /* IE11 */
+                    document.msExitFullscreen();
+                }
+                btn.innerHTML = "🔲 Layar Penuh";
+            }
+        }
+
+        // Event listener saat user keluar dari fullscreen
+        document.addEventListener('fullscreenchange', () => {
+            const btn = document.getElementById('fs-btn');
+            if (!document.fullscreenElement) {
+                btn.innerHTML = "🔲 Layar Penuh";
+            }
+        });
+
+        // Pengaturan tombol Tab pada textarea
+        const editor = document.getElementById('code-editor');
+        editor.addEventListener('keydown', function(e) {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const start = this.selectionStart;
+                const end = this.selectionEnd;
+
+                this.value = this.value.substring(0, start) + "    " + this.value.substring(end);
+                this.selectionStart = this.selectionEnd = start + 4;
+            }
+        });
+
+        window.onload = runCode;
+    </script>
+
+</body>
+</html>

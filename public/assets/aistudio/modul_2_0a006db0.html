@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LKPD Interaktif: Modul 2 - Efisiensi Kode & Detail Visual</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800&family=Fira+Code:wght@400;500&display=swap');
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: #f8f9fc;
+            color: #2d3748;
+            height: 100vh;
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background-color: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 12px 25px;
+            box-shadow: 0 4px 30px rgba(0, 150, 255, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+
+        header h1 {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: #1a202c;
+            background: linear-gradient(135deg, #00c6ff, #0072ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .badge {
+            background: linear-gradient(135deg, #e0f2fe, #bae6fd);
+            color: #0369a1;
+            padding: 6px 16px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-weight: 800;
+            box-shadow: 0 2px 10px rgba(0, 114, 255, 0.1);
+        }
+
+        .mobile-tabs {
+            display: none;
+            background: #ffffff;
+            padding: 8px 12px;
+            gap: 8px;
+            border-bottom: 1px solid #e2e8f0;
+            position: sticky;
+            top: 0;
+            z-index: 20;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #cbd5e1;
+            background: #f1f5f9;
+            color: #475569;
+            border-radius: 12px;
+            font-weight: 700;
+            font-family: 'Nunito', sans-serif;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+            color: white;
+            border-color: transparent;
+            box-shadow: 0 4px 12px rgba(79, 172, 254, 0.3);
+        }
+
+        .workspace {
+            display: flex;
+            flex: 1;
+            padding: 20px;
+            gap: 20px;
+            overflow: hidden;
+        }
+
+        .panel {
+            background: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 150, 255, 0.04);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid #f1f5f9;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .panel-header {
+            padding: 12px 20px;
+            background: #ffffff;
+            border-bottom: 2px dashed #f1f5f9;
+            font-weight: 800;
+            font-size: 1rem;
+            color: #4a5568;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .instruction-panel {
+            flex: 1;
+            overflow-y: auto;
+        }
+        
+        .instruction-content {
+            padding: 20px;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .instruction-content h3 {
+            margin-bottom: 12px;
+            color: #2b6cb0;
+        }
+
+        .instruction-content p {
+            margin-bottom: 12px;
+            color: #4a5568;
+        }
+
+        .task-box {
+            background: #f0fdf4;
+            border-left: 4px solid #4ade80;
+            padding: 12px;
+            border-radius: 0 10px 10px 0;
+            margin-top: 15px;
+        }
+
+        .editor-panel {
+            flex: 1.2;
+        }
+
+        textarea {
+            flex: 1;
+            width: 100%;
+            border: none;
+            resize: none;
+            padding: 20px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.95rem;
+            background-color: #fafbfc;
+            color: #1e293b;
+            outline: none;
+            line-height: 1.5;
+        }
+
+        textarea:focus {
+            background-color: #ffffff;
+            box-shadow: inset 0 0 0 2px #e0f2fe;
+        }
+
+        .action-bar {
+            padding: 12px 20px;
+            background: #ffffff;
+            border-top: 1px solid #f1f5f9;
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .btn {
+            border: none;
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-weight: 800;
+            font-family: 'Nunito', sans-serif;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-run {
+            background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+            color: white;
+            box-shadow: 0 6px 16px rgba(79, 172, 254, 0.3);
+        }
+
+        .btn-run:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(79, 172, 254, 0.4);
+        }
+
+        .btn-reset {
+            background: #f1f5f9;
+            color: #64748b;
+        }
+
+        .btn-reset:hover {
+            background: #e2e8f0;
+            color: #334155;
+        }
+
+        .btn-fullscreen {
+            background: #e0f2fe;
+            color: #0369a1;
+            padding: 4px 12px;
+            font-size: 0.8rem;
+            border-radius: 8px;
+        }
+
+        .preview-panel {
+            flex: 1;
+            position: relative;
+        }
+
+        iframe {
+            flex: 1;
+            width: 100%;
+            border: none;
+            background-color: #ffffff;
+        }
+
+        .preview-panel.fullscreen-mode {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 999;
+            border-radius: 0;
+        }
+
+        @media (max-width: 768px) {
+            header {
+                flex-direction: column;
+                gap: 6px;
+                text-align: center;
+                padding: 10px;
+            }
+
+            header h1 {
+                font-size: 1.1rem;
+            }
+
+            .mobile-tabs {
+                display: flex;
+            }
+
+            .workspace {
+                flex-direction: column;
+                padding: 10px;
+                gap: 0;
+                height: calc(100dvh - 120px);
+            }
+
+            .panel {
+                display: none;
+                height: 100%;
+                border-radius: 16px;
+            }
+
+            .panel.active-tab {
+                display: flex;
+            }
+
+            textarea {
+                font-size: 16px !important;
+                padding: 15px;
+            }
+
+            .action-bar {
+                padding: 10px;
+            }
+
+            .btn-run {
+                flex: 1;
+            }
+        }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>CodeQuest: Canvas Edition</h1>
+        <div class="badge">🚀 Modul 2: Efisiensi Kode & Detail Visual</div>
+    </header>
+
+    <div class="mobile-tabs">
+        <button id="tab-btn-instruction" class="tab-btn active" onclick="switchTab('instruction')">📖 Materi</button>
+        <button id="tab-btn-editor" class="tab-btn" onclick="switchTab('editor')">💻 Editor</button>
+        <button id="tab-btn-preview" class="tab-btn" onclick="switchTab('preview')">🎮 Hasil</button>
+    </div>
+
+    <div class="workspace">
+        
+        <!-- Panel 1: Instruksi & Materi -->
+        <div id="panel-instruction" class="panel instruction-panel active-tab">
+            <div class="panel-header">📚 Pokok Bahasan Modul 2 (20 Tantangan)</div>
+            <div class="instruction-content">
+                <h3>Efisiensi Kode & Detail Visual</h3>
+                <p>Selamat datang di Modul 2! Hari ini kamu akan merapikan kode, menambahkan batas garis visual, serta memanfaatkan fungsi modular dan perulangan.</p>
+                
+                <p><strong>3 Pilar Utama Pembahasan:</strong></p>
+                <ul>
+                    <li>🎨 <strong>Detail Visual Garis:</strong> Menggunakan <code>lineWidth</code>, <code>strokeStyle</code>, dan <code>stroke()</code>.</li>
+                    <li>🔄 <strong>Perulangan (For Loop):</strong> Menggambar ratusan objek secara efisien tanpa pengulangan kode.</li>
+                    <li>📦 <strong>Fungsi Modular:</strong> Membuat fungsi <code>gambarPohon(x, y)</code> sebagai cetakan reusable.</li>
+                </ul>
+
+                <div class="task-box">
+                    <strong>🎯 Misi Kamu:</strong><br>
+                    Selesaikan <strong>🎯 TUGAS 1 sampai TUGAS 20</strong> di editor kode secara berurutan, lalu klik <strong>"✨ Jalankan Kode"</strong> untuk melihat hasil karyamu!
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel 2: Editor Kode -->
+        <div id="panel-editor" class="panel editor-panel">
+            <div class="panel-header">
+                <span>💻 Area Coding</span>
+                <span style="font-size: 0.75rem; color: #94a3b8; font-weight: normal;">💾 Otomatis Tersimpan</span>
+            </div>
+
+            <textarea id="code-editor" spellcheck="false" autocorrect="off" autocapitalize="off" autocomplete="off"></textarea>
+            
+            <div class="action-bar">
+                <button class="btn btn-reset" onclick="resetCode()" title="Kembalikan kode ke awal">🔄 Reset</button>
+                <button class="btn btn-run" onclick="handleRunClick()">✨ Jalankan Kode</button>
+            </div>
+        </div>
+
+        <!-- Panel 3: Preview Hasil -->
+        <div id="panel-preview" class="panel preview-panel">
+            <div class="panel-header">
+                <span>🎮 Hasil Visual</span>
+                <button class="btn btn-fullscreen" onclick="toggleFullscreen()">⛶ Layar Penuh</button>
+            </div>
+            <iframe id="preview-frame"></iframe>
+        </div>
+
+    </div>
+
+    <script>
+        const editor = document.getElementById('code-editor');
+        const STORAGE_KEY = 'codequest_modul2_20tugas_saved_code';
+
+        const defaultCode = `<!DOCTYPE html>
+<html lang="id">
+<head>
+    <title>Modul 2 - 20 Tantangan Canvas</title>
+    <style>
+        /* 🎯 TUGAS 1: Ubah latar belakang body halaman web.
+           Ganti '#0f172a' menjadi '#1e1b4b' (indigo gelap) atau warna pilihanmu */
+        body {
+            background-color: #0f172a;
+            text-align: center;
+            font-family: Arial, sans-serif;
+        }
+
+        /* 🎯 TUGAS 2: Ubah warna teks judul h2.
+           Ganti 'white' menjadi 'cyan' atau '#38bdf8' */
+        h2 {
+            color: white;
+        }
+
+        /* 🎯 TUGAS 3 (Detail Visual Canvas): 
+           Beri border canvas yang lebih tebal! Ubah '2px solid white' menjadi '4px solid #38bdf8' */
+        canvas {
+            border: 2px solid white;
+            margin-top: 10px;
+            box-shadow: 0px 0px 25px rgba(56, 189, 248, 0.3);
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Pemandangan Malam Modul 2 - [NAMA SISWA]</h2>
+    <canvas id="kanvasMalam" width="600" height="400"></canvas>
+
+    <script>
+        const canvas = document.getElementById('kanvasMalam');
+        const ctx = canvas.getContext('2d');
+
+        // ==========================================
+        // BAGIAN 1: LATAR BELAKANG LANGIT
+        // ==========================================
+        
+        // 🎯 TUGAS 4: Ubah warna langit malam! 
+        // Ganti '#090d16' menjadi '#030712' atau 'midnightblue'
+        ctx.fillStyle = '#090d16'; 
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+
+        // ==========================================
+        // BAGIAN 2: BULAN & CAHAYA (DETAIL VISUAL: STROKE & LINEWIDTH)
+        // ==========================================
+        ctx.beginPath();
+        
+        // 🎯 TUGAS 5: Atur posisi X bulan ke sebelah kanan atas (Ubah 150 jadi 480)
+        let posisiX_Bulan = 150;
+        
+        // 🎯 TUGAS 6: Atur posisi Y bulan agak ke atas (Ubah 200 jadi 90)
+        let posisiY_Bulan = 200;
+        
+        // 🎯 TUGAS 7: Perbesar radius bulan dari 20 menjadi 45
+        let radiusBulan = 20;
+
+        ctx.arc(posisiX_Bulan, posisiY_Bulan, radiusBulan, 0, Math.PI * 2);
+        
+        // 🎯 TUGAS 8: Ubah warna isi bulan dari 'gray' menjadi kuning terang ('#fef08a')
+        ctx.fillStyle = 'gray'; 
+        ctx.fill();
+
+        // 🎯 TUGAS 9 (Detail Visual): Beri ketebalan garis tepi/cahaya bulan!
+        // Ubah lineWidth dari 0 menjadi 8
+        ctx.lineWidth = 0; 
+        
+        // 🎯 TUGAS 10 (Detail Visual): Beri warna garis tepi cahaya bulan.
+        // Ubah 'transparent' menjadi 'rgba(254, 240, 138, 0.4)'
+        ctx.strokeStyle = 'transparent'; 
+        
+        // 🎯 TUGAS 11: Aktifkan garis tepi bulan dengan memanggil fungsi stroke!
+        // (Hapus tanda garis miring ganda // di bawah ini)
+        // ctx.stroke();
+
+
+        // ==========================================
+        // BAGIAN 3: PERULANGAN (FOR LOOP) BINTANG
+        // ==========================================
+        
+        // 🎯 TUGAS 12: Ubah warna bintang dari 'red' menjadi 'white'
+        ctx.fillStyle = 'red';
+
+        // 🎯 TUGAS 13 (Efisiensi Kode - Loop): Langit masih sepi. 
+        // Ubah jumlahBintang dari 5 menjadi 150 agar loop menggambar 150 bintang!
+        let jumlahBintang = 5; 
+
+        for (let i = 0; i < jumlahBintang; i++) {
+            let x = Math.random() * canvas.width;
+            let y = Math.random() * (canvas.height - 120); 
+            
+            // 🎯 TUGAS 14: Ubah ukuran bintang maksimal dari 10 menjadi 2.5
+            let ukuranBintang = Math.random() * 10; 
+            
+            ctx.fillRect(x, y, ukuranBintang, ukuranBintang);
+        }
+
+
+        // ==========================================
+        // BAGIAN 4: TANAH & GARIS PEMBATAS (DETAIL VISUAL)
+        // ==========================================
+        
+        // 🎯 TUGAS 15: Ubah warna tanah dari 'brown' menjadi hijau tua '#14532d'
+        ctx.fillStyle = 'brown'; 
+        ctx.fillRect(0, canvas.height - 80, canvas.width, 80);
+
+        // Menambahkan garis pembatas bukit (Detail Visual)
+        ctx.beginPath();
+        ctx.moveTo(0, canvas.height - 80);
+        ctx.lineTo(canvas.width, canvas.height - 80);
+        
+        // 🎯 TUGAS 16 (Detail Visual): Beri tebal garis pembatas tanah (Ubah 0 jadi 3)
+        ctx.lineWidth = 0;
+        
+        // 🎯 TUGAS 17 (Detail Visual): Beri warna garis terang '#22c55e' lalu aktifkan stroke!
+        ctx.strokeStyle = 'transparent';
+        ctx.stroke();
+
+
+        // ==========================================
+        // BAGIAN 5: FUNGSI MODULAR (gambarPohon)
+        // ==========================================
+        
+        // Cetakan Fungsi Reusable
+        function gambarPohon(x, y) {
+            // Batang Pohon
+            ctx.fillStyle = '#422006';
+            ctx.fillRect(x - 8, y, 16, 35);
+
+            // Garis tepi batang
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = '#1c0a00';
+            ctx.strokeRect(x - 8, y, 16, 35);
+
+            // Daun Pohon (Segitiga)
+            ctx.beginPath();
+            ctx.moveTo(x - 25, y);
+            ctx.lineTo(x, y - 55);
+            ctx.lineTo(x + 25, y);
+            ctx.closePath();
+            
+            ctx.fillStyle = '#15803d';
+            ctx.fill();
+
+            // 🎯 TUGAS 18 (Detail Visual Daun): 
+            // Atur ketebalan garis tepi daun (lineWidth = 2) dan warnanya (strokeStyle = '#166534')
+            ctx.lineWidth = 0;
+            ctx.strokeStyle = 'transparent';
+            ctx.stroke();
+        }
+
+
+        // ==========================================
+        // BAGIAN 6: PEMANGGILAN FUNGSI MODULAR & FOR LOOP
+        // ==========================================
+        
+        // 🎯 TUGAS 19 (Pemanggilan Fungsi Modular):
+        // Hapus tanda // di bawah ini untuk menanam 3 pohon modular manual!
+        // gambarPohon(100, canvas.height - 80);
+        // gambarPohon(180, canvas.height - 75);
+        // gambarPohon(500, canvas.height - 80);
+
+        // 🎯 TUGAS 20 (TANTANGAN: Kombinasi Perulangan + Fungsi):
+        // Tulis perulangan 'for' di bawah ini untuk menanam deretan pohon otomatis setiap jarak 70px!
+        // Petunjuk: for (let x = 40; x < canvas.width; x += 70) { gambarPohon(x, canvas.height - 80); }
+
+    <\/script>
+</body>
+</html>`;
+
+        function loadSavedCode() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            editor.value = saved ? saved : defaultCode;
+        }
+
+        function runCode() {
+            const htmlCode = editor.value;
+            const iframe = document.getElementById('preview-frame');
+            const blob = new Blob([htmlCode], { type: 'text/html' });
+            iframe.src = URL.createObjectURL(blob);
+            localStorage.setItem(STORAGE_KEY, htmlCode);
+        }
+
+        function resetCode() {
+            if (confirm('Apakah kamu yakin ingin mengembalikan kode ke awal? Semua perubahanmu akan direset.')) {
+                editor.value = defaultCode;
+                localStorage.removeItem(STORAGE_KEY);
+                runCode();
+            }
+        }
+
+        function handleRunClick() {
+            runCode();
+            if (window.innerWidth <= 768) {
+                switchTab('preview');
+            }
+        }
+
+        function switchTab(tabName) {
+            const buttons = document.querySelectorAll('.tab-btn');
+            const panels = document.querySelectorAll('.panel');
+
+            buttons.forEach(btn => btn.classList.remove('active'));
+            panels.forEach(panel => panel.classList.remove('active-tab'));
+
+            const activeBtn = document.getElementById('tab-btn-' + tabName);
+            const activePanel = document.getElementById('panel-' + tabName);
+
+            if (activeBtn) activeBtn.classList.add('active');
+            if (activePanel) activePanel.classList.add('active-tab');
+
+            if (tabName === 'preview') runCode();
+        }
+
+        function toggleFullscreen() {
+            const previewPanel = document.getElementById('panel-preview');
+            previewPanel.classList.toggle('fullscreen-mode');
+        }
+
+        editor.addEventListener('keydown', function(e) {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const start = this.selectionStart;
+                const end = this.selectionEnd;
+                this.value = this.value.substring(0, start) + "  " + this.value.substring(end);
+                this.selectionStart = this.selectionEnd = start + 2;
+            }
+
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                handleRunClick();
+            }
+        });
+
+        window.onload = function() {
+            loadSavedCode();
+            runCode();
+        };
+    </script>
+</body>
+</html>

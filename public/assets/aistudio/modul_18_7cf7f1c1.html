@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LKPD Interaktif: Modul 18 Prince of Persia (J2ME)</title>
+    <style>
+        /* Import Font Modern, Minimalis & Retro */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Space+Grotesk:wght@500;700&family=Fira+Code:wght@400;500&display=swap');
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9fa;
+            color: #212529;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background-color: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            padding: 15px 30px;
+            border-bottom: 1px solid #e9ecef;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+
+        header h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #d35400, #c0392b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .badge {
+            background: #ffffff;
+            color: #d35400;
+            border: 1px solid #e67e22;
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            box-shadow: 0 4px 10px rgba(211, 84, 0, 0.15);
+            letter-spacing: 0.5px;
+        }
+
+        .workspace {
+            display: flex;
+            flex: 1;
+            padding: 20px;
+            gap: 20px;
+            overflow: hidden;
+            background-image: radial-gradient(#dee2e6 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        /* Responsive Workspace untuk Mobile */
+        @media (max-width: 768px) {
+            .workspace {
+                flex-direction: column;
+                overflow-y: auto;
+            }
+            .panel {
+                min-height: 400px;
+            }
+        }
+
+        .panel {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid #e9ecef;
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+
+        .panel:hover {
+            box-shadow: 0 12px 40px rgba(211, 84, 0, 0.12);
+            border-color: #e67e22;
+        }
+
+        .panel-header {
+            padding: 15px 25px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            font-weight: 700;
+            font-size: 1.05rem;
+            font-family: 'Space Grotesk', sans-serif;
+            color: #495057;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .instruction-panel {
+            flex: 1;
+            overflow-y: auto;
+        }
+        
+        .instruction-content {
+            padding: 25px;
+            font-size: 0.95rem;
+            line-height: 1.7;
+            color: #495057;
+        }
+
+        .instruction-content h3 {
+            margin-bottom: 15px;
+            color: #d35400;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .instruction-content p {
+            margin-bottom: 15px;
+        }
+
+        .task-box {
+            background: rgba(211, 84, 0, 0.08);
+            border-left: 4px solid #d35400;
+            border-radius: 0 8px 8px 0;
+            padding: 15px;
+            margin-top: 20px;
+            color: #212529;
+            font-size: 0.9rem;
+        }
+
+        .editor-panel {
+            flex: 1.2;
+        }
+
+        textarea {
+            flex: 1;
+            width: 100%;
+            border: none;
+            resize: none;
+            padding: 20px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+            background-color: #f1f3f5;
+            color: #212529;
+            outline: none;
+            line-height: 1.6;
+            white-space: pre;
+            overflow-x: auto;
+            transition: background-color 0.2s ease;
+        }
+
+        textarea:focus {
+            background-color: #ffffff;
+            box-shadow: inset 0 0 0 2px #d35400;
+        }
+
+        .action-bar {
+            padding: 12px 25px;
+            background: #ffffff;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        button.btn-run {
+            background: linear-gradient(135deg, #d35400 0%, #c0392b 100%);
+            color: #ffffff;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(211, 84, 0, 0.3);
+        }
+
+        button.btn-run:hover {
+            box-shadow: 0 6px 20px rgba(192, 57, 43, 0.35);
+            transform: translateY(-2px);
+        }
+
+        .preview-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Pengaturan saat mode Fullscreen aktif */
+        .preview-panel:fullscreen {
+            background: #ffffff;
+            border-radius: 0;
+            border: none;
+        }
+        .preview-panel:-webkit-full-screen {
+            background: #ffffff;
+        }
+
+        /* Tombol Fullscreen */
+        .btn-fullscreen {
+            background: transparent;
+            color: #495057;
+            border: 1px solid #ced4da;
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .btn-fullscreen:hover {
+            background: #e9ecef;
+            color: #212529;
+            border-color: #adb5bd;
+        }
+
+        iframe {
+            flex: 1;
+            width: 100%;
+            border: none;
+            background-color: #ffffff;
+        }
+        
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f8f9fa; }
+        ::-webkit-scrollbar-thumb { background: #ced4da; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #adb5bd; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>⚡ CodeQuest: NEXUS</h1>
+        <div class="badge">🗡️ Modul 18: Prince of Persia (J2ME) - Acrobatic & Timed Engine</div>
+    </header>
+
+    <div class="workspace">
+        
+        <div class="panel instruction-panel">
+            <div class="panel-header" style="justify-content: flex-start;">📜 Modul Instruksi</div>
+            <div class="instruction-content">
+                <h3>Prince of Persia (J2ME): Acrobatic Platformer & Timed State Engine!</h3>
+                <p>Selamat datang di <strong>Modul 18 (Ultimate Milestone)</strong>, Developer Game! 🗡️ Mengembangkan simulasi *Prince of Persia* klasik versi J2ME adalah mahakarya tingkat lanjut. Game ini menguji penguasaan animasi status bersyarat (<em>Acrobatic State Machine</em>), manajemen waktu sesi global (<em>Countdown Timer Logic</em>), dan presisi interaksi lingkungan (<em>Hazard Detection & Ledge Grabbing</em>).</p>
+                <p>Selesaikan **20 Tugas Terstruktur** pada editor terminal untuk melengkapi logika game fisika pangeran ini.</p>
+                
+                <div class="task-box">
+                    <strong>🎯 Cara Mengerjakan:</strong><br>
+                    Cari petunjuk <strong>🎯 TUGAS 1</strong> sampai <strong>TUGAS 20</strong> pada editor kode di tengah. Baca instruksi komentar, lalu isi nilai atau hapus tanda tanya (<code>'?'</code>) dengan ekspresi JavaScript yang tepat.<br><br>
+                    Setelah selesai, klik <strong>"✨ Sinkronisasi Kode"</strong>. Kamu dapat mengontrol Pangeran menggunakan <strong>Keyboard PC</strong> (Panah/WASD) atau <strong>D-Pad Virtual</strong> pada layar preview!
+                </div>
+
+                <div style="margin-top:20px; font-size:0.85rem; background:#f8f9fa; padding:12px; border-radius:8px; border-left:3px solid #d35400;">
+                    <strong>💡 Konsep Kunci Modul 18:</strong><br>
+                    • <strong>State Machine Akrobatik:</strong> Mengatur status karakter yang saling terikat: <code>IDLE</code>, <code>RUNNING</code>, <code>JUMPING</code>, <code>LEDGE_GRAB</code>, <code>FALLING</code>, hingga <code>HURT</code>.<br>
+                    • <strong>Countdown Timer Logic:</strong> Menggunakan interval 1000ms untuk menghitung mundur durasi sesi permainan (<code>timeLeft--</code>). Jika waktu habis, pemicu status <code>TIME_UP</code> diaktifkan.<br>
+                    • <strong>Precision Ledge Detection:</strong> Mendeteksi saat pangeran berada tepat di tepi dinding tinggi untuk memicu status bergantung (<code>LEDGE_GRAB</code>).<br>
+                    • <strong>Environmental Hazard (Spike Trap):</strong> Deteksi tabrakan presisi dengan duri tajam di lantai yang mengurangi nyawa dan memicu *respawn*.
+                </div>
+            </div>
+        </div>
+
+        <div class="panel editor-panel">
+            <div class="panel-header" style="justify-content: flex-start;">💻 Terminal Interface</div>
+<textarea id="code-editor" spellcheck="false" wrap="off">
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <!-- 🎯 TUGAS 1: Ubah judul tab browser di bawah ini dengan namamu -->
+    <title>Modul 18 - Prince of Persia J2ME [NAMA SISWA]</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: #121214;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding-top: 15px;
+            touch-action: manipulation;
+        }
+        
+        #gameInfo {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 360px;
+            margin-bottom: 10px;
+            font-size: 0.85rem;
+            padding: 8px 12px;
+            box-sizing: border-box;
+            background: #1e1e24;
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+
+        /* 🎯 TUGAS 2: Ganti warna background kanvas menjadi nuansa kastil/dungeon, misal: '#1a162b' */
+        #gameCanvas {
+            background-color: #1a162b;
+            
+            /* 🎯 TUGAS 3: Ubah ketebalan border dari 3px menjadi 4px */
+            border: 3px solid #d35400;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(211, 84, 0, 0.25);
+            max-width: 100%;
+            height: auto;
+        }
+
+        .btn-start {
+            margin-top: 12px;
+            padding: 10px 20px;
+            /* 🎯 TUGAS 4: Ganti warna tombol dari #d35400 menjadi warna favoritmu (misal: '#e67e22') */
+            background-color: #d35400;
+            border: none;
+            border-radius: 8px;
+            color: #ffffff;
+            font-size: 0.95rem;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 4px 0 #a04000;
+            transition: all 0.1s;
+        }
+        .btn-start:active {
+            transform: translateY(3px);
+            box-shadow: none;
+        }
+
+        /* Controls Virtual D-Pad untuk Mobile & Touch */
+        .controls-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            margin-top: 10px;
+        }
+        .row-btn {
+            display: flex;
+            gap: 10px;
+        }
+        .nav-btn {
+            width: 50px;
+            height: 40px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: white;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            user-select: none;
+        }
+        .nav-btn:active {
+            background-color: #d35400;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 🎯 TUGAS 5: Ganti nama judul game H2 di bawah ini -->
+    <h2>🗡️ Prince of Persia: Timed State Engine</h2>
+    
+    <div id="gameInfo">
+        <span>Sisa Waktu: <span id="timeVal" style="color:#ffcc00;">01:00</span></span>
+        <span>Nyawa: <span id="livesVal" style="color:#ff0055;">❤️❤️❤️</span></span>
+        <span>State: <span id="stateVal" style="color:#00f0ff;">IDLE</span></span>
+    </div>
+    
+    <canvas id="gameCanvas" width="360" height="260"></canvas>
+    
+    <button class="btn-start" onclick="startGame()">▶ Mulai / Restart Sesi</button>
+
+    <!-- Controls Virtual D-Pad -->
+    <div class="controls-container">
+        <div class="nav-btn" onclick="handleTouchAction('UP')">⬆️ Lompat / Panjat</div>
+        <div class="row-btn">
+            <div class="nav-btn" onclick="handleTouchAction('LEFT')">⬅️</div>
+            <div class="nav-btn" onclick="handleTouchAction('STOP')">⏹️</div>
+            <div class="nav-btn" onclick="handleTouchAction('RIGHT')">➡️</div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const timeEl = document.getElementById('timeVal');
+        const livesEl = document.getElementById('livesVal');
+        const stateEl = document.getElementById('stateVal');
+
+        // ==========================================
+        // 1. MANAJEMEN STATUS TERPUSAT (STATE MANAGEMENT)
+        // ==========================================
+        const gameState = {
+            // 🎯 TUGAS 6: Setel durasi waktu awal misi (timeLeft) menjadi 60 detik
+            timeLeft: '?',
+            score: 0,
+            
+            // 🎯 TUGAS 7: Setel jumlah nyawa awal pangeran (lives) menjadi 3
+            lives: '?',
+            
+            // 🎯 TUGAS 8: Setel status awal permainan menjadi 'PLAYING'
+            status: '?' // PLAYING, PAUSED, GAME_OVER, TIME_UP, WIN
+        };
+
+        const prince = {
+            x: 30,
+            y: 180,
+            width: 20,
+            height: 38,
+            dx: 0,
+            dy: 0,
+            speed: 3,
+            
+            // 🎯 TUGAS 9: Setel status awal gerakan pangeran (state) menjadi 'IDLE'
+            state: '?', // IDLE, RUNNING, JUMPING, LEDGE_GRAB, HURT, FALLING
+            facing: 'RIGHT',
+            isGrounded: false
+        };
+
+        const gravity = 0.45;
+        const spikes = [
+            { x: 130, y: 225, width: 45, height: 15 },
+            { x: 230, y: 225, width: 45, height: 15 }
+        ];
+
+        const platforms = [
+            { x: 0, y: 240, width: 360, height: 20 },   // Lantai Utama
+            { x: 100, y: 175, width: 75, height: 12 },  // Platform Gantung 1
+            { x: 210, y: 125, width: 85, height: 12 }   // Platform Gantung 2 (Ledge Target)
+        ];
+
+        const exitGate = { x: 260, y: 85, width: 25, height: 40 };
+
+        let sessionTimer = null;
+        let animationFrameId = null;
+
+        // ==========================================
+        // 2. FUNGSI GLOBAL TIMER (COUNTDOWN TIMER LOGIC)
+        // ==========================================
+        function startSessionTimer() {
+            if (sessionTimer) clearInterval(sessionTimer);
+            
+            sessionTimer = setInterval(() => {
+                if (gameState.status !== 'PLAYING') return;
+
+                // 🎯 TUGAS 10: Kurangi durasi waktu gameState.timeLeft sebanyak 1 setiap detik
+                // Ubah '?' menjadi: gameState.timeLeft--
+                '?';
+
+                // Percabangan Waktu Habis
+                // 🎯 TUGAS 11: Cek apakah gameState.timeLeft kurang dari atau sama dengan 0
+                if ('?') {
+                    gameState.timeLeft = 0;
+                    
+                    // 🎯 TUGAS 12: Setel gameState.status menjadi 'TIME_UP'
+                    gameState.status = '?';
+                    clearInterval(sessionTimer);
+                }
+            }, 1000);
+        }
+
+        // ==========================================
+        // 3. EVENT LISTENER KONTROL DENGAN STATE CHECK
+        // ==========================================
+        window.addEventListener('keydown', (e) => {
+            if (gameState.status !== 'PLAYING') return;
+
+            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+                prince.dx = -prince.speed;
+                
+                // 🎯 TUGAS 13: Setel arah hadap pangeran (prince.facing) menjadi 'LEFT'
+                prince.facing = '?';
+                if (prince.isGrounded) prince.state = 'RUNNING';
+            } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+                prince.dx = prince.speed;
+                prince.facing = 'RIGHT';
+                if (prince.isGrounded) prince.state = 'RUNNING';
+            } else if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W' || e.key === ' ') {
+                if (prince.state === 'LEDGE_GRAB') {
+                    // Panjat Naik dari Tepi Tebing
+                    prince.y -= 42;
+                    prince.x += (prince.facing === 'RIGHT') ? 15 : -15;
+                    prince.state = 'IDLE';
+                } else if (prince.isGrounded) {
+                    // 🎯 TUGAS 14: Setel impuls kecepatan vertikal lompat prince.dy menjadi -9
+                    prince.dy = '?';
+                    prince.state = 'JUMPING';
+                    prince.isGrounded = false;
+                }
+            }
+
+            if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(e.code)) {
+                e.preventDefault();
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            if (['ArrowLeft', 'a', 'A', 'ArrowRight', 'd', 'D'].includes(e.key)) {
+                prince.dx = 0;
+                if (prince.isGrounded) prince.state = 'IDLE';
+            }
+        });
+
+        function handleTouchAction(action) {
+            if (gameState.status !== 'PLAYING') return;
+            if (action === 'LEFT') {
+                prince.dx = -prince.speed;
+                prince.facing = 'LEFT';
+                if (prince.isGrounded) prince.state = 'RUNNING';
+            } else if (action === 'RIGHT') {
+                prince.dx = prince.speed;
+                prince.facing = 'RIGHT';
+                if (prince.isGrounded) prince.state = 'RUNNING';
+            } else if (action === 'STOP') {
+                prince.dx = 0;
+                if (prince.isGrounded) prince.state = 'IDLE';
+            } else if (action === 'UP') {
+                if (prince.state === 'LEDGE_GRAB') {
+                    prince.y -= 42;
+                    prince.x += (prince.facing === 'RIGHT') ? 15 : -15;
+                    prince.state = 'IDLE';
+                } else if (prince.isGrounded) {
+                    prince.dy = -9;
+                    prince.state = 'JUMPING';
+                    prince.isGrounded = false;
+                }
+            }
+        }
+
+        // ==========================================
+        // 4. LOGIKA FISIKA & INTERAKSI LINGKUNGAN
+        // ==========================================
+        function updatePrincePhysics() {
+            if (gameState.status !== 'PLAYING') return;
+
+            // A. Update Posisi Horizontal & Vertikal
+            // 🎯 TUGAS 15: Tambahkan impuls prince.dx ke posisi horizontal pangeran (prince.x)
+            // Ubah '?' menjadi: prince.dx
+            prince.x += '?';
+
+            if (prince.state !== 'LEDGE_GRAB') {
+                // 🎯 TUGAS 16: Terapkan efek gravitasi dengan menambahkan nilai gravity ke prince.dy
+                // Ubah '?' menjadi: gravity
+                prince.dy += '?';
+                prince.y += prince.dy;
+            }
+
+            // B. Deteksi Tabrakan Platform & Ledge Grabbing
+            prince.isGrounded = false;
+            
+            platforms.forEach(plat => {
+                // Mendarat di atas platform
+                if (
+                    prince.x + prince.width > plat.x &&
+                    prince.x < plat.x + plat.width &&
+                    prince.y + prince.height >= plat.y &&
+                    prince.y + prince.height <= plat.y + 12 &&
+                    prince.dy >= 0
+                ) {
+                    prince.y = plat.y - prince.height;
+                    prince.dy = 0;
+                    prince.isGrounded = true;
+                    if (prince.state === 'JUMPING' || prince.state === 'FALLING') {
+                        prince.state = (prince.dx !== 0) ? 'RUNNING' : 'IDLE';
+                    }
+                }
+
+                // 🎯 TUGAS 19: Deteksi Bergantung Tepi Tebing (Ledge Detection)
+                // Cek saat pangeran jatuh dekat dengan sudut kanan platform
+                let distToLedgeRight = Math.abs(prince.x - (plat.x + plat.width));
+                let distToLedgeLeft = Math.abs((prince.x + prince.width) - plat.x);
+
+                if (
+                    !prince.isGrounded &&
+                    (distToLedgeRight < 12 || distToLedgeLeft < 12) &&
+                    prince.y + 10 >= plat.y &&
+                    prince.y + 10 <= plat.y + 15 &&
+                    prince.dy > 0
+                ) {
+                    // Ubah '?' menjadi: 'LEDGE_GRAB'
+                    prince.state = '?';
+                    prince.dy = 0;
+                    prince.dx = 0;
+                }
+            });
+
+            if (!prince.isGrounded && prince.state !== 'LEDGE_GRAB' && prince.dy > 0) {
+                prince.state = 'FALLING';
+            }
+
+            // C. Deteksi Tabrakan Jebakan Duri (Spike Hazards)
+            spikes.forEach(spike => {
+                // 🎯 TUGAS 17: Cek kondisi tabrakan pangeran dengan jebakan duri
+                if (
+                    prince.x < spike.x + spike.width &&
+                    prince.x + prince.width > spike.x &&
+                    prince.y + prince.height >= spike.y &&
+                    prince.state !== 'LEDGE_GRAB'
+                ) {
+                    prince.state = 'HURT';
+                    
+                    // 🎯 TUGAS 18: Kurangi nyawa pangeran (gameState.lives--) saat terkena duri
+                    // Ubah '?' menjadi: gameState.lives--
+                    '?';
+                    
+                    if (gameState.lives <= 0) {
+                        gameState.status = 'GAME_OVER';
+                    } else {
+                        respawnPrince();
+                    }
+                }
+            });
+
+            // D. Deteksi Pintu Keluar (Win Condition)
+            if (
+                prince.x < exitGate.x + exitGate.width &&
+                prince.x + prince.width > exitGate.x &&
+                prince.y < exitGate.y + exitGate.height &&
+                prince.y + prince.height > exitGate.y
+            ) {
+                gameState.status = 'WIN';
+            }
+
+            // Batas Dinding Layar
+            if (prince.x < 0) prince.x = 0;
+            if (prince.x + prince.width > canvas.width) prince.x = canvas.width - prince.width;
+        }
+
+        function respawnPrince() {
+            prince.x = 30;
+            prince.y = 180;
+            prince.dx = 0;
+            prince.dy = 0;
+            prince.state = 'IDLE';
+        }
+
+        // ==========================================
+        // 5. RENDERING VISUAL KANVAS
+        // ==========================================
+        function drawGame() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // A. Gambar Dinding/Latar Belakang Dungeon
+            ctx.fillStyle = '#1a162b';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // B. Gambar Platform & Tebing
+            platforms.forEach(plat => {
+                ctx.fillStyle = '#4a3f5a';
+                ctx.fillRect(plat.x, plat.y, plat.width, plat.height);
+                ctx.fillStyle = '#7d6b96';
+                ctx.fillRect(plat.x, plat.y, plat.width, 3); // Top highlight
+            });
+
+            // C. Gambar Jebakan Duri (Spike Trap)
+            spikes.forEach(spike => {
+                ctx.fillStyle = '#d63031';
+                let count = Math.floor(spike.width / 9);
+                for (let i = 0; i < count; i++) {
+                    ctx.beginPath();
+                    ctx.moveTo(spike.x + i * 9, spike.y + spike.height);
+                    ctx.lineTo(spike.x + i * 9 + 4.5, spike.y);
+                    ctx.lineTo(spike.x + i * 9 + 9, spike.y + spike.height);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+            });
+
+            // D. Gambar Pintu Keluar (Exit Gate)
+            ctx.fillStyle = '#f1c40f';
+            ctx.fillRect(exitGate.x, exitGate.y, exitGate.width, exitGate.height);
+            ctx.fillStyle = '#b8860b';
+            ctx.fillRect(exitGate.x + 4, exitGate.y + 4, exitGate.width - 8, exitGate.height - 4);
+
+            // E. Gambar Karakter Pangeran (Prince Retro Sprite)
+            ctx.fillStyle = (prince.state === 'HURT') ? '#e74c3c' : '#e0c097';
+            ctx.fillRect(prince.x, prince.y, prince.width, prince.height); // Badan
+
+            ctx.fillStyle = '#c0392b'; // Rompi Merah Pangeran
+            ctx.fillRect(prince.x + 2, prince.y + 10, prince.width - 4, 14);
+            
+            ctx.fillStyle = '#ffffff'; // Celana Putih
+            ctx.fillRect(prince.x + 2, prince.y + 24, prince.width - 4, 12);
+
+            // Mata / Arah Hadap
+            ctx.fillStyle = '#000000';
+            let eyeX = (prince.facing === 'RIGHT') ? prince.x + prince.width - 5 : prince.x + 2;
+            ctx.fillRect(eyeX, prince.y + 4, 3, 3);
+
+            // Indikator Teks saat LEDGE_GRAB
+            if (prince.state === 'LEDGE_GRAB') {
+                ctx.fillStyle = '#ffcc00';
+                ctx.font = '10px Space Grotesk';
+                ctx.fillText('GRAB! [⬆️ Naik]', prince.x - 15, prince.y - 8);
+            }
+
+            // Update UI Status Bar
+            let min = Math.floor(gameState.timeLeft / 60);
+            let sec = gameState.timeLeft % 60;
+            timeEl.innerText = `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+            livesEl.innerText = "❤️".repeat(Math.max(0, gameState.lives));
+            stateEl.innerText = prince.state;
+
+            // Overlay Game Over / Win / Time Up
+            if (gameState.status !== 'PLAYING') {
+                ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                ctx.textAlign = "center";
+                if (gameState.status === 'GAME_OVER') {
+                    ctx.fillStyle = "#ff0055";
+                    ctx.font = "bold 20px Space Grotesk";
+                    ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - 10);
+                    ctx.fillStyle = "#ffffff";
+                    ctx.font = "11px Space Grotesk";
+                    ctx.fillText("Pangeran gugur! Klik Mulai untuk coba lagi.", canvas.width / 2, canvas.height / 2 + 15);
+                } else if (gameState.status === 'TIME_UP') {
+                    ctx.fillStyle = "#ffaa00";
+                    ctx.font = "bold 20px Space Grotesk";
+                    ctx.fillText("WAKTU HABIS!", canvas.width / 2, canvas.height / 2 - 10);
+                    ctx.fillStyle = "#ffffff";
+                    ctx.font = "11px Space Grotesk";
+                    ctx.fillText("Kehabisan waktu sesi global!", canvas.width / 2, canvas.height / 2 + 15);
+                } else if (gameState.status === 'WIN') {
+                    ctx.fillStyle = "#00ff66";
+                    ctx.font = "bold 20px Space Grotesk";
+                    ctx.fillText("MISI BERHASIL! 🎉", canvas.width / 2, canvas.height / 2 - 10);
+                    ctx.fillStyle = "#ffffff";
+                    ctx.font = "11px Space Grotesk";
+                    ctx.fillText("Selamat! Kamu berhasil menamatkan Modul 18!", canvas.width / 2, canvas.height / 2 + 15);
+                }
+            }
+        }
+
+        // ==========================================
+        // 6. MAIN ENGINE LOOP
+        // ==========================================
+        function gameLoop() {
+            updatePrincePhysics();
+            drawGame();
+
+            if (gameState.status === 'PLAYING') {
+                // 🎯 TUGAS 20: Panggil requestAnimationFrame(gameLoop) untuk animasi berulang
+                // Ubah '?' menjadi: gameLoop
+                animationFrameId = requestAnimationFrame('?');
+            }
+        }
+
+        function startGame() {
+            gameState.timeLeft = 60;
+            gameState.lives = 3;
+            gameState.status = 'PLAYING';
+
+            respawnPrince();
+            startSessionTimer();
+
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+
+            window.focus();
+            gameLoop();
+        }
+
+        drawGame();
+    </script>
+</body>
+</html>
+</textarea>
+            <div class="action-bar">
+                <button class="btn-run" onclick="runCode()">✨ Sinkronisasi Kode</button>
+            </div>
+        </div>
+
+        <div class="panel preview-panel" id="preview-panel">
+            <div class="panel-header">
+                <div>🎮 Output Sistem</div>
+                <button class="btn-fullscreen" id="fs-btn" onclick="toggleFullscreen()" title="Buka Mode Layar Penuh">🔲 Layar Penuh</button>
+            </div>
+            <iframe id="preview-frame"></iframe>
+        </div>
+
+    </div>
+
+    <script>
+        let urlAktif = null;
+
+        function runCode() {
+            const htmlCode = document.getElementById('code-editor').value;
+            const iframe = document.getElementById('preview-frame');
+            
+            const blob = new Blob([htmlCode], { type: 'text/html;charset=utf-8' });
+            
+            if (urlAktif) {
+                URL.revokeObjectURL(urlAktif);
+            }
+            
+            urlAktif = URL.createObjectURL(blob);
+            iframe.src = urlAktif;
+            
+            // Auto focus ke iframe setelah sinkronisasi agar event keyboard langsung berfungsi
+            iframe.onload = () => {
+                iframe.contentWindow.focus();
+            };
+        }
+
+        // Logika Mode Fullscreen
+        function toggleFullscreen() {
+            const panel = document.getElementById('preview-panel');
+            const btn = document.getElementById('fs-btn');
+            
+            if (!document.fullscreenElement) {
+                if (panel.requestFullscreen) {
+                    panel.requestFullscreen();
+                } else if (panel.webkitRequestFullscreen) { /* Safari */
+                    panel.webkitRequestFullscreen();
+                } else if (panel.msRequestFullscreen) { /* IE11 */
+                    panel.msRequestFullscreen();
+                }
+                btn.innerHTML = "🔳 Perkecil Layar";
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) { /* Safari */
+                    document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) { /* IE11 */
+                    document.msExitFullscreen();
+                }
+                btn.innerHTML = "🔲 Layar Penuh";
+            }
+        }
+
+        // Event listener saat user keluar dari fullscreen
+        document.addEventListener('fullscreenchange', () => {
+            const btn = document.getElementById('fs-btn');
+            if (!document.fullscreenElement) {
+                btn.innerHTML = "🔲 Layar Penuh";
+            }
+        });
+
+        // Pengaturan tombol Tab pada textarea
+        const editor = document.getElementById('code-editor');
+        editor.addEventListener('keydown', function(e) {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const start = this.selectionStart;
+                const end = this.selectionEnd;
+
+                this.value = this.value.substring(0, start) + "    " + this.value.substring(end);
+                this.selectionStart = this.selectionEnd = start + 4;
+            }
+        });
+
+        window.onload = runCode;
+    </script>
+
+</body>
+</html>

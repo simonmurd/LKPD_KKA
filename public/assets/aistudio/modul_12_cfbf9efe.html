@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LKPD Interaktif: Modul 12 Pac-Man Game</title>
+    <style>
+        /* Import Font Modern, Minimalis & Futuristik */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Space+Grotesk:wght@500;700&family=Fira+Code:wght@400;500&display=swap');
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9fa;
+            color: #212529;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background-color: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            padding: 15px 30px;
+            border-bottom: 1px solid #e9ecef;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+
+        header h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #ffcc00, #ff0055);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .badge {
+            background: #ffffff;
+            color: #d4a000;
+            border: 1px solid #ffcc00;
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            box-shadow: 0 4px 10px rgba(255, 204, 0, 0.15);
+            letter-spacing: 0.5px;
+        }
+
+        .workspace {
+            display: flex;
+            flex: 1;
+            padding: 20px;
+            gap: 20px;
+            overflow: hidden;
+            background-image: radial-gradient(#dee2e6 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        /* Responsive Workspace untuk Mobile */
+        @media (max-width: 768px) {
+            .workspace {
+                flex-direction: column;
+                overflow-y: auto;
+            }
+            .panel {
+                min-height: 400px;
+            }
+        }
+
+        .panel {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid #e9ecef;
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+
+        .panel:hover {
+            box-shadow: 0 12px 40px rgba(255, 204, 0, 0.12);
+            border-color: #ffd633;
+        }
+
+        .panel-header {
+            padding: 15px 25px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            font-weight: 700;
+            font-size: 1.05rem;
+            font-family: 'Space Grotesk', sans-serif;
+            color: #495057;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .instruction-panel {
+            flex: 1;
+            overflow-y: auto;
+        }
+        
+        .instruction-content {
+            padding: 25px;
+            font-size: 0.95rem;
+            line-height: 1.7;
+            color: #495057;
+        }
+
+        .instruction-content h3 {
+            margin-bottom: 15px;
+            color: #d4a000;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .instruction-content p {
+            margin-bottom: 15px;
+        }
+
+        .task-box {
+            background: rgba(255, 204, 0, 0.08);
+            border-left: 4px solid #ffcc00;
+            border-radius: 0 8px 8px 0;
+            padding: 15px;
+            margin-top: 20px;
+            color: #212529;
+            font-size: 0.9rem;
+        }
+
+        .editor-panel {
+            flex: 1.2;
+        }
+
+        textarea {
+            flex: 1;
+            width: 100%;
+            border: none;
+            resize: none;
+            padding: 20px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+            background-color: #f1f3f5;
+            color: #212529;
+            outline: none;
+            line-height: 1.6;
+            white-space: pre;
+            overflow-x: auto;
+            transition: background-color 0.2s ease;
+        }
+
+        textarea:focus {
+            background-color: #ffffff;
+            box-shadow: inset 0 0 0 2px #ffcc00;
+        }
+
+        .action-bar {
+            padding: 12px 25px;
+            background: #ffffff;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        button.btn-run {
+            background: linear-gradient(135deg, #ffcc00 0%, #ff0055 100%);
+            color: #ffffff;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(255, 204, 0, 0.3);
+        }
+
+        button.btn-run:hover {
+            box-shadow: 0 6px 20px rgba(255, 0, 85, 0.35);
+            transform: translateY(-2px);
+        }
+
+        .preview-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Pengaturan saat mode Fullscreen aktif */
+        .preview-panel:fullscreen {
+            background: #ffffff;
+            border-radius: 0;
+            border: none;
+        }
+        .preview-panel:-webkit-full-screen {
+            background: #ffffff;
+        }
+
+        /* Tombol Fullscreen */
+        .btn-fullscreen {
+            background: transparent;
+            color: #495057;
+            border: 1px solid #ced4da;
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .btn-fullscreen:hover {
+            background: #e9ecef;
+            color: #212529;
+            border-color: #adb5bd;
+        }
+
+        iframe {
+            flex: 1;
+            width: 100%;
+            border: none;
+            background-color: #ffffff;
+        }
+        
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f8f9fa; }
+        ::-webkit-scrollbar-thumb { background: #ced4da; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #adb5bd; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>⚡ CodeQuest: NEXUS</h1>
+        <div class="badge">🚀 Capstone Project: Grid Navigation & Ghost AI - Pac-Man (Modul 12)</div>
+    </header>
+
+    <div class="workspace">
+        
+        <div class="panel instruction-panel">
+            <div class="panel-header" style="justify-content: flex-start;">📜 Modul Instruksi</div>
+            <div class="instruction-content">
+                <h3>Retro Pac-Man: Grid Navigation & Ghost AI Engine!</h3>
+                <p>Selamat datang di Modul 12 (Capstone Project), Developer Game! 🟡 Pac-Man adalah puncak dari seluruh modul pemrograman game interaktif. Sebagai proyek tingkat lanjut, Pac-Man menguji pemahaman menyeluruh tentang <strong>navigasi grid</strong>, <strong>kecerdasan buatan (AI) hantu</strong>, dan <strong>manajemen status terpusat</strong>.</p>
+                <p>Misi ini menguji logika percabangan kompleks, input buffering, dan Finite State Machine melalui <strong>20 Tugas Terstruktur</strong> yang harus kamu selesaikan pada kode di editor tengah.</p>
+                
+                <div class="task-box">
+                    <strong>🎯 Cara Mengerjakan:</strong><br>
+                    Cari petunjuk <strong>🎯 TUGAS 1</strong> sampai <strong>TUGAS 20</strong> pada editor kode. Baca instruksi komentar, lalu isi nilai atau hapus tanda tanya (<code>'?'</code>) dengan ekspresi JavaScript yang tepat.<br><br>
+                    Setelah selesai, klik <strong>"✨ Sinkronisasi Kode"</strong>. Kamu dapat mengontrol Pac-Man menggunakan <strong>Keyboard PC</strong> (Panah/WASD) atau <strong>D-Pad Virtual</strong> pada layar!
+                </div>
+
+                <div style="margin-top:20px; font-size:0.85rem; background:#f8f9fa; padding:12px; border-radius:8px; border-left:3px solid #ffcc00;">
+                    <strong>💡 Konsep Kunci Modul 12:</strong><br>
+                    • <strong>Navigasi Grid & Input Buffering:</strong> Menggunakan event <code>keydown</code> untuk menyimpan arah pergerakan berikutnya (<code>nextDx</code>, <code>nextDy</code>) sebelum Pac-Man mencapai persimpangan jalur ubin.<br>
+                    • <strong>Ghost AI & Finite State Machine:</strong> Mengatur pergerakan hantu berdasarkan mode (<code>CHASE</code> vs <code>FRIGHTENED</code>).<br>
+                    • <strong>Mode Panik (Power Pellet):</strong> Mengubah status hantu menjadi Frightened (warna biru, bergerak lambat, dan bisa dimakan) selama durasi tertentu.<br>
+                    • <strong>State Management Terpusat:</strong> Melacak status permainan secara real-time: score, lives, status, dan mode.
+                </div>
+            </div>
+        </div>
+
+        <div class="panel editor-panel">
+            <div class="panel-header" style="justify-content: flex-start;">💻 Terminal Interface</div>
+<textarea id="code-editor" spellcheck="false" wrap="off">
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <!-- 🎯 TUGAS 1: Ubah judul tab browser di bawah ini dengan namamu -->
+    <title>Modul 12 - Retro Pac-Man Game [NAMA SISWA]</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: #121214;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding-top: 15px;
+            touch-action: manipulation;
+        }
+        
+        #gameInfo {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 325px;
+            margin-bottom: 10px;
+            font-size: 0.85rem;
+            padding: 8px 12px;
+            box-sizing: border-box;
+            background: #1e1e24;
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+
+        /* 🎯 TUGAS 2: Ganti warna background kanvas dari #050508 menjadi warna lain, misal: '#0a0a10' */
+        #gameCanvas {
+            background-color: #050508;
+            
+            /* 🎯 TUGAS 3: Ubah ketebalan border dari 3px menjadi 4px */
+            border: 3px solid #ffcc00;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(255, 204, 0, 0.25);
+            max-width: 100%;
+            height: auto;
+        }
+
+        .btn-start {
+            margin-top: 12px;
+            padding: 10px 20px;
+            /* 🎯 TUGAS 4: Ganti warna tombol dari #ffcc00 menjadi warna favoritmu */
+            background-color: #ffcc00;
+            border: none;
+            border-radius: 8px;
+            color: #000000;
+            font-size: 0.95rem;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 4px 0 #cc9900;
+            transition: all 0.1s;
+        }
+        .btn-start:active {
+            transform: translateY(3px);
+            box-shadow: none;
+        }
+
+        /* Controls Virtual D-Pad untuk Mobile & Touch */
+        .controls-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            margin-top: 10px;
+        }
+        .row-btn {
+            display: flex;
+            gap: 10px;
+        }
+        .nav-btn {
+            width: 50px;
+            height: 40px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: white;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            user-select: none;
+        }
+        .nav-btn:active {
+            background-color: #ffcc00;
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 🎯 TUGAS 5: Ganti nama judul game H2 di bawah ini -->
+    <h2>🟡 Retro Pac-Man Engine</h2>
+    
+    <div id="gameInfo">
+        <span>Nyawa: <span id="livesVal" style="color:#ff0055;">💛💛💛</span></span>
+        <span>Skor: <span id="scoreVal" style="color:#ffcc00;">0</span></span>
+        <span>Mode: <span id="modeVal" style="color:#00f0ff;">CHASE</span></span>
+    </div>
+    
+    <canvas id="gameCanvas" width="325" height="275"></canvas>
+    
+    <button class="btn-start" onclick="startGame()">▶ Mulai / Restart</button>
+
+    <!-- Controls Virtual D-Pad -->
+    <div class="controls-container">
+        <div class="nav-btn" onclick="setDirection(0, -1)">⬆️</div>
+        <div class="row-btn">
+            <div class="nav-btn" onclick="setDirection(-1, 0)">⬅️</div>
+            <div class="nav-btn" onclick="setDirection(0, 1)">⬇️</div>
+            <div class="nav-btn" onclick="setDirection(1, 0)">➡️</div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('scoreVal');
+        const livesEl = document.getElementById('livesVal');
+        const modeEl = document.getElementById('modeVal');
+
+        const tileSize = 25;
+        // Matriks Peta Grid (11 Baris x 13 Kolom)
+        // 1 = Dinding, 0 = Dot (Titik Makanan), 2 = Kosong, 3 = Power Pellet
+        let grid = [
+            [1,1,1,1,1,1,1,1,1,1,1,1,1],
+            [1,3,0,0,0,0,1,0,0,0,0,3,1],
+            [1,0,1,1,0,1,1,1,0,1,1,0,1],
+            [1,0,1,0,0,0,0,0,0,0,1,0,1],
+            [1,0,0,0,1,1,2,1,1,0,0,0,1],
+            [1,1,1,0,1,2,2,2,1,0,1,1,1],
+            [1,0,0,0,1,1,1,1,1,0,0,0,1],
+            [1,0,1,0,0,0,0,0,0,0,1,0,1],
+            [1,0,1,1,0,1,1,1,0,1,1,0,1],
+            [1,3,0,0,0,0,1,0,0,0,0,3,1],
+            [1,1,1,1,1,1,1,1,1,1,1,1,1]
+        ];
+
+        // ==========================================
+        // 1. MANAJEMEN STATUS TERPUSAT (STATE MANAGEMENT)
+        // ==========================================
+        const gameState = {
+            score: 0,
+            
+            // 🎯 TUGAS 6: Setel nilai awal nyawa pemain (lives) menjadi 3
+            lives: '?',
+            status: 'IDLE', // IDLE, PLAYING, GAME_OVER, WIN
+            
+            // 🎯 TUGAS 7: Setel mode awal hantu menjadi 'CHASE'
+            mode: '?'       // CHASE, FRIGHTENED
+        };
+
+        const pacman = {
+            x: 6 * tileSize + tileSize / 2,
+            y: 7 * tileSize + tileSize / 2,
+            gridX: 6,
+            gridY: 7,
+            dx: 0,
+            dy: 0,
+            nextDx: 0,
+            nextDy: 0,
+            
+            // 🎯 TUGAS 8: Setel kecepatan gerak Pac-Man (speed) menjadi 2
+            speed: '?'
+        };
+
+        const ghosts = [
+            { name: 'Blinky', gridX: 6, gridY: 4, x: 6*25+12.5, y: 4*25+12.5, dx: 1, dy: 0, color: '#ff0000', defaultColor: '#ff0000', speed: 1.5 },
+            { name: 'Pinky',  gridX: 5, gridY: 5, x: 5*25+12.5, y: 5*25+12.5, dx: -1, dy: 0, color: '#ffb8ff', defaultColor: '#ffb8ff', speed: 1.5 }
+        ];
+
+        let frightenedTimer = null;
+        let animationFrameId = null;
+
+        function setDirection(dx, dy) {
+            pacman.nextDx = dx;
+            pacman.nextDy = dy;
+        }
+
+        // ==========================================
+        // 2. EVENT LISTENER KONTROL DENGAN INPUT BUFFERING
+        // ==========================================
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
+                pacman.nextDx = 0;
+                // 🎯 TUGAS 9: Setel pacman.nextDy menjadi -1 untuk arah ke atas
+                pacman.nextDy = '?';
+            } else if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') {
+                pacman.nextDx = 0;
+                // 🎯 TUGAS 10: Setel pacman.nextDy menjadi 1 untuk arah ke bawah
+                pacman.nextDy = '?';
+            } else if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+                // 🎯 TUGAS 11: Setel pacman.nextDx menjadi -1 untuk arah ke kiri
+                pacman.nextDx = '?';
+                pacman.nextDy = 0;
+            } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+                // 🎯 TUGAS 12: Setel pacman.nextDx menjadi 1 untuk arah ke kanan
+                pacman.nextDx = '?';
+                pacman.nextDy = 0;
+            }
+
+            if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(e.code)) {
+                e.preventDefault();
+            }
+        });
+
+        // ==========================================
+        // 3. LOGIKA STATE MACHINE & BEHAVIOR HANTU (GHOST AI)
+        // ==========================================
+        function updateGhostBehavior(ghost) {
+            if (gameState.mode === 'FRIGHTENED') {
+                ghost.speed = 1;
+                // 🎯 TUGAS 13: Ubah warna hantu saat mode FRIGHTENED menjadi 'blue'
+                ghost.color = '?';
+            } else if (gameState.mode === 'CHASE') {
+                ghost.speed = 1.5;
+                // 🎯 TUGAS 14: Kembalikan warna hantu ke warna aslinya (ghost.defaultColor)
+                ghost.color = '?';
+            }
+        }
+
+        function triggerPowerPellet() {
+            gameState.mode = 'FRIGHTENED';
+            if (frightenedTimer) clearTimeout(frightenedTimer);
+            frightenedTimer = setTimeout(() => {
+                gameState.mode = 'CHASE';
+            }, 7000); // Mode Frightened aktif selama 7 detik
+        }
+
+        // Cek apakah koordinat tile adalah dinding (nilai 1)
+        function isWall(gx, gy) {
+            if (gy < 0 || gy >= grid.length || gx < 0 || gx >= grid[0].length) return true;
+            // 🎯 TUGAS 15: Cek apakah nilai grid[gy][gx] sama dengan 1 (artinya dinding)
+            // Ubah '?' menjadi: 1
+            return grid[gy][gx] === '?';
+        }
+
+        // ==========================================
+        // 4. LOGIKA PEMBARUAN GAME ENGINE
+        // ==========================================
+        function updateGame() {
+            if (gameState.status !== 'PLAYING') return;
+
+            // A. Update Pergerakan Pac-Man & Input Buffering
+            let currGX = Math.floor(pacman.x / tileSize);
+            let currGY = Math.floor(pacman.y / tileSize);
+            let centerX = currGX * tileSize + tileSize / 2;
+            let centerY = currGY * tileSize + tileSize / 2;
+
+            // Jika Pac-Man berada di persimpangan ubin, coba ubah arah dari buffer
+            if (Math.abs(pacman.x - centerX) < pacman.speed && Math.abs(pacman.y - centerY) < pacman.speed) {
+                if (!isWall(currGX + pacman.nextDx, currGY + pacman.nextDy)) {
+                    pacman.dx = pacman.nextDx;
+                    pacman.dy = pacman.nextDy;
+                }
+                if (isWall(currGX + pacman.dx, currGY + pacman.dy)) {
+                    pacman.dx = 0;
+                    pacman.dy = 0;
+                }
+            }
+
+            pacman.x += pacman.dx * pacman.speed;
+            pacman.y += pacman.dy * pacman.speed;
+            pacman.gridX = Math.floor(pacman.x / tileSize);
+            pacman.gridY = Math.floor(pacman.y / tileSize);
+
+            // B. Memakan Dot & Power Pellet
+            let tileType = grid[pacman.gridY][pacman.gridX];
+            if (tileType === 0) { // Dot Biasa
+                grid[pacman.gridY][pacman.gridX] = 2; // Kosongkan tile
+                
+                // 🎯 TUGAS 16: Tambahkan skor sebesar 10 saat memakan Dot
+                // Ubah '?' menjadi: 10
+                gameState.score += '?';
+            } else if (tileType === 3) { // Power Pellet
+                grid[pacman.gridY][pacman.gridX] = 2;
+                gameState.score += 50;
+                
+                // 🎯 TUGAS 17: Panggil fungsi triggerPowerPellet untuk mengaktifkan mode Frightened
+                // Ubah '?' menjadi: triggerPowerPellet
+                '?'();
+            }
+
+            // C. Pergerakan Hantu (AI Sederhana)
+            ghosts.forEach(ghost => {
+                updateGhostBehavior(ghost);
+
+                let gGX = Math.floor(ghost.x / tileSize);
+                let gGY = Math.floor(ghost.y / tileSize);
+                let gCenterX = gGX * tileSize + tileSize / 2;
+                let gCenterY = gGY * tileSize + tileSize / 2;
+
+                if (Math.abs(ghost.x - gCenterX) < ghost.speed && Math.abs(ghost.y - gCenterY) < ghost.speed) {
+                    let possibleDirs = [
+                        {dx: 0, dy: -1}, {dx: 0, dy: 1},
+                        {dx: -1, dy: 0}, {dx: 1, dy: 0}
+                    ].filter(d => !isWall(gGX + d.dx, gGY + d.dy));
+
+                    if (possibleDirs.length > 0) {
+                        let chosen = possibleDirs[Math.floor(Math.random() * possibleDirs.length)];
+                        ghost.dx = chosen.dx;
+                        ghost.dy = chosen.dy;
+                    }
+                }
+
+                ghost.x += ghost.dx * ghost.speed;
+                ghost.y += ghost.dy * ghost.speed;
+
+                // D. Deteksi Tabrakan Pac-Man vs Hantu
+                let dist = Math.hypot(pacman.x - ghost.x, pacman.y - ghost.y);
+                if (dist < tileSize * 0.8) {
+                    if (gameState.mode === 'CHASE') {
+                        // 🎯 TUGAS 18: Kurangi nyawa pemain (gameState.lives--) saat tersentuh hantu
+                        // Ubah '?' menjadi: gameState.lives--
+                        '?';
+                        
+                        if (gameState.lives <= 0) {
+                            gameState.status = 'GAME_OVER';
+                        } else {
+                            resetPositions();
+                        }
+                    } else if (gameState.mode === 'FRIGHTENED') {
+                        // 🎯 TUGAS 19: Tambahkan skor sebesar 200 saat Pac-Man berhasil memakan hantu
+                        // Ubah '?' menjadi: 200
+                        gameState.score += '?';
+                        
+                        // Kembalikan hantu ke markas
+                        ghost.x = 6 * tileSize + tileSize / 2;
+                        ghost.y = 5 * tileSize + tileSize / 2;
+                    }
+                }
+            });
+
+            // Cek kondisi menang (Semua makanan telah dimakan)
+            let remainingDots = grid.flat().filter(v => v === 0 || v === 3).length;
+            if (remainingDots === 0) {
+                gameState.status = 'WIN';
+            }
+        }
+
+        function resetPositions() {
+            pacman.x = 6 * tileSize + tileSize / 2;
+            pacman.y = 7 * tileSize + tileSize / 2;
+            pacman.dx = 0; pacman.dy = 0;
+            pacman.nextDx = 0; pacman.nextDy = 0;
+
+            ghosts[0].x = 6 * tileSize + tileSize / 2; ghosts[0].y = 4 * tileSize + tileSize / 2;
+            ghosts[1].x = 5 * tileSize + tileSize / 2; ghosts[1].y = 5 * tileSize + tileSize / 2;
+        }
+
+        // ==========================================
+        // 5. RENDERING VISUAL KANVAS
+        // ==========================================
+        function drawGame() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // A. Gambar Peta Grid (Dinding, Dot, & Power Pellet)
+            for (let r = 0; r < grid.length; r++) {
+                for (let c = 0; c < grid[r].length; c++) {
+                    let cell = grid[r][c];
+                    let x = c * tileSize;
+                    let y = r * tileSize;
+
+                    if (cell === 1) { // Dinding Labirin
+                        ctx.fillStyle = '#1919a6';
+                        ctx.fillRect(x, y, tileSize, tileSize);
+                        ctx.strokeStyle = '#000';
+                        ctx.strokeRect(x, y, tileSize, tileSize);
+                    } else if (cell === 0) { // Dot Makanan
+                        ctx.beginPath();
+                        ctx.arc(x + tileSize/2, y + tileSize/2, 3, 0, Math.PI * 2);
+                        ctx.fillStyle = '#ffb8ae';
+                        ctx.fill();
+                    } else if (cell === 3) { // Power Pellet
+                        ctx.beginPath();
+                        ctx.arc(x + tileSize/2, y + tileSize/2, 6, 0, Math.PI * 2);
+                        ctx.fillStyle = '#ffb8ff';
+                        ctx.fill();
+                    }
+                }
+            }
+
+            // B. Gambar Pac-Man
+            ctx.beginPath();
+            ctx.arc(pacman.x, pacman.y, tileSize / 2 - 2, 0.2 * Math.PI, 1.8 * Math.PI);
+            ctx.lineTo(pacman.x, pacman.y);
+            ctx.fillStyle = '#ffcc00';
+            ctx.fill();
+            ctx.closePath();
+
+            // C. Gambar Hantu (Ghosts)
+            ghosts.forEach(ghost => {
+                ctx.beginPath();
+                ctx.arc(ghost.x, ghost.y, tileSize / 2 - 2, 0, Math.PI * 2);
+                ctx.fillStyle = ghost.color;
+                ctx.fill();
+                ctx.closePath();
+            });
+
+            // Update UI Status Bar
+            scoreEl.innerText = gameState.score;
+            livesEl.innerText = "💛".repeat(Math.max(0, gameState.lives));
+            modeEl.innerText = gameState.mode;
+            modeEl.style.color = (gameState.mode === 'FRIGHTENED') ? '#00f0ff' : '#ff0055';
+
+            // Tampilan Game Over / Win Overlay
+            if (gameState.status === 'GAME_OVER' || gameState.status === 'WIN') {
+                ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                ctx.textAlign = "center";
+                if (gameState.status === 'GAME_OVER') {
+                    ctx.fillStyle = "#ff0055";
+                    ctx.font = "bold 20px Space Grotesk";
+                    ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - 10);
+                    ctx.fillStyle = "#ffffff";
+                    ctx.font = "11px Space Grotesk";
+                    ctx.fillText("Kehabisan nyawa! Klik Mulai untuk coba lagi.", canvas.width / 2, canvas.height / 2 + 15);
+                } else {
+                    ctx.fillStyle = "#00ff66";
+                    ctx.font = "bold 20px Space Grotesk";
+                    ctx.fillText("CAPSTONE CLEAR! 🎉", canvas.width / 2, canvas.height / 2 - 10);
+                    ctx.fillStyle = "#ffffff";
+                    ctx.font = "11px Space Grotesk";
+                    ctx.fillText("Semua makanan labirin berhasil dihabiskan!", canvas.width / 2, canvas.height / 2 + 15);
+                }
+            }
+        }
+
+        // ==========================================
+        // 6. MAIN ENGINE LOOP
+        // ==========================================
+        function gameLoop() {
+            updateGame();
+            drawGame();
+
+            if (gameState.status === 'PLAYING') {
+                // 🎯 TUGAS 20: Panggil requestAnimationFrame(gameLoop) untuk memperbarui animasi frame secara berulang
+                // Ubah '?' menjadi: gameLoop
+                animationFrameId = requestAnimationFrame('?');
+            }
+        }
+
+        function initGrid() {
+            grid = [
+                [1,1,1,1,1,1,1,1,1,1,1,1,1],
+                [1,3,0,0,0,0,1,0,0,0,0,3,1],
+                [1,0,1,1,0,1,1,1,0,1,1,0,1],
+                [1,0,1,0,0,0,0,0,0,0,1,0,1],
+                [1,0,0,0,1,1,2,1,1,0,0,0,1],
+                [1,1,1,0,1,2,2,2,1,0,1,1,1],
+                [1,0,0,0,1,1,1,1,1,0,0,0,1],
+                [1,0,1,0,0,0,0,0,0,0,1,0,1],
+                [1,0,1,1,0,1,1,1,0,1,1,0,1],
+                [1,3,0,0,0,0,1,0,0,0,0,3,1],
+                [1,1,1,1,1,1,1,1,1,1,1,1,1]
+            ];
+        }
+
+        function startGame() {
+            gameState.score = 0;
+            gameState.lives = 3;
+            gameState.status = 'PLAYING';
+            gameState.mode = 'CHASE';
+
+            initGrid();
+            resetPositions();
+
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+
+            window.focus();
+            gameLoop();
+        }
+
+        drawGame();
+    </script>
+</body>
+</html>
+</textarea>
+            <div class="action-bar">
+                <button class="btn-run" onclick="runCode()">✨ Sinkronisasi Kode</button>
+            </div>
+        </div>
+
+        <div class="panel preview-panel" id="preview-panel">
+            <div class="panel-header">
+                <div>🎮 Output Sistem</div>
+                <button class="btn-fullscreen" id="fs-btn" onclick="toggleFullscreen()" title="Buka Mode Layar Penuh">🔲 Layar Penuh</button>
+            </div>
+            <iframe id="preview-frame"></iframe>
+        </div>
+
+    </div>
+
+    <script>
+        let urlAktif = null;
+
+        function runCode() {
+            const htmlCode = document.getElementById('code-editor').value;
+            const iframe = document.getElementById('preview-frame');
+            
+            const blob = new Blob([htmlCode], { type: 'text/html;charset=utf-8' });
+            
+            if (urlAktif) {
+                URL.revokeObjectURL(urlAktif);
+            }
+            
+            urlAktif = URL.createObjectURL(blob);
+            iframe.src = urlAktif;
+            
+            // Auto focus ke iframe setelah sinkronisasi agar event keyboard langsung berfungsi
+            iframe.onload = () => {
+                iframe.contentWindow.focus();
+            };
+        }
+
+        // Logika Mode Fullscreen
+        function toggleFullscreen() {
+            const panel = document.getElementById('preview-panel');
+            const btn = document.getElementById('fs-btn');
+            
+            if (!document.fullscreenElement) {
+                if (panel.requestFullscreen) {
+                    panel.requestFullscreen();
+                } else if (panel.webkitRequestFullscreen) { /* Safari */
+                    panel.webkitRequestFullscreen();
+                } else if (panel.msRequestFullscreen) { /* IE11 */
+                    panel.msRequestFullscreen();
+                }
+                btn.innerHTML = "🔳 Perkecil Layar";
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) { /* Safari */
+                    document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) { /* IE11 */
+                    document.msExitFullscreen();
+                }
+                btn.innerHTML = "🔲 Layar Penuh";
+            }
+        }
+
+        // Event listener saat user keluar dari fullscreen
+        document.addEventListener('fullscreenchange', () => {
+            const btn = document.getElementById('fs-btn');
+            if (!document.fullscreenElement) {
+                btn.innerHTML = "🔲 Layar Penuh";
+            }
+        });
+
+        // Pengaturan tombol Tab pada textarea
+        const editor = document.getElementById('code-editor');
+        editor.addEventListener('keydown', function(e) {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const start = this.selectionStart;
+                const end = this.selectionEnd;
+
+                this.value = this.value.substring(0, start) + "    " + this.value.substring(end);
+                this.selectionStart = this.selectionEnd = start + 4;
+            }
+        });
+
+        window.onload = runCode;
+    </script>
+
+</body>
+</html>

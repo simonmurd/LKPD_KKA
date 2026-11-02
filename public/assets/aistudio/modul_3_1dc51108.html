@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LKPD Interaktif: Karya Pemandangan</title>
+    <style>
+        /* Import Font Modern & Friendly */
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800&family=Fira+Code:wght@400;500&display=swap');
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: #f8f9fc;
+            color: #2d3748;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        header {
+            background-color: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 12px 25px;
+            box-shadow: 0 4px 30px rgba(0, 150, 255, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+
+        header h1 {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: #1a202c;
+            background: linear-gradient(135deg, #00c6ff, #0072ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .badge {
+            background: linear-gradient(135deg, #e0f2fe, #bae6fd);
+            color: #0369a1;
+            padding: 6px 16px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-weight: 800;
+            box-shadow: 0 2px 10px rgba(0, 114, 255, 0.1);
+        }
+
+        /* Navigasi Tab HP (Sembunyi di PC) */
+        .mobile-tabs {
+            display: none;
+            background: #ffffff;
+            padding: 8px;
+            gap: 6px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: transparent;
+            font-family: 'Nunito', sans-serif;
+            font-weight: 800;
+            font-size: 0.85rem;
+            color: #64748b;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn.active {
+            background: #e0f2fe;
+            color: #0284c7;
+        }
+
+        .workspace {
+            display: flex;
+            flex: 1;
+            padding: 15px;
+            gap: 15px;
+            overflow: hidden;
+        }
+
+        .panel {
+            background: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 150, 255, 0.04);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid #f1f5f9;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .panel:hover {
+            box-shadow: 0 15px 50px rgba(0, 150, 255, 0.08);
+        }
+
+        .panel-header {
+            padding: 12px 20px;
+            background: #ffffff;
+            border-bottom: 2px dashed #f1f5f9;
+            font-weight: 800;
+            font-size: 0.95rem;
+            color: #4a5568;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .instruction-panel { flex: 1; }
+        .instruction-content {
+            padding: 20px;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            overflow-y: auto;
+        }
+
+        .instruction-content h3 { margin-bottom: 10px; color: #2b6cb0; }
+        .instruction-content p { margin-bottom: 10px; color: #4a5568; }
+
+        .task-box {
+            background: #f0fdf4;
+            border-left: 4px solid #4ade80;
+            padding: 12px;
+            border-radius: 0 12px 12px 0;
+            margin-top: 15px;
+            font-size: 0.9rem;
+        }
+
+        .editor-panel { flex: 1.3; }
+
+        textarea {
+            flex: 1;
+            width: 100%;
+            border: none;
+            resize: none;
+            padding: 20px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.95rem;
+            background-color: #fafbfc;
+            color: #1e293b;
+            outline: none;
+            line-height: 1.5;
+        }
+
+        textarea:focus {
+            background-color: #ffffff;
+            box-shadow: inset 0 0 0 2px #e0f2fe;
+        }
+
+        .action-bar {
+            padding: 12px 20px;
+            background: #ffffff;
+            border-top: 1px solid #f1f5f9;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn {
+            border: none;
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-weight: 800;
+            font-family: 'Nunito', sans-serif;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+            color: white;
+            box-shadow: 0 6px 15px rgba(79, 172, 254, 0.3);
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 10px 20px rgba(79, 172, 254, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #f1f5f9;
+            color: #64748b;
+        }
+
+        .btn-secondary:hover {
+            background: #e2e8f0;
+            color: #334155;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            border-radius: 8px;
+        }
+
+        .preview-panel { flex: 1.1; }
+
+        iframe {
+            flex: 1;
+            width: 100%;
+            border: none;
+            background-color: #ffffff;
+        }
+
+        /* Responsive Breakpoint Mobile */
+        @media (max-width: 768px) {
+            body {
+                height: auto;
+                min-height: 100vh;
+                overflow: auto;
+            }
+
+            header {
+                padding: 10px 15px;
+            }
+
+            header h1 {
+                font-size: 1.1rem;
+            }
+
+            .badge {
+                font-size: 0.75rem;
+                padding: 4px 10px;
+            }
+
+            .mobile-tabs {
+                display: flex;
+            }
+
+            .workspace {
+                flex-direction: column;
+                height: calc(100vh - 110px);
+                padding: 10px;
+            }
+
+            .panel {
+                display: none;
+                height: 100%;
+            }
+
+            .panel.active-panel {
+                display: flex;
+            }
+
+            textarea {
+                font-size: 16px !important; /* Mencegah auto-zoom di iOS/Android */
+            }
+        }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>CodeQuest: Canvas Edition</h1>
+        <div class="badge">🎨 LKPD Interaktif</div>
+    </header>
+
+    <div class="mobile-tabs">
+        <button class="tab-btn active" id="tab-instruction" onclick="switchTab('instruction')">📖 Instruksi</button>
+        <button class="tab-btn" id="tab-editor" onclick="switchTab('editor')">💻 Editor</button>
+        <button class="tab-btn" id="tab-preview" onclick="switchTab('preview')">🎮 Hasil</button>
+    </div>
+
+    <div class="workspace">
+        
+        <div class="panel instruction-panel active-panel" id="panel-instruction">
+            <div class="panel-header">
+                <span>👋 Misi Kamu Hari Ini</span>
+            </div>
+            <div class="instruction-content">
+                <h3>Melukis dengan Kode!</h3>
+                <p>Halo, Seniman Digital! 🖌️ Hari ini kita akan menggunakan JavaScript dan HTML Canvas untuk menggambar sebuah pemandangan alam lengkap dengan rumah dan matahari.</p>
+                <p>Di editor kode, terdapat 20 Tugas (🎯 TUGAS 1 - 20) yang menunggu untuk kamu selesaikan.</p>
+                
+                <div class="task-box">
+                    <strong>🎯 Cara Mengerjakan:</strong><br>
+                    Cari tulisan <strong>🎯 TUGAS</strong> di dalam editor kode, baca instruksinya, lalu ubah nilai atau kodenya.<br><br>
+                    <strong>💡 Tips Keyboard:</strong>
+                    <ul>
+                        <li>Gunakan tombol <strong>Tab</strong> untuk indentasi (2 spasi).</li>
+                        <li>Tekan <strong>Ctrl + Enter</strong> (atau <strong>Cmd + Enter</strong>) untuk langsung menjalankan kode!</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel editor-panel" id="panel-editor">
+            <div class="panel-header">
+                <span>💻 Area Coding</span>
+                <button class="btn btn-secondary btn-sm" onclick="resetCode()" title="Kembalikan kode ke templat awal">🔄 Reset</button>
+            </div>
+            
+            <textarea id="code-editor" spellcheck="false" autocorrect="off" autocapitalize="none" autocomplete="off"></textarea>
+            
+            <div class="action-bar">
+                <span style="font-size: 0.8rem; color: #94a3b8;">💾 Otomatis tersimpan</span>
+                <button class="btn btn-primary" onclick="runCode()">✨ Jalankan Kode</button>
+            </div>
+        </div>
+
+        <div class="panel preview-panel" id="panel-preview">
+            <div class="panel-header">
+                <span>🎮 Hasil Karyamu</span>
+                <button class="btn btn-secondary btn-sm" onclick="toggleFullscreen()" title="Tampilkan layar penuh">⛶ Layar Penuh</button>
+            </div>
+            <iframe id="preview-frame"></iframe>
+        </div>
+
+    </div>
+
+    <script>
+        // Templat Kode Awal
+        const DEFAULT_CODE = `<!DOCTYPE html>
+<html lang="id">
+<head>
+    <title>Tugas Modul 3 - [NAMA SISWA]</title>
+    
+    <style>
+        /* 🎯 TUGAS 2: Ubah warna background luar canvas. 
+           Ganti '#2c3e50' menjadi '#111' atau 'black' */
+        body {
+            background-color: #2c3e50; 
+            text-align: center;
+            font-family: Arial, sans-serif;
+            color: white;
+            margin: 0;
+            padding: 10px;
+        }
+
+        /* 🎯 TUGAS 3: Ubah warna dan ketebalan border canvas.
+           Ganti '2px solid white' menjadi '5px solid gray' */
+        canvas {
+            border: 2px solid white; 
+            margin-top: 10px;
+            box-shadow: 0px 0px 20px rgba(255, 255, 255, 0.2);
+            background-color: #000033; /* Warna dasar canvas */
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Animasi Malam: [NAMA SISWA]</h1>
+
+    <canvas id="kanvasAnimasi" width="600" height="400"></canvas>
+
+    <script>
+        const canvas = document.getElementById('kanvasAnimasi');
+        const ctx = canvas.getContext('2d');
+
+        // ==========================================
+        // PERSIAPAN VARIABEL ANIMASI
+        // ==========================================
+        
+        // 🎯 TUGAS 6: Posisikan Bulan di luar kanan layar.
+        // Ubah posisiX_Bulan dari 400 menjadi 800
+        let posisiX_Bulan = 400; 
+        let posisiY_Bulan = 120;
+        
+        // 🎯 TUGAS 7: Posisikan Awan bersiap dari luar kiri layar.
+        // Ubah posisiX_Awan dari 150 menjadi -100
+        let posisiX_Awan = 150; 
+        let posisiY_Awan = 150;
+
+        // 🎯 TUGAS 8: Langit kurang ramai! Ubah jumlah bintang dari 20 menjadi 150.
+        let jumlahBintang = 20; 
+        let bintang = [];
+        for (let i = 0; i < jumlahBintang; i++) {
+            bintang.push({
+                x: Math.random() * 800,
+                y: Math.random() * 400,
+                ukuran: Math.random() * 2.5
+            });
+        }
+
+        // Fungsi cetakan Pohon
+        function gambarPohon(x, y) {
+            ctx.fillStyle = '#3e2723';
+            ctx.fillRect(x - 10, y, 20, 40);
+            ctx.fillStyle = 'forestgreen';
+            ctx.beginPath();
+            ctx.moveTo(x - 30, y);
+            ctx.lineTo(x, y - 60);
+            ctx.lineTo(x + 30, y);
+            ctx.fill();
+        }
+
+        // ==========================================
+        // FUNGSI ANIMASI UTAMA (FRAME-BY-FRAME)
+        // ==========================================
+        function animasi() {
+            
+            // 🎯 TUGAS 9: MENGHAPUS JEJAK FRAME (TRAILS)
+            // Tanpa ini, bulan dan awan akan meninggalkan jejak seperti kuas.
+            // Hapus tanda garis miring ganda (//) di bawah ini untuk membersihkan layar tiap frame!
+            
+            // ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+
+            // 🎯 TUGAS 10: Warnai langit malam. Ganti 'blue' menjadi 'midnightblue'
+            ctx.fillStyle = 'blue';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Menggambar Kumpulan Bintang
+            ctx.fillStyle = 'white';
+            for (let i = 0; i < bintang.length; i++) {
+                ctx.fillRect(bintang[i].x, bintang[i].y, bintang[i].ukuran, bintang[i].ukuran);
+            }
+
+            // ================== BULAN ==================
+            ctx.beginPath();
+            ctx.arc(posisiX_Bulan, posisiY_Bulan, 40, 0, Math.PI * 2);
+            
+            // 🎯 TUGAS 11: Beri warna bulan, ganti 'white' menjadi 'lightyellow'
+            ctx.fillStyle = 'white'; 
+            ctx.fill();
+            
+            ctx.lineWidth = 6;
+            ctx.strokeStyle = 'rgba(255, 255, 0, 0.4)';
+            ctx.stroke();
+
+            // 🎯 TUGAS 12: MEMBUAT BULAN BERGERAK!
+            // Ubah angka 0 menjadi 1 atau 1.5 agar bulan bergeser perlahan ke kiri.
+            posisiX_Bulan -= 0; 
+
+            // 🎯 TUGAS 13: MEMBUAT BULAN KEMBALI LAGI (LOOPING)
+            // Jika bulan melewati batas kiri (-50), kembalikan ke batas kanan (850).
+            // Hapus tanda (//) di bawah ini untuk mengaktifkan logikanya!
+            
+            // if (posisiX_Bulan < -50) {
+            //     posisiX_Bulan = 850;
+            // }
+
+            // ================== AWAN ==================
+            // 🎯 TUGAS 14: Ubah warna awan agar agak transparan.
+            // Ganti 'white' menjadi 'rgba(255, 255, 255, 0.6)'
+            ctx.fillStyle = 'white';
+            
+            ctx.beginPath();
+            ctx.arc(posisiX_Awan, posisiY_Awan, 30, 0, Math.PI * 2);
+            ctx.arc(posisiX_Awan + 40, posisiY_Awan - 10, 40, 0, Math.PI * 2);
+            ctx.arc(posisiX_Awan + 80, posisiY_Awan, 30, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 🎯 TUGAS 15: MEMBUAT AWAN BERGERAK!
+            // Ketik kode ini di bawah: posisiX_Awan += 0.5;
+            
+            // KETIK DI SINI:
+
+
+            // 🎯 TUGAS 16: MEMBUAT AWAN KEMBALI LAGI (LOOPING)
+            // Hapus tanda (//) di bawah ini agar awan terus muncul kembali dari kiri.
+            
+            // if (posisiX_Awan > canvas.width + 100) {
+            //     posisiX_Awan = -100;
+            // }
+
+            // ================== TANAH & POHON ==================
+            // 🎯 TUGAS 17: Ubah warna tanah. Ganti 'brown' menjadi '#0b3303'
+            ctx.fillStyle = 'brown';
+            ctx.fillRect(0, canvas.height - 100, canvas.width, 100);
+            
+            gambarPohon(150, canvas.height - 100);
+            
+            // 🎯 TUGAS 18: Tanam lebih banyak pohon! 
+            // Hapus tanda (//) pada dua baris kode di bawah ini:
+            // gambarPohon(300, canvas.height - 90);
+            // gambarPohon(650, canvas.height - 100);
+
+            // ================== TANDA TANGAN ==================
+            ctx.fillStyle = 'white';
+            ctx.font = '20px Arial';
+            
+            // 🎯 TUGAS 19: Ubah tulisan "Nama Siswa" menjadi namamu!
+            ctx.fillText("Karya: Nama Siswa", 20, 40);
+
+            // ================== MESIN ANIMASI ==================
+            // 🎯 TUGAS 20: MEMICU ANIMASI 60 FPS
+            // Perintah ini meminta browser untuk mengulang fungsi animasi secara terus menerus.
+            // Ketik kode ini di bawah: requestAnimationFrame(animasi);
+            
+            // KETIK DI SINI:
+            
+
+        }
+
+        // Memanggil fungsi animasi untuk pertama kalinya
+        animasi();
+
+    <\/script>
+</body>
+</html>`;
+
+        const editor = document.getElementById('code-editor');
+
+        // Initial Load Data & LocalStorage
+        window.onload = function() {
+            const savedCode = localStorage.getItem('lkpd_modul3_code');
+            editor.value = savedCode ? savedCode : DEFAULT_CODE;
+            runCode(false); // Jalankan kode saat halaman dibuka
+        };
+
+        // Fungsi Menjalankan Kode
+        function runCode(autoSwitch = true) {
+            const htmlCode = editor.value;
+            localStorage.setItem('lkpd_modul3_code', htmlCode);
+            
+            const iframe = document.getElementById('preview-frame');
+            const blob = new Blob([htmlCode], { type: 'text/html' });
+            iframe.src = URL.createObjectURL(blob);
+
+            // Jika diakses dari HP dan tombol ditekan, alihkan ke Tab Hasil
+            if (window.innerWidth <= 768 && autoSwitch) {
+                switchTab('preview');
+            }
+        }
+
+        // Auto Save saat siswa mengetik
+        editor.addEventListener('input', function() {
+            localStorage.setItem('lkpd_modul3_code', this.value);
+        });
+
+        // Penanganan Keyboard Shortcuts & Tab Indentation
+        editor.addEventListener('keydown', function(e) {
+            // Indentasi Tab (2 Spasi)
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const start = this.selectionStart;
+                const end = this.selectionEnd;
+
+                this.value = this.value.substring(0, start) + "  " + this.value.substring(end);
+                this.selectionStart = this.selectionEnd = start + 2;
+            }
+
+            // Shortcut Ctrl + Enter / Cmd + Enter
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                runCode(true);
+            }
+        });
+
+        // Fungsi Perpindahan Tab (Tampilan HP)
+        function switchTab(tabName) {
+            if (window.innerWidth > 768) return;
+
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.panel').forEach(panel => panel.classList.remove('active-panel'));
+
+            document.getElementById('tab-' + tabName).classList.add('active');
+            document.getElementById('panel-' + tabName).classList.add('active-panel');
+        }
+
+        // Fitur Reset Kode Ke Templat Awal
+        function resetCode() {
+            if (confirm("Apakah kamu yakin ingin mengembalikan kode ke awal? Semua perubahanmu akan dihapus.")) {
+                localStorage.removeItem('lkpd_modul3_code');
+                editor.value = DEFAULT_CODE;
+                runCode(false);
+            }
+        }
+
+        // Fitur Layar Penuh pada Hasil Preview
+        function toggleFullscreen() {
+            const iframe = document.getElementById('preview-frame');
+            if (iframe.requestFullscreen) {
+                iframe.requestFullscreen();
+            } else if (iframe.webkitRequestFullscreen) { /* Safari */
+                iframe.webkitRequestFullscreen();
+            } else if (iframe.msRequestFullscreen) { /* IE11 */
+                iframe.msRequestFullscreen();
+            }
+        }
+    </script>
+</body>
+</html>

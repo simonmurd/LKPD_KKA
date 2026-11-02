@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LKPD Interaktif: Modul Diamond Rush Game</title>
+    <style>
+        /* Import Font Modern, Minimalis & Futuristik */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Space+Grotesk:wght@500;700&family=Fira+Code:wght@400;500&display=swap');
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9fa;
+            color: #212529;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background-color: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            padding: 15px 30px;
+            border-bottom: 1px solid #e9ecef;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+
+        header h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #00d2ff, #3a7bd5);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .badge {
+            background: #ffffff;
+            color: #0083b0;
+            border: 1px solid #00d2ff;
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            box-shadow: 0 4px 10px rgba(0, 210, 255, 0.15);
+            letter-spacing: 0.5px;
+        }
+
+        .workspace {
+            display: flex;
+            flex: 1;
+            padding: 20px;
+            gap: 20px;
+            overflow: hidden;
+            background-image: radial-gradient(#dee2e6 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        /* Responsive Workspace untuk Mobile */
+        @media (max-width: 768px) {
+            .workspace {
+                flex-direction: column;
+                overflow-y: auto;
+            }
+            .panel {
+                min-height: 400px;
+            }
+        }
+
+        .panel {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid #e9ecef;
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+
+        .panel:hover {
+            box-shadow: 0 12px 40px rgba(0, 210, 255, 0.12);
+            border-color: #00d2ff;
+        }
+
+        .panel-header {
+            padding: 15px 25px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            font-weight: 700;
+            font-size: 1.05rem;
+            font-family: 'Space Grotesk', sans-serif;
+            color: #495057;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .instruction-panel {
+            flex: 1;
+            overflow-y: auto;
+        }
+        
+        .instruction-content {
+            padding: 25px;
+            font-size: 0.95rem;
+            line-height: 1.7;
+            color: #495057;
+        }
+
+        .instruction-content h3 {
+            margin-bottom: 15px;
+            color: #0083b0;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .instruction-content p {
+            margin-bottom: 15px;
+        }
+
+        .task-box {
+            background: rgba(0, 210, 255, 0.08);
+            border-left: 4px solid #00d2ff;
+            border-radius: 0 8px 8px 0;
+            padding: 15px;
+            margin-top: 20px;
+            color: #212529;
+            font-size: 0.9rem;
+        }
+
+        .editor-panel {
+            flex: 1.2;
+        }
+
+        textarea {
+            flex: 1;
+            width: 100%;
+            border: none;
+            resize: none;
+            padding: 20px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+            background-color: #f1f3f5;
+            color: #212529;
+            outline: none;
+            line-height: 1.6;
+            white-space: pre;
+            overflow-x: auto;
+            transition: background-color 0.2s ease;
+        }
+
+        textarea:focus {
+            background-color: #ffffff;
+            box-shadow: inset 0 0 0 2px #00d2ff;
+        }
+
+        .action-bar {
+            padding: 12px 25px;
+            background: #ffffff;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        button.btn-run {
+            background: linear-gradient(135deg, #00d2ff 0%, #3a7bd5 100%);
+            color: #ffffff;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(0, 210, 255, 0.3);
+        }
+
+        button.btn-run:hover {
+            box-shadow: 0 6px 20px rgba(58, 123, 213, 0.35);
+            transform: translateY(-2px);
+        }
+
+        .preview-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Pengaturan saat mode Fullscreen aktif */
+        .preview-panel:fullscreen {
+            background: #ffffff;
+            border-radius: 0;
+            border: none;
+        }
+        .preview-panel:-webkit-full-screen {
+            background: #ffffff;
+        }
+
+        /* Tombol Fullscreen */
+        .btn-fullscreen {
+            background: transparent;
+            color: #495057;
+            border: 1px solid #ced4da;
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .btn-fullscreen:hover {
+            background: #e9ecef;
+            color: #212529;
+            border-color: #adb5bd;
+        }
+
+        iframe {
+            flex: 1;
+            width: 100%;
+            border: none;
+            background-color: #ffffff;
+        }
+        
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f8f9fa; }
+        ::-webkit-scrollbar-thumb { background: #ced4da; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #adb5bd; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>⚡ CodeQuest: NEXUS</h1>
+        <div class="badge">💎 Modul: Diamond Rush (Tilemap & Grid Matrix Logic)</div>
+    </header>
+
+    <div class="workspace">
+        
+        <div class="panel instruction-panel">
+            <div class="panel-header" style="justify-content: flex-start;">📜 Modul Instruksi</div>
+            <div class="instruction-content">
+                <h3>Klasik Diamond Rush: Tilemap & Grid Matrix Logic!</h3>
+                <p>Selamat datang di Modul Diamond Rush, Developer Game! 💎 Game ini membawa konsep matriks 2D ke tingkat berikutnya karena tidak hanya membaca posisi objek, tetapi juga mensimulasikan fisika sederhana dan interaksi lingkungan (seperti mendorong batu dan mengumpulkan item).</p>
+                <p>Misi ini menguji logika percabangan majemuk, manipulasi matriks ubin, dan event handler melalui <strong>20 Tugas Terstruktur</strong> yang harus kamu selesaikan pada kode di editor tengah.</p>
+                
+                <div class="task-box">
+                    <strong>🎯 Cara Mengerjakan:</strong><br>
+                    Cari petunjuk <strong>🎯 TUGAS 1</strong> sampai <strong>TUGAS 20</strong> pada editor kode. Baca instruksi komentar, lalu isi nilai atau hapus tanda tanya (<code>'?'</code>) dengan ekspresi JavaScript yang tepat.<br><br>
+                    Setelah selesai, klik <strong>"✨ Sinkronisasi Kode"</strong>. Kamu dapat mengontrol karakter Penjelajah menggunakan <strong>Keyboard PC</strong> (Panah/WASD) atau <strong>D-Pad Virtual</strong> pada layar!
+                </div>
+
+                <div style="margin-top:20px; font-size:0.85rem; background:#f8f9fa; padding:12px; border-radius:8px; border-left:3px solid #00d2ff;">
+                    <strong>💡 Kaitan Materi & Fokus Pembelajaran:</strong><br>
+                    • <strong>Tilemap & Matriks 2D:</strong> Peta gua direpresentasikan sebagai matriks angka (0: Kosong, 1: Dinding, 2: Batu, 3: Berlian, 4: Musuh).<br>
+                    • <strong>Event Keyboard (addEventListener):</strong> Navigasi grid menggunakan keydown.<br>
+                    • <strong>Logika Dorong Batu:</strong> Jika menabrak batu (2) dan ubin di baliknya kosong (0), geser batu dan majukan pemain.<br>
+                    • <strong>Logika Ambil Berlian & Jebakan:</strong> Ambil berlian (3) untuk menambah skor, dan hindari musuh/jebakan (4) agar nyawa tidak berkurang.
+                </div>
+            </div>
+        </div>
+
+        <div class="panel editor-panel">
+            <div class="panel-header" style="justify-content: flex-start;">💻 Terminal Interface</div>
+<textarea id="code-editor" spellcheck="false" wrap="off">
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <!-- 🎯 TUGAS 1: Ubah judul tab browser di bawah ini dengan namamu -->
+    <title>Modul Diamond Rush - Tilemap Game [NAMA SISWA]</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: #0f172a;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding-top: 15px;
+            touch-action: manipulation;
+        }
+        
+        #gameInfo {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 325px;
+            margin-bottom: 10px;
+            font-size: 0.85rem;
+            padding: 8px 12px;
+            box-sizing: border-box;
+            background: #1e293b;
+            border-radius: 8px;
+            border: 1px solid #334155;
+        }
+
+        /* 🎯 TUGAS 2: Ganti warna background kanvas dari #020617 menjadi warna lain, misal: '#090d16' */
+        #gameCanvas {
+            background-color: #020617;
+            
+            /* 🎯 TUGAS 3: Ubah ketebalan border dari 3px menjadi 4px */
+            border: 3px solid #00d2ff;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0, 210, 255, 0.25);
+            max-width: 100%;
+            height: auto;
+        }
+
+        .btn-start {
+            margin-top: 12px;
+            padding: 10px 20px;
+            /* 🎯 TUGAS 4: Ganti warna tombol dari #00d2ff menjadi warna favoritmu */
+            background-color: #00d2ff;
+            border: none;
+            border-radius: 8px;
+            color: #0f172a;
+            font-size: 0.95rem;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 4px 0 #0083b0;
+            transition: all 0.1s;
+        }
+        .btn-start:active {
+            transform: translateY(3px);
+            box-shadow: none;
+        }
+
+        /* Controls Virtual D-Pad untuk Mobile & Touch */
+        .controls-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            margin-top: 10px;
+        }
+        .row-btn {
+            display: flex;
+            gap: 10px;
+        }
+        .nav-btn {
+            width: 50px;
+            height: 40px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: white;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            user-select: none;
+        }
+        .nav-btn:active {
+            background-color: #00d2ff;
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 🎯 TUGAS 5: Ganti nama judul game H2 di bawah ini -->
+    <h2>💎 Diamond Rush Engine</h2>
+    
+    <div id="gameInfo">
+        <span>Nyawa: <span id="livesVal" style="color:#ef4444;">❤️❤️❤️</span></span>
+        <span>Skor: <span id="scoreVal" style="color:#38bdf8;">0</span></span>
+        <span>Sisa Berlian: <span id="diamondsVal" style="color:#facc15;">0</span></span>
+    </div>
+    
+    <canvas id="gameCanvas" width="325" height="275"></canvas>
+    
+    <button class="btn-start" onclick="startGame()">▶ Mulai / Restart</button>
+
+    <!-- Controls Virtual D-Pad -->
+    <div class="controls-container">
+        <div class="nav-btn" onclick="movePlayer(0, -1)">⬆️</div>
+        <div class="row-btn">
+            <div class="nav-btn" onclick="movePlayer(-1, 0)">⬅️</div>
+            <div class="nav-btn" onclick="movePlayer(0, 1)">⬇️</div>
+            <div class="nav-btn" onclick="movePlayer(1, 0)">➡️</div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('scoreVal');
+        const livesEl = document.getElementById('livesVal');
+        const diamondsEl = document.getElementById('diamondsVal');
+
+        const tileSize = 25;
+        
+        // 1. Matriks Tilemap Gua (11 Baris x 13 Kolom)
+        // 0 = Jalur Kosong/Tanah, 1 = Dinding/Tembok, 2 = Batu Besar (Boulder), 3 = Berlian (Diamond), 4 = Musuh/Jebakan
+        let mapGrid = [
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 0, 3, 0, 2, 0, 3, 0, 2, 0, 3, 0, 1],
+            [1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1],
+            [1, 2, 0, 3, 0, 0, 4, 0, 0, 3, 0, 2, 1],
+            [1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1],
+            [1, 3, 2, 0, 0, 3, 0, 3, 0, 0, 2, 3, 1],
+            [1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1],
+            [1, 2, 0, 3, 0, 0, 4, 0, 0, 3, 0, 2, 1],
+            [1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1],
+            [1, 0, 3, 0, 2, 0, 3, 0, 2, 0, 3, 0, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+        ];
+
+        // ==========================================
+        // 1. MANAJEMEN STATUS TERPUSAT (STATE MANAGEMENT)
+        // ==========================================
+        const gameState = {
+            score: 0,
+            
+            // 🎯 TUGAS 6: Setel nilai awal nyawa pemain (lives) menjadi 3
+            lives: '?',
+            
+            status: 'IDLE' // IDLE, PLAYING, GAME_OVER, WIN
+        };
+
+        const player = {
+            x: 1,
+            y: 1,
+            
+            // 🎯 TUGAS 7: Setel warna karakter pemain menjadi '#00f0ff' (Cyan/Biru Muda)
+            color: '?'
+        };
+
+        let animationFrameId = null;
+
+        // ==========================================
+        // 2. LOGIKA PERGERAKAN & INTERAKSI MATRIKS TILEMAP
+        // ==========================================
+        function handlePlayerMovement(nextX, nextY) {
+            if (gameState.status !== 'PLAYING') return;
+
+            // Cek batas koordinat grid
+            if (nextY < 0 || nextY >= mapGrid.length || nextX < 0 || nextX >= mapGrid[0].length) return;
+
+            let targetTile = mapGrid[nextY][nextX];
+
+            // Kasus 1: Jalur Kosong (Tanah) -> Pemain Langsung Melangkah
+            if (targetTile === 0) {
+                // 🎯 TUGAS 8: Setel player.x ke nilai nextX
+                player.x = '?';
+                
+                // 🎯 TUGAS 9: Setel player.y ke nilai nextY
+                player.y = '?';
+            } 
+            // Kasus 2: Ambil Berlian (Diamond)
+            else if (targetTile === 3) {
+                // 🎯 TUGAS 10: Tambahkan skor pemain sebesar 100 saat mengambil berlian
+                gameState.score += '?';
+                
+                // 🎯 TUGAS 11: Ubah ubin berlian yang diambil di mapGrid[nextY][nextX] menjadi jalur kosong (0)
+                mapGrid[nextY][nextX] = '?';
+                
+                player.x = nextX;
+                player.y = nextY;
+            } 
+            // Kasus 3: Dorong Batu Besar (Boulder)
+            else if (targetTile === 2) {
+                // Hitung koordinat ubin di balik batu yang didorong
+                // 🎯 TUGAS 12: Tentukan pushX yaitu nextX + (nextX - player.x)
+                let pushX = '?';
+                
+                // 🎯 TUGAS 13: Tentukan pushY yaitu nextY + (nextY - player.y)
+                let pushY = '?';
+
+                // Cek apakah ubin di balik batu adalah jalur kosong (nilai 0)
+                // 🎯 TUGAS 14: Cek jika ubin mapGrid[pushY][pushX] === 0 (Kosong)
+                if (mapGrid[pushY][pushX] === '?') {
+                    // Pindahkan batu ke ubin baru di baliknya
+                    mapGrid[pushY][pushX] = 2;
+                    
+                    // 🎯 TUGAS 15: Kosongkan ubin batu sebelumnya dengan mengubah mapGrid[nextY][nextX] menjadi 0
+                    mapGrid[nextY][nextX] = '?';
+                    
+                    // Majukan posisi pemain
+                    player.x = nextX;
+                    player.y = nextY;
+                }
+            }
+            // Kasus 4: Menabrak Musuh / Jebakan (Enemy)
+            else if (targetTile === 4) {
+                // 🎯 TUGAS 16: Kurangi nyawa pemain (gameState.lives--)
+                '?';
+                
+                if (gameState.lives <= 0) {
+                    gameState.status = 'GAME_OVER';
+                } else {
+                    // Reset posisi pemain kembali ke awal (1, 1)
+                    player.x = 1;
+                    player.y = 1;
+                }
+            }
+            // Kasus 5: Target Tile === 1 (Dinding) -> Pemain Diam di Tempat (Tidak ada aksi)
+        }
+
+        function movePlayer(dx, dy) {
+            let nextX = player.x + dx;
+            let nextY = player.y + dy;
+            handlePlayerMovement(nextX, nextY);
+        }
+
+        // ==========================================
+        // 3. EVENT LISTENER KONTROL KEYBOARD
+        // ==========================================
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
+                // 🎯 TUGAS 17: Panggil movePlayer(0, -1) untuk bergerak ke atas
+                movePlayer('?', '?');
+            } else if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') {
+                // 🎯 TUGAS 18: Panggil movePlayer(0, 1) untuk bergerak ke bawah
+                movePlayer('?', '?');
+            } else if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+                // 🎯 TUGAS 19: Panggil movePlayer(-1, 0) untuk bergerak ke kiri
+                movePlayer('?', '?');
+            } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+                movePlayer(1, 0);
+            }
+
+            if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(e.code)) {
+                e.preventDefault();
+            }
+        });
+
+        // ==========================================
+        // 4. RENDERING VISUAL KANVAS TILEMAP
+        // ==========================================
+        function drawGame() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // A. Gambar Peta Matrix Tilemap (Dinding, Batu, Berlian, Musuh)
+            let remainingDiamonds = 0;
+
+            for (let r = 0; r < mapGrid.length; r++) {
+                for (let c = 0; c < mapGrid[r].length; c++) {
+                    let tile = mapGrid[r][c];
+                    let x = c * tileSize;
+                    let y = r * tileSize;
+
+                    if (tile === 1) { // 1 = Dinding Kuno
+                        ctx.fillStyle = '#334155';
+                        ctx.fillRect(x, y, tileSize, tileSize);
+                        ctx.strokeStyle = '#1e293b';
+                        ctx.strokeRect(x, y, tileSize, tileSize);
+                    } else if (tile === 2) { // 2 = Batu Besar (Boulder)
+                        ctx.beginPath();
+                        ctx.arc(x + tileSize/2, y + tileSize/2, tileSize/2 - 2, 0, Math.PI * 2);
+                        ctx.fillStyle = '#94a3b8';
+                        ctx.fill();
+                        ctx.strokeStyle = '#64748b';
+                        ctx.stroke();
+                    } else if (tile === 3) { // 3 = Berlian (Diamond)
+                        remainingDiamonds++;
+                        ctx.beginPath();
+                        ctx.moveTo(x + tileSize/2, y + 3);
+                        ctx.lineTo(x + tileSize - 3, y + tileSize/2);
+                        ctx.lineTo(x + tileSize/2, y + tileSize - 3);
+                        ctx.lineTo(x + 3, y + tileSize/2);
+                        ctx.closePath();
+                        ctx.fillStyle = '#00d2ff';
+                        ctx.fill();
+                        ctx.strokeStyle = '#ffffff';
+                        ctx.stroke();
+                    } else if (tile === 4) { // 4 = Musuh (Ular/Laba-laba)
+                        ctx.beginPath();
+                        ctx.arc(x + tileSize/2, y + tileSize/2, tileSize/2 - 4, 0, Math.PI * 2);
+                        ctx.fillStyle = '#ef4444';
+                        ctx.fill();
+                    }
+                }
+            }
+
+            // B. Gambar Karakter Pemain (Penjelajah)
+            let px = player.x * tileSize + tileSize / 2;
+            let py = player.y * tileSize + tileSize / 2;
+            ctx.beginPath();
+            ctx.arc(px, py, tileSize / 2 - 3, 0, Math.PI * 2);
+            ctx.fillStyle = player.color;
+            ctx.fill();
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.lineWidth = 1;
+
+            // C. Update UI Status Bar
+            scoreEl.innerText = gameState.score;
+            livesEl.innerText = "❤️".repeat(Math.max(0, gameState.lives));
+            diamondsEl.innerText = remainingDiamonds;
+
+            // Cek kondisi Menang (Semua Berlian telah dikumpulkan)
+            if (remainingDiamonds === 0 && gameState.status === 'PLAYING') {
+                gameState.status = 'WIN';
+            }
+
+            // D. Tampilan Overlay Game Over / Win
+            if (gameState.status === 'GAME_OVER' || gameState.status === 'WIN') {
+                ctx.fillStyle = "rgba(15, 23, 42, 0.88)";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                ctx.textAlign = "center";
+                if (gameState.status === 'GAME_OVER') {
+                    ctx.fillStyle = "#ef4444";
+                    ctx.font = "bold 20px Space Grotesk";
+                    ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - 10);
+                    ctx.fillStyle = "#ffffff";
+                    ctx.font = "11px Space Grotesk";
+                    ctx.fillText("Kehabisan nyawa! Klik Mulai untuk coba lagi.", canvas.width / 2, canvas.height / 2 + 15);
+                } else {
+                    ctx.fillStyle = "#10b981";
+                    ctx.font = "bold 20px Space Grotesk";
+                    ctx.fillText("STAGE CLEAR! 💎", canvas.width / 2, canvas.height / 2 - 10);
+                    ctx.fillStyle = "#ffffff";
+                    ctx.font = "11px Space Grotesk";
+                    ctx.fillText("Semua berlian berhasil dikumpulkan!", canvas.width / 2, canvas.height / 2 + 15);
+                }
+            }
+        }
+
+        // ==========================================
+        // 5. MAIN ENGINE LOOP
+        // ==========================================
+        function gameLoop() {
+            drawGame();
+
+            if (gameState.status === 'PLAYING') {
+                // 🎯 TUGAS 20: Panggil requestAnimationFrame(gameLoop) untuk memperbarui tampilan game secara kontinu
+                animationFrameId = requestAnimationFrame('?');
+            }
+        }
+
+        function resetMap() {
+            mapGrid = [
+                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                [1, 0, 3, 0, 2, 0, 3, 0, 2, 0, 3, 0, 1],
+                [1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1],
+                [1, 2, 0, 3, 0, 0, 4, 0, 0, 3, 0, 2, 1],
+                [1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1],
+                [1, 3, 2, 0, 0, 3, 0, 3, 0, 0, 2, 3, 1],
+                [1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1],
+                [1, 2, 0, 3, 0, 0, 4, 0, 0, 3, 0, 2, 1],
+                [1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1],
+                [1, 0, 3, 0, 2, 0, 3, 0, 2, 0, 3, 0, 1],
+                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+            ];
+            player.x = 1;
+            player.y = 1;
+        }
+
+        function startGame() {
+            gameState.score = 0;
+            gameState.lives = 3;
+            gameState.status = 'PLAYING';
+
+            resetMap();
+
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+
+            window.focus();
+            gameLoop();
+        }
+
+        drawGame();
+    </script>
+</body>
+</html>
+</textarea>
+            <div class="action-bar">
+                <button class="btn-run" onclick="runCode()">✨ Sinkronisasi Kode</button>
+            </div>
+        </div>
+
+        <div class="panel preview-panel" id="preview-panel">
+            <div class="panel-header">
+                <div>🎮 Output Sistem</div>
+                <button class="btn-fullscreen" id="fs-btn" onclick="toggleFullscreen()" title="Buka Mode Layar Penuh">🔲 Layar Penuh</button>
+            </div>
+            <iframe id="preview-frame"></iframe>
+        </div>
+
+    </div>
+
+    <script>
+        let urlAktif = null;
+
+        function runCode() {
+            const htmlCode = document.getElementById('code-editor').value;
+            const iframe = document.getElementById('preview-frame');
+            
+            const blob = new Blob([htmlCode], { type: 'text/html;charset=utf-8' });
+            
+            if (urlAktif) {
+                URL.revokeObjectURL(urlAktif);
+            }
+            
+            urlAktif = URL.createObjectURL(blob);
+            iframe.src = urlAktif;
+            
+            // Auto focus ke iframe setelah sinkronisasi agar event keyboard langsung berfungsi
+            iframe.onload = () => {
+                iframe.contentWindow.focus();
+            };
+        }
+
+        // Logika Mode Fullscreen
+        function toggleFullscreen() {
+            const panel = document.getElementById('preview-panel');
+            const btn = document.getElementById('fs-btn');
+            
+            if (!document.fullscreenElement) {
+                if (panel.requestFullscreen) {
+                    panel.requestFullscreen();
+                } else if (panel.webkitRequestFullscreen) { /* Safari */
+                    panel.webkitRequestFullscreen();
+                } else if (panel.msRequestFullscreen) { /* IE11 */
+                    panel.msRequestFullscreen();
+                }
+                btn.innerHTML = "🔳 Perkecil Layar";
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) { /* Safari */
+                    document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) { /* IE11 */
+                    document.msExitFullscreen();
+                }
+                btn.innerHTML = "🔲 Layar Penuh";
+            }
+        }
+
+        // Event listener saat user keluar dari fullscreen
+        document.addEventListener('fullscreenchange', () => {
+            const btn = document.getElementById('fs-btn');
+            if (!document.fullscreenElement) {
+                btn.innerHTML = "🔲 Layar Penuh";
+            }
+        });
+
+        // Pengaturan tombol Tab pada textarea
+        const editor = document.getElementById('code-editor');
+        editor.addEventListener('keydown', function(e) {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const start = this.selectionStart;
+                const end = this.selectionEnd;
+
+                this.value = this.value.substring(0, start) + "    " + this.value.substring(end);
+                this.selectionStart = this.selectionEnd = start + 4;
+            }
+        });
+
+        window.onload = runCode;
+    </script>
+
+</body>
+</html>

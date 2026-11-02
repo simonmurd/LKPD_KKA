@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LKPD Interaktif: Modul 14 Bubble Bash / Puzzle Bobble</title>
+    <style>
+        /* Import Font Modern, Minimalis & Futuristik */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Space+Grotesk:wght@500;700&family=Fira+Code:wght@400;500&display=swap');
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9fa;
+            color: #212529;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background-color: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            padding: 15px 30px;
+            border-bottom: 1px solid #e9ecef;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+
+        header h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #00f0ff, #ff0055);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .badge {
+            background: #ffffff;
+            color: #00b3cc;
+            border: 1px solid #00f0ff;
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            box-shadow: 0 4px 10px rgba(0, 240, 255, 0.15);
+            letter-spacing: 0.5px;
+        }
+
+        .workspace {
+            display: flex;
+            flex: 1;
+            padding: 20px;
+            gap: 20px;
+            overflow: hidden;
+            background-image: radial-gradient(#dee2e6 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        /* Responsive Workspace untuk Mobile */
+        @media (max-width: 768px) {
+            .workspace {
+                flex-direction: column;
+                overflow-y: auto;
+            }
+            .panel {
+                min-height: 400px;
+            }
+        }
+
+        .panel {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid #e9ecef;
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+
+        .panel:hover {
+            box-shadow: 0 12px 40px rgba(0, 240, 255, 0.12);
+            border-color: #80f7ff;
+        }
+
+        .panel-header {
+            padding: 15px 25px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            font-weight: 700;
+            font-size: 1.05rem;
+            font-family: 'Space Grotesk', sans-serif;
+            color: #495057;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .instruction-panel {
+            flex: 1;
+            overflow-y: auto;
+        }
+        
+        .instruction-content {
+            padding: 25px;
+            font-size: 0.95rem;
+            line-height: 1.7;
+            color: #495057;
+        }
+
+        .instruction-content h3 {
+            margin-bottom: 15px;
+            color: #00b3cc;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .instruction-content p {
+            margin-bottom: 15px;
+        }
+
+        .task-box {
+            background: rgba(0, 240, 255, 0.08);
+            border-left: 4px solid #00f0ff;
+            border-radius: 0 8px 8px 0;
+            padding: 15px;
+            margin-top: 20px;
+            color: #212529;
+            font-size: 0.9rem;
+        }
+
+        .editor-panel {
+            flex: 1.2;
+        }
+
+        textarea {
+            flex: 1;
+            width: 100%;
+            border: none;
+            resize: none;
+            padding: 20px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+            background-color: #f1f3f5;
+            color: #212529;
+            outline: none;
+            line-height: 1.6;
+            white-space: pre;
+            overflow-x: auto;
+            transition: background-color 0.2s ease;
+        }
+
+        textarea:focus {
+            background-color: #ffffff;
+            box-shadow: inset 0 0 0 2px #00f0ff;
+        }
+
+        .action-bar {
+            padding: 12px 25px;
+            background: #ffffff;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        button.btn-run {
+            background: linear-gradient(135deg, #00f0ff 0%, #ff0055 100%);
+            color: #ffffff;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(0, 240, 255, 0.3);
+        }
+
+        button.btn-run:hover {
+            box-shadow: 0 6px 20px rgba(255, 0, 85, 0.35);
+            transform: translateY(-2px);
+        }
+
+        .preview-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Pengaturan saat mode Fullscreen aktif */
+        .preview-panel:fullscreen {
+            background: #ffffff;
+            border-radius: 0;
+            border: none;
+        }
+        .preview-panel:-webkit-full-screen {
+            background: #ffffff;
+        }
+
+        /* Tombol Fullscreen */
+        .btn-fullscreen {
+            background: transparent;
+            color: #495057;
+            border: 1px solid #ced4da;
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .btn-fullscreen:hover {
+            background: #e9ecef;
+            color: #212529;
+            border-color: #adb5bd;
+        }
+
+        iframe {
+            flex: 1;
+            width: 100%;
+            border: none;
+            background-color: #ffffff;
+        }
+        
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f8f9fa; }
+        ::-webkit-scrollbar-thumb { background: #ced4da; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #adb5bd; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>⚡ CodeQuest: NEXUS</h1>
+        <div class="badge">🫧 Modul 14: Bubble Bash / Puzzle Bobble (Grid Physics & Color Matching)</div>
+    </header>
+
+    <div class="workspace">
+        
+        <div class="panel instruction-panel">
+            <div class="panel-header" style="justify-content: flex-start;">📜 Modul Instruksi</div>
+            <div class="instruction-content">
+                <h3>Bubble Bash: Grid-Based Physics & Color Matching Engine!</h3>
+                <p>Selamat datang di Modul 14, Developer Game! 🫧 Game puzzle tembak-menembak ini menguji kemampuan tingkat lanjut dalam matematika terapan dan algoritma pencarian kelompok. Kamu akan mempelajari <strong>trigonometri peluncuran</strong>, <strong>penguncian matriks grid (Grid Snap)</strong>, serta <strong>algoritma rekursif / Flood Fill (Cluster Detection)</strong>.</p>
+                <p>Misi ini dikemas dalam <strong>20 Tugas Terstruktur</strong> yang harus kamu selesaikan pada kode di editor tengah.</p>
+                
+                <div class="task-box">
+                    <strong>🎯 Cara Mengerjakan:</strong><br>
+                    Cari petunjuk <strong>🎯 TUGAS 1</strong> sampai <strong>TUGAS 20</strong> pada editor kode. Baca instruksi komentar, lalu isi nilai atau hapus tanda tanya (<code>'?'</code>) dengan ekspresi JavaScript yang tepat.<br><br>
+                    Setelah selesai, klik <strong>"✨ Sinkronisasi Kode"</strong>. Kamu dapat mengarahkan tembakan menggunakan **Mouse / Touch** atau tombol kontrol virtual!
+                </div>
+
+                <div style="margin-top:20px; font-size:0.85rem; background:#f8f9fa; padding:12px; border-radius:8px; border-left:3px solid #00f0ff;">
+                    <strong>💡 Konsep Kunci Modul 14:</strong><br>
+                    • <strong>Trigonometri & Vektor Peluncuran:</strong> Menggunakan <code>Math.atan2</code> untuk sudut kursor serta <code>Math.cos</code> & <code>Math.sin</code> untuk menentukan kecepatan sumbu X dan Y.<br>
+                    • <strong>Grid Snap & Matriks 2D:</strong> Mengonversi posisi koordinat piksel gelembung menjadi indeks baris dan kolom matriks papan saat terjadi benturan.<br>
+                    • <strong>Flood Fill / Cluster Matching (Match-3+):</strong> Memeriksa gelembung bersebelahan dengan warna sama. Jika berjumlah $\ge 3$, pemicuan animasi pecah dijalankan.<br>
+                    • <strong>Floating Bubble Check (Gravitasi):</strong> Algoritma BFS/DFS untuk meruntuhkan gelembung-gelembung yang terisolasi dari langit-langit papan.
+                </div>
+            </div>
+        </div>
+
+        <div class="panel editor-panel">
+            <div class="panel-header" style="justify-content: flex-start;">💻 Terminal Interface</div>
+<textarea id="code-editor" spellcheck="false" wrap="off">
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <!-- 🎯 TUGAS 1: Ubah judul tab browser di bawah ini dengan namamu -->
+    <title>Modul 14 - Bubble Bash Game [NAMA SISWA]</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: #121214;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding-top: 15px;
+            touch-action: manipulation;
+        }
+        
+        #gameInfo {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 320px;
+            margin-bottom: 10px;
+            font-size: 0.85rem;
+            padding: 8px 12px;
+            box-sizing: border-box;
+            background: #1e1e24;
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+
+        /* 🎯 TUGAS 2: Ganti warna background kanvas dari #0b0c10 menjadi warna lain, misal: '#0f111a' */
+        #gameCanvas {
+            background-color: #0b0c10;
+            
+            /* 🎯 TUGAS 3: Ubah ketebalan border dari 3px menjadi 4px atau ganti warnanya */
+            border: 3px solid #00f0ff;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.25);
+            max-width: 100%;
+            height: auto;
+            cursor: crosshair;
+        }
+
+        .btn-start {
+            margin-top: 12px;
+            padding: 10px 20px;
+            /* 🎯 TUGAS 4: Ganti warna tombol dari #00f0ff menjadi warna favoritmu */
+            background-color: #00f0ff;
+            border: none;
+            border-radius: 8px;
+            color: #000000;
+            font-size: 0.95rem;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 4px 0 #00b3cc;
+            transition: all 0.1s;
+        }
+        .btn-start:active {
+            transform: translateY(3px);
+            box-shadow: none;
+        }
+
+        .controls-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .nav-btn {
+            padding: 8px 16px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .nav-btn:active {
+            background-color: #00f0ff;
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 🎯 TUGAS 5: Ganti nama judul game H2 di bawah ini -->
+    <h2>🫧 Bubble Bash Engine</h2>
+    
+    <div id="gameInfo">
+        <span>Skor: <span id="scoreVal" style="color:#00f0ff;">0</span></span>
+        <span>Status: <span id="statusVal" style="color:#ffcc00;">AIMING</span></span>
+        <span>Selanjutnya: <span id="nextBubbleVal" style="font-weight:bold;">●</span></span>
+    </div>
+    
+    <canvas id="gameCanvas" width="320" height="420"></canvas>
+    
+    <button class="btn-start" onclick="startGame()">▶ Mulai / Restart</button>
+
+    <div class="controls-container">
+        <button class="nav-btn" onclick="aimAndShoot(-0.2)">⬅️ Kiri</button>
+        <button class="nav-btn" onclick="shootBubble()">🚀 Tembak</button>
+        <button class="nav-btn" onclick="aimAndShoot(0.2)">➡️ Kanan</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('scoreVal');
+        const statusEl = document.getElementById('statusVal');
+        const nextBubbleEl = document.getElementById('nextBubbleVal');
+
+        const BUBBLE_RADIUS = 16;
+        const GRID_ROWS = 9;
+        const GRID_COLS = 10;
+        const COLORS = ['#ff4d4d', '#4d79ff', '#4dff4d', '#ffd700', '#ff4dff'];
+
+        let grid = [];
+
+        // ==========================================
+        // 1. MANAJEMEN STATUS TERPUSAT (STATE MANAGEMENT)
+        // ==========================================
+        const gameState = {
+            // 🎯 TUGAS 6: Setel skor awal pemain menjadi 0
+            score: '?',
+            currentBubbleColor: '#ff4d4d',
+            nextBubbleColor: '#4d79ff',
+            status: 'AIMING' // AIMING, SHOOTING, GAME_OVER
+        };
+
+        const shooter = {
+            x: canvas.width / 2,
+            y: canvas.height - 35,
+            angle: -Math.PI / 2,
+            
+            // 🎯 TUGAS 7: Setel kecepatan peluru gelembung (speed) menjadi 9
+            speed: '?'
+        };
+
+        const movingBubble = {
+            x: 0,
+            y: 0,
+            dx: 0,
+            dy: 0,
+            
+            // 🎯 TUGAS 8: Setel radius gelembung bergerak sama dengan BUBBLE_RADIUS (16)
+            radius: '?',
+            color: '#ff4d4d',
+            active: false
+        };
+
+        let animationFrameId = null;
+
+        function getRandomColor() {
+            return COLORS[Math.floor(Math.random() * COLORS.length)];
+        }
+
+        // ==========================================
+        // 2. EVENT LISTENER KONTROL & TRIGONOMETRI
+        // ==========================================
+        canvas.addEventListener('mousemove', (e) => {
+            if (gameState.status !== 'AIMING') return;
+
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            // 🎯 TUGAS 9: Hitung sudut kemiringan penembak menggunakan Math.atan2(mouseY - shooter.y, mouseX - shooter.x)
+            // Ubah '?' menjadi: Math.atan2(mouseY - shooter.y, mouseX - shooter.x)
+            shooter.angle = '?';
+
+            if (shooter.angle > -0.2) shooter.angle = -0.2;
+            if (shooter.angle < -Math.PI + 0.2) shooter.angle = -Math.PI + 0.2;
+        });
+
+        canvas.addEventListener('click', shootBubble);
+
+        function shootBubble() {
+            if (gameState.status !== 'AIMING') return;
+
+            gameState.status = 'SHOOTING';
+            movingBubble.x = shooter.x;
+            movingBubble.y = shooter.y;
+            movingBubble.color = gameState.currentBubbleColor;
+
+            // 🎯 TUGAS 10: Menentukan kecepatan horizontal (dx) menggunakan shooter.speed * Math.cos(shooter.angle)
+            // Ubah '?' menjadi: shooter.speed * Math.cos(shooter.angle)
+            movingBubble.dx = '?';
+
+            // 🎯 TUGAS 11: Menentukan kecepatan vertikal (dy) menggunakan shooter.speed * Math.sin(shooter.angle)
+            // Ubah '?' menjadi: shooter.speed * Math.sin(shooter.angle)
+            movingBubble.dy = '?';
+
+            movingBubble.active = true;
+        }
+
+        function aimAndShoot(deltaAngle) {
+            if (gameState.status === 'AIMING') {
+                shooter.angle += deltaAngle;
+                if (shooter.angle > -0.2) shooter.angle = -0.2;
+                if (shooter.angle < -Math.PI + 0.2) shooter.angle = -Math.PI + 0.2;
+            }
+        }
+
+        // ==========================================
+        // 3. LOGIKA DETEKSI TABRAKAN & GRID SNAP
+        // ==========================================
+        function updateBubblePhysics() {
+            if (!movingBubble.active) return;
+
+            movingBubble.x += movingBubble.dx;
+            movingBubble.y += movingBubble.dy;
+
+            // 🎯 TUGAS 12: Pantulkan gelembung secara horizontal (dx = -movingBubble.dx) jika menabrak dinding kiri/kanan
+            // Ubah '?' menjadi: -movingBubble.dx
+            if (movingBubble.x - movingBubble.radius <= 0 || movingBubble.x + movingBubble.radius >= canvas.width) {
+                movingBubble.dx = '?';
+            }
+
+            // 🎯 TUGAS 13: Cek tabrakan dengan langit-langit top (movingBubble.y - movingBubble.radius <= BUBBLE_RADIUS)
+            // Ubah '?' menjadi: BUBBLE_RADIUS
+            if (movingBubble.y - movingBubble.radius <= '?' || checkCollisionWithGrid()) {
+                movingBubble.active = false;
+                snapToGrid(movingBubble.x, movingBubble.y, movingBubble.color);
+                checkMatchAndPop();
+                reloadNextBubble();
+            }
+        }
+
+        function checkCollisionWithGrid() {
+            for (let r = 0; r < GRID_ROWS; r++) {
+                for (let c = 0; c < GRID_COLS; c++) {
+                    if (grid[r][c] !== 0) {
+                        let bubbleX = c * (BUBBLE_RADIUS * 2) + BUBBLE_RADIUS + (r % 2 === 1 ? BUBBLE_RADIUS : 0);
+                        let bubbleY = r * (BUBBLE_RADIUS * 2 - 2) + BUBBLE_RADIUS;
+                        
+                        // 🎯 TUGAS 14: Hitung jarak koordinat antara movingBubble dan gelembung grid menggunakan Math.hypot
+                        // Ubah '?' menjadi: Math.hypot(movingBubble.x - bubbleX, movingBubble.y - bubbleY)
+                        let dist = '?';
+
+                        if (dist < BUBBLE_RADIUS * 1.8) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        function snapToGrid(x, y, color) {
+            // 🎯 TUGAS 15: Hitung indeks baris grid (row) berdasarkan koordinat Y
+            // Ubah '?' menjadi: Math.floor(y / (BUBBLE_RADIUS * 2 - 2))
+            let r = '?';
+            
+            let xOffset = (r % 2 === 1) ? BUBBLE_RADIUS : 0;
+            
+            // 🎯 TUGAS 16: Hitung indeks kolom grid (col) berdasarkan koordinat X
+            // Ubah '?' menjadi: Math.floor((x - xOffset) / (BUBBLE_RADIUS * 2))
+            let c = '?';
+
+            r = Math.max(0, Math.min(GRID_ROWS - 1, r));
+            c = Math.max(0, Math.min(GRID_COLS - 1, c));
+
+            if (grid[r][c] === 0) {
+                grid[r][c] = color;
+            } else {
+                for (let nr = r - 1; nr <= r + 1; nr++) {
+                    for (let nc = c - 1; nc <= c + 1; nc++) {
+                        if (nr >= 0 && nr < GRID_ROWS && nc >= 0 && nc < GRID_COLS && grid[nr][nc] === 0) {
+                            grid[nr][nc] = color;
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+
+        // ==========================================
+        // 4. ALGORITMA REKURSI / FLOOD FILL & FLOATING CHECK
+        // ==========================================
+        function getNeighbors(r, c) {
+            let neighbors = [];
+            let isOdd = (r % 2 === 1);
+            let offsets = isOdd ? 
+                [[-1, 0], [-1, 1], [0, -1], [0, 1], [1, 0], [1, 1]] :
+                [[-1, -1], [-1, 0], [0, -1], [0, 1], [1, -1], [1, 0]];
+
+            offsets.forEach(([dr, dc]) => {
+                let nr = r + dr;
+                let nc = c + dc;
+                if (nr >= 0 && nr < GRID_ROWS && nc >= 0 && nc < GRID_COLS) {
+                    neighbors.push({r: nr, c: nc});
+                }
+            });
+            return neighbors;
+        }
+
+        function findCluster(startR, startC, targetColor) {
+            let cluster = [];
+            let visited = Array.from({ length: GRID_ROWS }, () => Array(GRID_COLS).fill(false));
+            let queue = [{ r: startR, c: startC }];
+
+            visited[startR][startC] = true;
+
+            while (queue.length > 0) {
+                let current = queue.shift();
+                cluster.push(current);
+
+                let neighbors = getNeighbors(current.r, current.c);
+                neighbors.forEach(nb => {
+                    if (!visited[nb.r][nb.c] && grid[nb.r][nb.c] === targetColor) {
+                        visited[nb.r][nb.c] = true;
+                        queue.push(nb);
+                    }
+                });
+            }
+            return cluster;
+        }
+
+        function checkMatchAndPop() {
+            for (let r = 0; r < GRID_ROWS; r++) {
+                for (let c = 0; c < GRID_COLS; c++) {
+                    if (grid[r][c] !== 0) {
+                        let cluster = findCluster(r, c, grid[r][c]);
+                        
+                        // 🎯 TUGAS 17: Cek apakah jumlah kelompok gelembung berwarna sama >= 3
+                        // Ubah '?' menjadi: 3
+                        if (cluster.length >= '?') {
+                            cluster.forEach(cell => {
+                                grid[cell.r][cell.c] = 0;
+                            });
+
+                            // 🎯 TUGAS 18: Tambahkan skor sebesar cluster.length * 100 saat gelembung pecah
+                            // Ubah '?' menjadi: cluster.length * 100
+                            gameState.score += '?';
+
+                            // 🎯 TUGAS 19: Panggil fungsi dropFloatingBubbles untuk meruntuhkan gelembung yang menggantung
+                            // Ubah '?' menjadi: dropFloatingBubbles
+                            '?'();
+                        }
+                    }
+                }
+            }
+        }
+
+        function dropFloatingBubbles() {
+            let connectedToTop = Array.from({ length: GRID_ROWS }, () => Array(GRID_COLS).fill(false));
+            let queue = [];
+
+            for (let c = 0; c < GRID_COLS; c++) {
+                if (grid[0][c] !== 0) {
+                    connectedToTop[0][c] = true;
+                    queue.push({ r: 0, c: c });
+                }
+            }
+
+            while (queue.length > 0) {
+                let current = queue.shift();
+                let neighbors = getNeighbors(current.r, current.c);
+                neighbors.forEach(nb => {
+                    if (!connectedToTop[nb.r][nb.c] && grid[nb.r][nb.c] !== 0) {
+                        connectedToTop[nb.r][nb.c] = true;
+                        queue.push(nb);
+                    }
+                });
+            }
+
+            for (let r = 0; r < GRID_ROWS; r++) {
+                for (let c = 0; c < GRID_COLS; c++) {
+                    if (grid[r][c] !== 0 && !connectedToTop[r][c]) {
+                        grid[r][c] = 0;
+                        gameState.score += 150;
+                    }
+                }
+            }
+        }
+
+        function reloadNextBubble() {
+            gameState.currentBubbleColor = gameState.nextBubbleColor;
+            gameState.nextBubbleColor = getRandomColor();
+            gameState.status = 'AIMING';
+
+            for (let c = 0; c < GRID_COLS; c++) {
+                if (grid[GRID_ROWS - 1][c] !== 0) {
+                    gameState.status = 'GAME_OVER';
+                }
+            }
+        }
+
+        // ==========================================
+        // 5. RENDERING VISUAL KANVAS
+        // ==========================================
+        function drawGame() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // A. Gambar Matriks Grid Gelembung
+            for (let r = 0; r < GRID_ROWS; r++) {
+                for (let c = 0; c < GRID_COLS; c++) {
+                    if (grid[r][c] !== 0) {
+                        let x = c * (BUBBLE_RADIUS * 2) + BUBBLE_RADIUS + (r % 2 === 1 ? BUBBLE_RADIUS : 0);
+                        let y = r * (BUBBLE_RADIUS * 2 - 2) + BUBBLE_RADIUS;
+
+                        ctx.beginPath();
+                        ctx.arc(x, y, BUBBLE_RADIUS - 1, 0, Math.PI * 2);
+                        ctx.fillStyle = grid[r][c];
+                        ctx.fill();
+                        ctx.strokeStyle = '#ffffff';
+                        ctx.lineWidth = 1;
+                        ctx.stroke();
+                        ctx.closePath();
+                    }
+                }
+            }
+
+            // B. Gambar Meriam Tembak
+            ctx.save();
+            ctx.translate(shooter.x, shooter.y);
+            ctx.rotate(shooter.angle);
+            ctx.fillStyle = '#00f0ff';
+            ctx.fillRect(0, -5, 35, 10);
+            ctx.restore();
+
+            // C. Gambar Gelembung Pada Meriam Penembak
+            ctx.beginPath();
+            ctx.arc(shooter.x, shooter.y, BUBBLE_RADIUS - 1, 0, Math.PI * 2);
+            ctx.fillStyle = gameState.currentBubbleColor;
+            ctx.fill();
+            ctx.strokeStyle = '#ffffff';
+            ctx.stroke();
+            ctx.closePath();
+
+            // D. Gambar Gelembung Berjalan (Moving Bubble)
+            if (movingBubble.active) {
+                ctx.beginPath();
+                ctx.arc(movingBubble.x, movingBubble.y, movingBubble.radius - 1, 0, Math.PI * 2);
+                ctx.fillStyle = movingBubble.color;
+                ctx.fill();
+                ctx.strokeStyle = '#ffffff';
+                ctx.stroke();
+                ctx.closePath();
+            }
+
+            // Update UI Status Bar
+            scoreEl.innerText = gameState.score;
+            statusEl.innerText = gameState.status;
+            nextBubbleEl.style.color = gameState.nextBubbleColor;
+
+            // Overlay Game Over
+            if (gameState.status === 'GAME_OVER') {
+                ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                ctx.textAlign = "center";
+                ctx.fillStyle = "#ff0055";
+                ctx.font = "bold 22px Space Grotesk";
+                ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - 10);
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "12px Space Grotesk";
+                ctx.fillText("Gelembung menyentuh batas bawah!", canvas.width / 2, canvas.height / 2 + 15);
+            }
+        }
+
+        // ==========================================
+        // 6. MAIN ENGINE LOOP
+        // ==========================================
+        function gameLoop() {
+            updateBubblePhysics();
+            drawGame();
+
+            if (gameState.status === 'AIMING' || gameState.status === 'SHOOTING') {
+                // 🎯 TUGAS 20: Panggil requestAnimationFrame(gameLoop) untuk memperbarui frame animasi berulang
+                // Ubah '?' menjadi: gameLoop
+                animationFrameId = requestAnimationFrame('?');
+            }
+        }
+
+        function initGrid() {
+            grid = Array.from({ length: GRID_ROWS }, () => Array(GRID_COLS).fill(0));
+            for (let r = 0; r < 3; r++) {
+                for (let c = 0; c < GRID_COLS; c++) {
+                    grid[r][c] = getRandomColor();
+                }
+            }
+        }
+
+        function startGame() {
+            gameState.score = 0;
+            gameState.currentBubbleColor = getRandomColor();
+            gameState.nextBubbleColor = getRandomColor();
+            gameState.status = 'AIMING';
+
+            initGrid();
+
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+
+            window.focus();
+            gameLoop();
+        }
+
+        initGrid();
+        drawGame();
+    </script>
+</body>
+</html>
+</textarea>
+            <div class="action-bar">
+                <button class="btn-run" onclick="runCode()">✨ Sinkronisasi Kode</button>
+            </div>
+        </div>
+
+        <div class="panel preview-panel" id="preview-panel">
+            <div class="panel-header">
+                <div>🎮 Output Sistem</div>
+                <button class="btn-fullscreen" id="fs-btn" onclick="toggleFullscreen()" title="Buka Mode Layar Penuh">🔲 Layar Penuh</button>
+            </div>
+            <iframe id="preview-frame"></iframe>
+        </div>
+
+    </div>
+
+    <script>
+        let urlAktif = null;
+
+        function runCode() {
+            const htmlCode = document.getElementById('code-editor').value;
+            const iframe = document.getElementById('preview-frame');
+            
+            const blob = new Blob([htmlCode], { type: 'text/html;charset=utf-8' });
+            
+            if (urlAktif) {
+                URL.revokeObjectURL(urlAktif);
+            }
+            
+            urlAktif = URL.createObjectURL(blob);
+            iframe.src = urlAktif;
+            
+            iframe.onload = () => {
+                iframe.contentWindow.focus();
+            };
+        }
+
+        function toggleFullscreen() {
+            const panel = document.getElementById('preview-panel');
+            const btn = document.getElementById('fs-btn');
+            
+            if (!document.fullscreenElement) {
+                if (panel.requestFullscreen) {
+                    panel.requestFullscreen();
+                } else if (panel.webkitRequestFullscreen) {
+                    panel.webkitRequestFullscreen();
+                } else if (panel.msRequestFullscreen) {
+                    panel.msRequestFullscreen();
+                }
+                btn.innerHTML = "🔳 Perkecil Layar";
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) {
+                    document.msExitFullscreen();
+                }
+                btn.innerHTML = "🔲 Layar Penuh";
+            }
+        }
+
+        document.addEventListener('fullscreenchange', () => {
+            const btn = document.getElementById('fs-btn');
+            if (!document.fullscreenElement) {
+                btn.innerHTML = "🔲 Layar Penuh";
+            }
+        });
+
+        const editor = document.getElementById('code-editor');
+        editor.addEventListener('keydown', function(e) {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const start = this.selectionStart;
+                const end = this.selectionEnd;
+
+                this.value = this.value.substring(0, start) + "    " + this.value.substring(end);
+                this.selectionStart = this.selectionEnd = start + 4;
+            }
+        });
+
+        window.onload = runCode;
+    </script>
+
+</body>
+</html>

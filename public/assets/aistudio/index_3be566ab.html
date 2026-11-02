@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KKA - Web Development & Canvas API (18 Modul)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                        display: ['"Space Grotesk"', 'sans-serif'],
+                    },
+                    colors: {
+                        futuristic: {
+                            bg: '#f8fafc',
+                            card: 'rgba(255, 255, 255, 0.85)',
+                            cyan: '#06b6d4',
+                            indigo: '#6366f1',
+                            violet: '#8b5cf6',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Pattern Latar Belakang Modern Grid Dot */
+        .bg-grid-pattern {
+            background-image: radial-gradient(#cbd5e1 1.2px, transparent 1.2px);
+            background-size: 24px 24px;
+        }
+        /* Style Glassmorphism Futuristik Tema Terang */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(226, 232, 240, 0.9);
+        }
+        .glass-card:hover {
+            border-color: rgba(99, 102, 241, 0.4);
+            box-shadow: 0 20px 40px -15px rgba(99, 102, 241, 0.12);
+        }
+        .glass-nav {
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col relative selection:bg-indigo-500 selection:text-white bg-grid-pattern">
+
+    <div class="fixed top-0 left-1/4 w-96 h-96 bg-cyan-400/15 rounded-full blur-[120px] pointer-events-none -z-10"></div>
+    <div class="fixed top-1/3 right-1/4 w-[30rem] h-[30rem] bg-indigo-500/10 rounded-full blur-[140px] pointer-events-none -z-10"></div>
+    <div class="fixed bottom-10 left-1/3 w-[25rem] h-[25rem] bg-violet-400/15 rounded-full blur-[130px] pointer-events-none -z-10"></div>
+
+    <nav class="sticky top-0 z-40 glass-nav border-b border-slate-200/80">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="h-11 w-11 rounded-2xl bg-gradient-to-tr from-cyan-500 via-indigo-600 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/20 text-white font-display font-bold text-xl">
+                    &lt;/&gt;
+                </div>
+                <div>
+                    <span class="text-xl font-bold font-display tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-800">DevCore Academy</span>
+                    <span class="block text-xs text-indigo-600 font-semibold tracking-wider uppercase">Kurikulum Web & Canvas API</span>
+                </div>
+            </div>
+            
+            <div class="hidden md:flex items-center space-x-4">
+                <div class="relative">
+                    <input type="text" id="searchInput" placeholder="Cari modul, tag, atau topik..." class="w-72 px-4 py-2 pl-10 text-xs rounded-xl bg-slate-100/90 border border-slate-200 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all shadow-inner">
+                    <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                </div>
+                <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <span class="w-2 h-2 mr-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                    18 Modul Lengkap
+                </span>
+            </div>
+        </div>
+        
+        <div class="md:hidden px-4 pb-3">
+            <div class="relative w-full">
+                <input type="text" id="searchInputMobile" placeholder="Cari modul atau materi..." class="w-full px-4 py-2 pl-10 text-xs rounded-xl bg-slate-100/90 border border-slate-200 focus:outline-none focus:border-indigo-500 focus:bg-white">
+                <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            </div>
+        </div>
+    </nav>
+
+    <header class="relative pt-10 pb-12 lg:pt-14 lg:pb-16">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-50 border border-indigo-200/80 text-indigo-700 text-xs font-semibold mb-6 shadow-sm">
+                <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                Modul Pembelajaran Interaktif 2026
+            </div>
+            <h1 class="text-3xl sm:text-5xl lg:text-6xl font-extrabold font-display tracking-tight text-slate-900 mb-6 leading-[1.15]">
+                Silabus Modul Pemrograman <br>
+                <span class="bg-clip-text text-transparent bg-gradient-to-r from-cyan-600 via-indigo-600 to-violet-600">HTML5, JavaScript & Canvas 2D</span>
+            </h1>
+            <p class="text-slate-600 text-sm sm:text-base max-w-3xl mx-auto mb-8 leading-relaxed">
+                Panduan terstruktur 18 modul praktikum yang dirancang dari penguasaan fondasi HTML semantik, manipulasi DOM interaktif dengan JavaScript tingkat lanjut, hingga pengemasan grafis & game 2D kompleks berbasis HTML5 Canvas API.
+            </p>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto p-4 rounded-2xl glass-card shadow-sm">
+                <div class="p-3 border-r border-slate-200/60 last:border-none">
+                    <div class="text-2xl font-bold font-display text-slate-900">18 Modul</div>
+                    <div class="text-xs text-slate-500 font-medium">Praktikum Lengkap</div>
+                </div>
+                <div class="p-3 border-r border-slate-200/60 last:border-none">
+                    <div class="text-2xl font-bold font-display text-cyan-600">3 Kelompok</div>
+                    <div class="text-xs text-slate-500 font-medium">Domain Utama</div>
+                </div>
+                <div class="p-3 border-r border-slate-200/60 last:border-none">
+                    <div class="text-2xl font-bold font-display text-indigo-600">100%</div>
+                    <div class="text-xs text-slate-500 font-medium">Praktik Berbasis Proyek</div>
+                </div>
+                <div class="p-3">
+                    <div class="text-2xl font-bold font-display text-violet-600">W3C</div>
+                    <div class="text-xs text-slate-500 font-medium">Standar Aksesibilitas</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 w-full">
+        
+        <div class="flex flex-wrap items-center justify-between gap-4 mb-8 pb-4 border-b border-slate-200">
+            <div class="flex flex-wrap items-center gap-2" id="filterContainer">
+                <button onclick="filterModules('all')" class="filter-btn active px-4 py-2 rounded-xl text-xs font-semibold transition-all bg-indigo-600 text-white shadow-md shadow-indigo-500/20" data-group="all">
+                    Semua Modul (18)
+                </button>
+                <button onclick="filterModules('k1')" class="filter-btn px-4 py-2 rounded-xl text-xs font-semibold transition-all bg-white text-slate-600 hover:bg-slate-100 border border-slate-200" data-group="k1">
+                    Kelompok 1: Fondasi & Grafis (6)
+                </button>
+                <button onclick="filterModules('k2')" class="filter-btn px-4 py-2 rounded-xl text-xs font-semibold transition-all bg-white text-slate-600 hover:bg-slate-100 border border-slate-200" data-group="k2">
+                    Kelompok 2: JS & DOM (6)
+                </button>
+                <button onclick="filterModules('k3')" class="filter-btn px-4 py-2 rounded-xl text-xs font-semibold transition-all bg-white text-slate-600 hover:bg-slate-100 border border-slate-200" data-group="k3">
+                    Kelompok 3: HTML5 Canvas (6)
+                </button>
+            </div>
+            <span class="text-xs text-slate-500 font-medium" id="moduleCountText">Menampilkan 18 Modul</span>
+        </div>
+
+        <div id="cardGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+    </main>
+
+    <div id="detailModal" class="fixed inset-0 z-50 hidden bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="glass-card bg-white rounded-2xl max-w-2xl w-full p-6 sm:p-8 relative shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto">
+            <button onclick="closeModal()" class="absolute top-4 right-4 p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+            
+            <div id="modalContent"></div>
+        </div>
+    </div>
+
+    <footer class="border-t border-slate-200 bg-white/80 backdrop-blur-md py-8 text-center text-xs text-slate-500 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center space-x-2">
+                <div class="h-6 w-6 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-xs">D</div>
+                <span class="font-semibold text-slate-700">DevCore Learning System</span>
+            </div>
+            <p>&copy; 2026 Modul Pemrograman Web Modern & Canvas API. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Fungsi pembantu untuk mengonversi tag HTML menjadi teks murni
+        function escapeHTML(str) {
+            if (!str) return '';
+            return str
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        // Database 18 Modul Lengkap
+        const moduleData = [
+            // ================= KELOMPOK 1: Fondasi & Grafis (Modul 1 - 6) =================
+            {
+                id: 1,
+                groupId: "k1",
+                groupLabel: "Kelompok 1: Fondasi & Grafis",
+                badgeBg: "bg-cyan-50 text-cyan-700 border-cyan-200",
+                accentColor: "from-cyan-500 to-blue-500",
+                title: "MODUL 1: Fondasi Web & Grafis Statis",
+                focus: "HTML/CSS dasar, sistem koordinat layar, dan pembentukan objek 2D awal.",
+                topics: [
+                    "Pengenalan tag dasar & styling (<h1>, background-color).",
+                    "Sistem koordinat layar & variabel lokasi (X, Y).",
+                    "Perintah gambar 2D awal: fillRect, arc, lineTo, fillText."
+                ],
+                result: "Mampu membuat tata letak web sederhana dan menggambar pemandangan statis (rumah, matahari, rumput).",
+                file: "modul_1.html"
+            },
+            {
+                id: 2,
+                groupId: "k1",
+                groupLabel: "Kelompok 1: Fondasi & Grafis",
+                badgeBg: "bg-cyan-50 text-cyan-700 border-cyan-200",
+                accentColor: "from-cyan-500 to-blue-500",
+                title: "MODUL 2: Efisiensi Kode & Detail Visual",
+                focus: "Pengorganisasian kode agar tidak berulang dan penambahan batas garis visual.",
+                topics: [
+                    "Penggunaan fungsi modular (Functions, e.g., gambarPohon(x, y)).",
+                    "Struktur perulangan (For Loops) untuk penggambaran berulang.",
+                    "Pengaturan batas garis visual (stroke(), lineWidth)."
+                ],
+                result: "Mampu menggambar objek kompleks yang efisien (hutan pohon, langit berbintang) dengan outline yang rapi.",
+                file: "modul_2.html"
+            },
+            {
+                id: 3,
+                groupId: "k1",
+                groupLabel: "Kelompok 1: Fondasi & Grafis",
+                badgeBg: "bg-cyan-50 text-cyan-700 border-cyan-200",
+                accentColor: "from-cyan-500 to-blue-500",
+                title: "MODUL 3: Animasi & Pergerakan",
+                focus: "Mengubah gambar statis menjadi objek bergerak secara frame-by-frame.",
+                topics: [
+                    "Pembersihan canvas per frame (clearRect()).",
+                    "Manajemen loop animasi mulus (requestAnimationFrame()).",
+                    "Pembaruan posisi variabel secara kontinu (X += v)."
+                ],
+                result: "Mampu membuat animasi halus berkecepatan 60 FPS (awan bergeser, matahari terbenam tanpa jejak).",
+                file: "modul_3.html"
+            },
+            {
+                id: 4,
+                groupId: "k1",
+                groupLabel: "Kelompok 1: Fondasi & Grafis",
+                badgeBg: "bg-cyan-50 text-cyan-700 border-cyan-200",
+                accentColor: "from-cyan-500 to-blue-500",
+                title: "MODUL 4: Interaktivitas & Logika Aplikasi",
+                focus: "Menghubungkan kontrol pengguna dengan aturan logika program.",
+                topics: [
+                    "Penanganan event pengguna (addEventListener mouse/keyboard).",
+                    "Penerapan percabangan keputusan (if/else).",
+                    "Manajemen status aplikasi (state management)."
+                ],
+                result: "Mampu membuat aplikasi/game interaktif (karakter digerakkan keyboard, perubahan siang/malam via klik).",
+                file: "modul_4.html"
+            },
+            {
+                id: 5,
+                groupId: "k1",
+                groupLabel: "Kelompok 1: Fondasi & Grafis",
+                badgeBg: "bg-cyan-50 text-cyan-700 border-cyan-200",
+                accentColor: "from-cyan-500 to-blue-500",
+                title: "MODUL 5: Desain Responsif & Layout Fleksibel",
+                focus: "Penerapan Flexbox dan Grid CSS agar tata letak web adaptif di berbagai ukuran layar.",
+                topics: [
+                    "Konsep dasar CSS Flexbox (flex-direction, justify-content, align-items).",
+                    "CSS Grid layout untuk struktur halaman multi-kolom.",
+                    "Media Queries dasar untuk perangkat mobile dan desktop."
+                ],
+                result: "Membuat kerangka antarmuka web portfolio yang responsif dan fleksibel.",
+                file: "modul_5.html"
+            },
+            {
+                id: 6,
+                groupId: "k1",
+                groupLabel: "Kelompok 1: Fondasi & Grafis",
+                badgeBg: "bg-cyan-50 text-cyan-700 border-cyan-200",
+                accentColor: "from-cyan-500 to-blue-500",
+                title: "MODUL 6: Tipografi & Styling Modern Tailwind",
+                focus: "Pemanfaatan utility-first CSS framework untuk mempercepat styling antarmuka.",
+                topics: [
+                    "Pengenalan konsep Utility-First CSS dengan Tailwind.",
+                    "Pengaturan kustomisasi warna, font, dan spacing.",
+                    "Penerapan efek bayangan, transisi, dan hover state."
+                ],
+                result: "Mendesain dashboard web modern yang bersih, konsisten, dan estetis.",
+                file: "modul_6.html"
+            },
+
+            // ================= KELOMPOK 2: JavaScript & DOM (Modul 7 - 12) =================
+            {
+                id: 7,
+                groupId: "k2",
+                groupLabel: "Kelompok 2: JavaScript Dasar",
+                badgeBg: "bg-indigo-50 text-indigo-700 border-indigo-200",
+                accentColor: "from-indigo-500 to-violet-500",
+                title: "Modul 7: Logika Dasar & Struktur Kontrol JavaScript",
+                focus: "Pemahaman sintaks dasar pemrograman JavaScript.",
+                topics: [
+                    "Deklarasi variabel (var, let, const) dan tipe data (String, Number, Boolean, Array, Object).",
+                    "Operator aritmatika, logika, dan perbandingan.",
+                    "Pengondisian (if...else, switch).",
+                    "Perulangan (for, while, forEach)."
+                ],
+                result: "Membuat program kalkulator nilai akhir siswa berdasarkan kriteria kelulusan.",
+                file: "modul_7.html"
+            },
+            {
+                id: 8,
+                groupId: "k2",
+                groupLabel: "Kelompok 2: JavaScript Dasar",
+                badgeBg: "bg-indigo-50 text-indigo-700 border-indigo-200",
+                accentColor: "from-indigo-500 to-violet-500",
+                title: "Modul 8: Fungsi, Scope, dan Manipulation Array/Object",
+                focus: "Pengorganisasian kode dan pengelolaan data dinamis.",
+                topics: [
+                    "Deklarasi fungsi (Function Declaration, Expression, Arrow Function).",
+                    "Konsep Scope (Global, Local, Block) dan Hoisting.",
+                    "Manipulasi Array (push, pop, map(), filter(), reduce()).",
+                    "Destructuring dan Object Literal."
+                ],
+                result: "Membuat fungsi pemrosesan data untuk menyaring dan mengurutkan daftar produk/nilai.",
+                file: "modul_8.html"
+            },
+            {
+                id: 9,
+                groupId: "k2",
+                groupLabel: "Kelompok 2: JavaScript DOM",
+                badgeBg: "bg-indigo-50 text-indigo-700 border-indigo-200",
+                accentColor: "from-indigo-500 to-violet-500",
+                title: "Modul 9: Manipulasi DOM (Document Object Model)",
+                focus: "Menghubungkan logika JavaScript dengan elemen HTML.",
+                topics: [
+                    "Seleksi elemen (getElementById, querySelector, querySelectorAll).",
+                    "Mengubah konten (innerText, innerHTML) dan gaya (element.style, classList).",
+                    "Membuat, menambahkan, dan menghapus elemen HTML secara dinamis (createElement, appendChild, remove)."
+                ],
+                result: "Membangun aplikasi To-Do List interaktif (tambah, tandai selesai, hapus tugas).",
+                file: "modul_9.html"
+            },
+            {
+                id: 10,
+                groupId: "k2",
+                groupLabel: "Kelompok 2: JavaScript DOM",
+                badgeBg: "bg-indigo-50 text-indigo-700 border-indigo-200",
+                accentColor: "from-indigo-500 to-violet-500",
+                title: "Modul 10: Event Handling & Form Control dengan JS",
+                focus: "Merespons interaksi pengguna di halaman web.",
+                topics: [
+                    "Konsep addEventListener (click, submit, input, keydown).",
+                    "Penanganan event form (event.preventDefault()).",
+                    "Event propagation (bubbling dan capturing).",
+                    "Validasi kustom pada input formulir."
+                ],
+                result: "Membuat formulir kalkulasi harga interaktif yang langsung memperbarui total biaya saat input diubah.",
+                file: "modul_10.html"
+            },
+            {
+                id: 11,
+                groupId: "k2",
+                groupLabel: "Kelompok 2: JavaScript Lanjutan",
+                badgeBg: "bg-indigo-50 text-indigo-700 border-indigo-200",
+                accentColor: "from-indigo-500 to-violet-500",
+                title: "Modul 11: Asynchronous JavaScript (Promises & Fetch API)",
+                focus: "Mengambil data eksternal dari server melalui jaringan secara asinkron.",
+                topics: [
+                    "Konsep asynchronous, Callback, dan Promise (then/catch).",
+                    "Penggunaan async/await untuk penulisan kode yang bersih.",
+                    "Mengambil data dari REST API publik menggunakan Fetch API.",
+                    "Error handling dengan try...catch."
+                ],
+                result: "Membuat aplikasi cuaca atau pencari data pengguna real-time dari API eksternal.",
+                file: "modul_11.html"
+            },
+            {
+                id: 12,
+                groupId: "k2",
+                groupLabel: "Kelompok 2: JavaScript Lanjutan",
+                badgeBg: "bg-indigo-50 text-indigo-700 border-indigo-200",
+                accentColor: "from-indigo-500 to-violet-500",
+                title: "Modul 12: Penyimpanan Lokal (Web Storage & State Management)",
+                focus: "Menyimpan data aplikasi di sisi browser secara persisten.",
+                topics: [
+                    "Penggunaan LocalStorage dan SessionStorage (setItem, getItem, removeItem).",
+                    "Konversi objek JavaScript ke string JSON (JSON.stringify dan JSON.parse).",
+                    "Manajemen state aplikasi sederhana."
+                ],
+                result: "Membuat aplikasi catatan harian (Note Keeper) yang datanya tidak hilang saat halaman direfresh.",
+                file: "modul_12.html"
+            },
+
+            // ================= KELOMPOK 3: HTML5 Canvas (Modul 13 - 18) =================
+            {
+                id: 13,
+                groupId: "k3",
+                groupLabel: "Kelompok 3: HTML5 Canvas",
+                badgeBg: "bg-violet-50 text-violet-700 border-violet-200",
+                accentColor: "from-violet-500 to-fuchsia-500",
+                title: "Modul 13: Pengenalan HTML5 Canvas & Drawing Context 2D",
+                focus: "Dasar pembuatan grafis berbasis piksel melalui kode.",
+                topics: [
+                    "Elemen <canvas> dan penentuan ukuran (width/height vs CSS scaling).",
+                    "Mengakses Rendering Context (getContext('2d')).",
+                    "Sistem koordinat Canvas (X, Y).",
+                    "Menggambar bentuk dasar: Garis (lineTo), Persegi (fillRect, strokeRect), dan Jalur (beginPath, closePath)."
+                ],
+                result: "Menggambar denah/diagram sederhana menggunakan kombinasi garis dan bentuk geometri dasar.",
+                file: "modul_13.html"
+            },
+            {
+                id: 14,
+                groupId: "k3",
+                groupLabel: "Kelompok 3: HTML5 Canvas",
+                badgeBg: "bg-violet-50 text-violet-700 border-violet-200",
+                accentColor: "from-violet-500 to-fuchsia-500",
+                title: "Modul 14: Pewarnaan, Styling, dan Teks pada Canvas",
+                focus: "Memperindah grafis dengan warna, gradasi, bayangan, dan teks.",
+                topics: [
+                    "Pengaturan warna fill dan stroke (fillStyle, strokeStyle, alpha opacity).",
+                    "Membuat warna gradasi (createLinearGradient, createRadialGradient).",
+                    "Efek bayangan (shadowColor, shadowBlur, shadowOffsetX).",
+                    "Rendering teks (fillText, strokeText, font, textAlign)."
+                ],
+                result: "Membuat sertifikat digital atau kartu nama grafis yang digambar penuh menggunakan Canvas API.",
+                file: "modul_14.html"
+            },
+            {
+                id: 15,
+                groupId: "k3",
+                groupLabel: "Kelompok 3: HTML5 Canvas",
+                badgeBg: "bg-violet-50 text-violet-700 border-violet-200",
+                accentColor: "from-violet-500 to-fuchsia-500",
+                title: "Modul 15: Transformasi, Gambar, dan State Canvas",
+                focus: "Manipulasi objek grafis dan penanganan aset eksternal.",
+                topics: [
+                    "Manipulasi sistem koordinat (translate, rotate, scale).",
+                    "Menyimpan dan memulihkan kondisi canvas (ctx.save() dan ctx.restore()).",
+                    "Memuat dan menampilkan gambar eksternal (drawImage).",
+                    "Teknik cropping/slicing gambar pada canvas."
+                ],
+                result: "Membuat aplikasi pemotong foto profil (image cropper) sederhana atau komponen jam analog berputar.",
+                file: "modul_15.html"
+            },
+            {
+                id: 16,
+                groupId: "k3",
+                groupLabel: "Kelompok 3: HTML5 Canvas",
+                badgeBg: "bg-violet-50 text-violet-700 border-violet-200",
+                accentColor: "from-violet-500 to-fuchsia-500",
+                title: "Modul 16: Animasi Canvas & Game Loop Dasar",
+                focus: "Menghidupkan grafis statis menjadi animasi berkesinambungan.",
+                topics: [
+                    "Konsep pembersihan layar (clearRect).",
+                    "Penggunaan requestAnimationFrame untuk animasi yang mulus.",
+                    "Logika pergerakan objek, batas area (bounce/collision detection sederhana).",
+                    "Respon terhadap input keyboard/mouse di atas Canvas."
+                ],
+                result: "Membangun game interaktif sederhana (seperti game memantulkan bola/Bounce Ball atau kontrol objek dengan keyboard).",
+                file: "modul_16.html"
+            },
+            {
+                id: 17,
+                groupId: "k3",
+                groupLabel: "Kelompok 3: HTML5 Canvas Lanjutan",
+                badgeBg: "bg-violet-50 text-violet-700 border-violet-200",
+                accentColor: "from-violet-500 to-fuchsia-500",
+                title: "Modul 17: Deteksi Tabrakan (Collision Detection) & Sistem Partikel",
+                focus: "Penerapan fisika sederhana dan efek partikel visual pada canvas.",
+                topics: [
+                    "Algoritma deteksi tabrakan AABB (Axis-Aligned Bounding Box) dan Circle-to-Circle.",
+                    "Pembuatan sistem partikel dinamis (efek ledakan, kembang api, atau hujan).",
+                    "Manajemen array objek partikel dalam loop animasi."
+                ],
+                result: "Membuat efek visual interaktif berupa kembang api atau ledakan partikel saat objek saling bersentuhan.",
+                file: "modul_17.html"
+            },
+            {
+                id: 18,
+                groupId: "k3",
+                groupLabel: "Kelompok 3: HTML5 Canvas Lanjutan",
+                badgeBg: "bg-violet-50 text-violet-700 border-violet-200",
+                accentColor: "from-violet-500 to-fuchsia-500",
+                title: "Modul 18: Pengembangan Game Arcade 2D Komprehensif",
+                focus: "Menggabungkan seluruh konsep Canvas API menjadi satu proyek game utuh.",
+                topics: [
+                    "Arsitektur game state (Menu, Playing, Game Over).",
+                    "Manajemen skor, nyawa (lives), dan tingkat kesulitan (difficulty scaling).",
+                    "Pengelolaan aset sprite sheet dan efek suara dasar.",
+                    "Deployment dan optimasi performa game berbasis web."
+                ],
+                result: "Membangun game arcade 2D lengkap (seperti Space Invaders sederhana atau Platformer mini) siap main di browser.",
+                file: "modul_18.html"
+            }
+        ];
+
+        // Fungsi Render Kartu Modul
+        function renderCards(data) {
+            const grid = document.getElementById('cardGrid');
+            grid.innerHTML = '';
+
+            if(data.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full text-center py-12 glass-card rounded-2xl">
+                        <p class="text-slate-500 font-medium">Modul tidak ditemukan. Coba pencarian dengan kata kunci lain.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            data.forEach(item => {
+                const card = document.createElement('div');
+                card.className = "glass-card rounded-2xl p-6 flex flex-col justify-between transition-all duration-300 hover:-translate-y-1.5 group relative overflow-hidden shadow-sm hover:shadow-xl";
+                
+                // Accent Bar Gradient di Atas Kartu
+                const accentLine = document.createElement('div');
+                accentLine.className = `absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${item.accentColor}`;
+                card.appendChild(accentLine);
+
+                card.innerHTML += `
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-slate-900 text-white font-display font-bold text-xs shadow-md">
+                                ${item.id < 10 ? '0' + item.id : item.id}
+                            </span>
+                            <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full border ${item.badgeBg}">
+                                ${escapeHTML(item.groupLabel)}
+                            </span>
+                        </div>
+
+                        <h3 class="text-base font-bold text-slate-900 mb-2 group-hover:text-indigo-600 transition-colors leading-snug">
+                            ${escapeHTML(item.title)}
+                        </h3>
+                        <p class="text-xs font-semibold text-slate-600 mb-4 bg-slate-100/80 p-2.5 rounded-lg border border-slate-200/70">
+                            🎯 <span class="text-slate-800">Fokus Utama:</span> ${escapeHTML(item.focus)}
+                        </p>
+
+                        <div class="mb-5">
+                            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Materi Pembahasan:</span>
+                            <ul class="space-y-1.5">
+                                ${item.topics.map(t => `
+                                    <li class="text-xs text-slate-600 flex items-start gap-2">
+                                        <span class="text-indigo-500 font-bold">•</span>
+                                        <span class="leading-normal">${escapeHTML(t)}</span>
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="pt-4 border-t border-slate-200/80 mt-2">
+                        <div class="mb-4">
+                            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Hasil Praktik:</span>
+                            <p class="text-xs text-emerald-800 font-medium bg-emerald-50/90 p-2 rounded-lg border border-emerald-200/70">
+                                🛠️ ${escapeHTML(item.result)}
+                            </p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="openModal(${item.id})" class="flex-1 py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition text-center">
+                                Detail Pop-Up
+                            </button>
+                            <a href="${item.file}" class="flex-1 py-2 px-3 rounded-xl bg-slate-900 hover:bg-indigo-600 text-white text-xs font-semibold transition duration-200 flex items-center justify-center gap-1 group/btn shadow-md hover:shadow-indigo-500/20">
+                                <span>Buka File</span>
+                                <svg class="w-3.5 h-3.5 transform group-hover/btn:translate-x-1 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                            </a>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+
+            document.getElementById('moduleCountText').innerText = `Menampilkan ${data.length} Modul`;
+        }
+
+        // Logika Filter Kelompok Modul
+        function filterModules(groupId) {
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                if(btn.dataset.group === groupId) {
+                    btn.className = "filter-btn active px-4 py-2 rounded-xl text-xs font-semibold transition-all bg-indigo-600 text-white shadow-md shadow-indigo-500/20";
+                } else {
+                    btn.className = "filter-btn px-4 py-2 rounded-xl text-xs font-semibold transition-all bg-white text-slate-600 hover:bg-slate-100 border border-slate-200";
+                }
+            });
+
+            if (groupId === 'all') {
+                renderCards(moduleData);
+            } else {
+                const filtered = moduleData.filter(item => item.groupId === groupId);
+                renderCards(filtered);
+            }
+        }
+
+        // Logika Pencarian Dinamis
+        function handleSearch(query) {
+            const q = query.toLowerCase();
+            const filtered = moduleData.filter(item => 
+                item.title.toLowerCase().includes(q) ||
+                item.focus.toLowerCase().includes(q) ||
+                item.result.toLowerCase().includes(q) ||
+                item.topics.some(t => t.toLowerCase().includes(q))
+            );
+            renderCards(filtered);
+        }
+
+        document.getElementById('searchInput').addEventListener('input', (e) => handleSearch(e.target.value));
+        document.getElementById('searchInputMobile').addEventListener('input', (e) => handleSearch(e.target.value));
+
+        // Logika Pop-Up Modal Detail Modul
+        function openModal(id) {
+            const item = moduleData.find(m => m.id === id);
+            if (!item) return;
+
+            const modalContent = document.getElementById('modalContent');
+            modalContent.innerHTML = `
+                <div class="mb-4">
+                    <span class="text-xs font-semibold px-2.5 py-1 rounded-full border ${item.badgeBg}">
+                        ${escapeHTML(item.groupLabel)}
+                    </span>
+                    <h2 class="text-xl font-bold font-display text-slate-900 mt-2">${escapeHTML(item.title)}</h2>
+                </div>
+
+                <div class="space-y-4 text-xs sm:text-sm text-slate-600">
+                    <div class="p-3 bg-slate-100/80 rounded-xl border border-slate-200">
+                        <strong class="text-slate-900 block mb-1">🎯 Fokus Utama:</strong>
+                        <p>${escapeHTML(item.focus)}</p>
+                    </div>
+
+                    <div>
+                        <strong class="text-slate-900 block mb-2">📚 Detail Materi Pembahasan:</strong>
+                        <ul class="space-y-2">
+                            ${item.topics.map(t => `<li class="flex items-start gap-2"><span class="text-indigo-600 font-bold">•</span><span>${escapeHTML(t)}</span></li>`).join('')}
+                        </ul>
+                    </div>
+
+                    <div class="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-emerald-900">
+                        <strong class="block mb-1">🛠️ Hasil Praktik Proyek:</strong>
+                        <p>${escapeHTML(item.result)}</p>
+                    </div>
+                </div>
+
+                <div class="mt-6 flex justify-end gap-3">
+                    <button onclick="closeModal()" class="px-4 py-2 rounded-xl bg-slate-200 text-slate-700 font-semibold text-xs hover:bg-slate-300 transition">
+                        Tutup
+                    </button>
+                    <a href="${item.file}" class="px-4 py-2 rounded-xl bg-indigo-600 text-white font-semibold text-xs hover:bg-indigo-700 transition">
+                        Mulai Praktikum (${item.file})
+                    </a>
+                </div>
+            `;
+
+            document.getElementById('detailModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('detailModal').classList.add('hidden');
+        }
+
+        // Close modal saat klik di luar area modal
+        window.addEventListener('click', (e) => {
+            const modal = document.getElementById('detailModal');
+            if (e.target === modal) closeModal();
+        });
+
+        // Initial Render Pertama Kali
+        renderCards(moduleData);
+    </script>
+</body>
+</html>
