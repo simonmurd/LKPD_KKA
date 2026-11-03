@@ -42,7 +42,7 @@ export const MODULES_DATA: ModuleItem[] = [
       "Menggambar bentuk lingkaran (matahari) dan poligon segitiga (atap rumah)"
     ],
     projectResult: "Aplikasi kanvas pemandangan alam digital statis lengkap (langit, matahari, rumput, dinding rumah bertingkat, atap segitiga, dan tanda tangan digital siswa).",
-    assetFile: "/assets/aistudio/modul_1_78097320.html",
+    assetFile: "./assets/aistudio/modul_1_78097320.html",
     accentColor: "from-cyan-500 to-blue-500",
     badgeBg: "bg-cyan-50 text-cyan-700 border-cyan-200",
     iconName: "Palette",
@@ -71,7 +71,7 @@ export const MODULES_DATA: ModuleItem[] = [
       "Fungsi modular berparameter untuk penanaman deretan pohon otomatis"
     ],
     projectResult: "Pemandangan malam modular efisien dengan bulan bercahaya (stroke/lineWidth), 150 bintang terdistribusi acak, dan barisan pohon berulang otomatis.",
-    assetFile: "/assets/aistudio/modul_2_0a006db0.html",
+    assetFile: "./assets/aistudio/modul_2_0a006db0.html",
     accentColor: "from-cyan-500 to-blue-500",
     badgeBg: "bg-cyan-50 text-cyan-700 border-cyan-200",
     iconName: "Repeat",
@@ -100,7 +100,7 @@ export const MODULES_DATA: ModuleItem[] = [
       "Konsep looping pergerakan kontinu melintasi batas layar kanvas"
     ],
     projectResult: "Aplikasi animasi malam interaktif 60 FPS di mana bulan meluncur perlahan ke barat, awan bergeser transparan, dan kumpulan bintang berkelap-kelip.",
-    assetFile: "/assets/aistudio/modul_3_1dc51108.html",
+    assetFile: "./assets/aistudio/modul_3_1dc51108.html",
     accentColor: "from-cyan-500 to-blue-500",
     badgeBg: "bg-cyan-50 text-cyan-700 border-cyan-200",
     iconName: "Film",
@@ -129,7 +129,7 @@ export const MODULES_DATA: ModuleItem[] = [
       "Pengacakan urutan array kartu menggunakan array.sort(() => 0.5 - Math.random())"
     ],
     projectResult: "Game edukasi Pairs / Memory Match interaktif lengkap dengan penghitung langkah (moves), deteksi kemenangan (win overlay), dan tombol restart.",
-    assetFile: "/assets/aistudio/modul_4_529d4d00.html",
+    assetFile: "./assets/aistudio/modul_4_529d4d00.html",
     accentColor: "from-indigo-500 to-purple-500",
     badgeBg: "bg-indigo-50 text-indigo-700 border-indigo-200",
     iconName: "Layers",
@@ -158,7 +158,7 @@ export const MODULES_DATA: ModuleItem[] = [
       "Pemeriksaan sisa berlian dan pemicuan status STAGE CLEAR"
     ],
     projectResult: "Game retro Diamond Rush Engine di mana pemain menjelajahi labirin gua, mendorong batu besar, mengumpulkan seluruh berlian, dan menghindari jebakan musuh.",
-    assetFile: "/assets/aistudio/modul_5_cf38dfd6.html",
+    assetFile: "./assets/aistudio/modul_5_cf38dfd6.html",
     accentColor: "from-indigo-500 to-purple-500",
     badgeBg: "bg-indigo-50 text-indigo-700 border-indigo-200",
     iconName: "Grid",
@@ -187,7 +187,7 @@ export const MODULES_DATA: ModuleItem[] = [
       "Kondisi Game Over saat jumlah pelanggan marah mencapai batas toleransi maksimum (3)"
     ],
     projectResult: "Simulasi game bisnis Time-Management Cake Mania di mana pemain mengelola 4 meja, mencatat pesanan kue, memasak di dapur, dan mengumpulkan pendapatan uang kasir.",
-    assetFile: "/assets/aistudio/modul_6_eb290b82.html",
+    assetFile: "./assets/aistudio/modul_6_eb290b82.html",
     accentColor: "from-indigo-500 to-purple-500",
     badgeBg: "bg-indigo-50 text-indigo-700 border-indigo-200",
     iconName: "Clock",
@@ -216,7 +216,7 @@ export const MODULES_DATA: ModuleItem[] = [
       "Penyediaan antarmuka D-Pad Virtual responsif untuk perangkat mobile"
     ],
     projectResult: "Game arkade Snake Simulator lengkap dengan pembaruan skor instan, status PLAYING/GAME_OVER, dan responsivitas kontrol keyboard & mobile.",
-    assetFile: "/assets/aistudio/modul_7_6a58e69d.html",
+    assetFile: "./assets/aistudio/modul_7_6a58e69d.html",
     accentColor: "from-emerald-500 to-teal-500",
     badgeBg: "bg-emerald-50 text-emerald-700 border-emerald-200",
     iconName: "Activity",
@@ -245,7 +245,7 @@ export const MODULES_DATA: ModuleItem[] = [
       "Pencegahan efek zoom sentuhan ganda pada mobile dengan CSS touch-action: none"
     ],
     projectResult: "Game Bounce Ball berkecepatan tinggi dengan dukungan kontrol mouse PC, layar sentuh ponsel Android, dan mode layar penuh satu tombol.",
-    assetFile: "/assets/aistudio/modul_8_8d480f98.html",
+    assetFile: "./assets/aistudio/modul_8_8d480f98.html",
     accentColor: "from-emerald-500 to-teal-500",
     badgeBg: "bg-emerald-50 text-emerald-700 border-emerald-200",
     iconName: "PlayCircle",
@@ -274,7 +274,7 @@ export const MODULES_DATA: ModuleItem[] = [
       "Pewarnaan Tetrimino berbasis ID numerik palet warna neon retro"
     ],
     projectResult: "Engine game Tetris modular fungsional lengkap dengan rotasi balok, deteksi tumpukan papan 2D, penghapusan baris ganda, dan kontrol D-Pad sentuh.",
-    assetFile: "/assets/aistudio/modul_9_e99882a2.html",
+    assetFile: "./assets/aistudio/modul_9_e99882a2.html",
     accentColor: "from-violet-500 to-indigo-500",
     badgeBg: "bg-violet-50 text-violet-700 border-violet-200",
     iconName: "Box",
@@ -303,7 +303,7 @@ export const MODULES_DATA: ModuleItem[] = [
       "Sistem penambahan skor +50 per eliminasi musuh dan pemulihan nyawa tiga hati"
     ],
     projectResult: "Game aksi pesawat luar angkasa Retro Space Impact side-scrolling dengan tembakan laser beruntun, puluhan musuh bergerak, dan tombol tembak cepat.",
-    assetFile: "/assets/aistudio/modul_10_043c4a44.html",
+    assetFile: "./assets/aistudio/modul_10_043c4a44.html",
     accentColor: "from-violet-500 to-indigo-500",
     badgeBg: "bg-violet-50 text-violet-700 border-violet-200",
     iconName: "Rocket",
@@ -332,7 +332,7 @@ export const MODULES_DATA: ModuleItem[] = [
       "Gradasi warna baris balok berdasarkan indeks modulo baris matriks"
     ],
     projectResult: "Game klasik pemecah balok (Brick Breaker) lengkap dengan puluhan balok warna-warni, paddle responsif, penghitung skor, dan status kemenangan.",
-    assetFile: "/assets/aistudio/modul_11_1a245907.html",
+    assetFile: "./assets/aistudio/modul_11_1a245907.html",
     accentColor: "from-violet-500 to-indigo-500",
     badgeBg: "bg-violet-50 text-violet-700 border-violet-200",
     iconName: "Trophy",
@@ -361,7 +361,7 @@ export const MODULES_DATA: ModuleItem[] = [
       "Pembedaan kondisi tabrakan: Pac-Man memakan hantu (+200 poin) vs Pac-Man kehilangan nyawa"
     ],
     projectResult: "Proyek Capstone Game Pac-Man retro utuh dengan labirin berdinding biru, dot makanan, power pellet, dua hantu AI berpatroli, dan sistem nyawa 3 hati.",
-    assetFile: "/assets/aistudio/modul_12_cfbf9efe.html",
+    assetFile: "./assets/aistudio/modul_12_cfbf9efe.html",
     accentColor: "from-amber-500 to-orange-500",
     badgeBg: "bg-amber-50 text-amber-800 border-amber-200",
     iconName: "Zap",
@@ -390,7 +390,7 @@ export const MODULES_DATA: ModuleItem[] = [
       "Perhitungan akumulasi jarak tempuh (skor meter) berbanding lurus dengan kecepatan mobil"
     ],
     projectResult: "Game balap jalanan top-down Nitro Street Racing dengan akselerasi turbo api, indikator bar nitro, rintangan mobil lawan di 3 jalur, dan tabrakan spektakuler.",
-    assetFile: "/assets/aistudio/modul_13_1b398024.html",
+    assetFile: "./assets/aistudio/modul_13_1b398024.html",
     accentColor: "from-amber-500 to-orange-500",
     badgeBg: "bg-amber-50 text-amber-800 border-amber-200",
     iconName: "Gauge",
@@ -419,7 +419,7 @@ export const MODULES_DATA: ModuleItem[] = [
       "Penyediaan antrean warna gelembung berikutnya untuk strategi pemain"
     ],
     projectResult: "Game teka-teki Bubble Bash interaktif lengkap dengan meriam berputar bebas, pantulan dinding, letusan rantai 3+ warna sama, dan peruntuhan gelembung menggantung.",
-    assetFile: "/assets/aistudio/modul_14_aada217d.html",
+    assetFile: "./assets/aistudio/modul_14_aada217d.html",
     accentColor: "from-amber-500 to-orange-500",
     badgeBg: "bg-amber-50 text-amber-800 border-amber-200",
     iconName: "Sparkles",
@@ -448,7 +448,7 @@ export const MODULES_DATA: ModuleItem[] = [
       "Desain rintangan platform melayang dengan highlight visual modern"
     ],
     projectResult: "Game aksi platformer Contra side-scroller dengan mekanika tembak multi-arah, gravitasi presisi, platform bertingkat, dan musuh patroli bersenjata.",
-    assetFile: "/assets/aistudio/modul_15_98c8745f.html",
+    assetFile: "./assets/aistudio/modul_15_98c8745f.html",
     accentColor: "from-rose-500 to-pink-500",
     badgeBg: "bg-rose-50 text-rose-700 border-rose-200",
     iconName: "Crosshair",
@@ -477,7 +477,7 @@ export const MODULES_DATA: ModuleItem[] = [
       "Indikator warna bola berikutnya di samping kodok untuk perencanaan taktik pemain"
     ],
     projectResult: "Game puzzle Zuma fungsional dengan kodok penembak 360 derajat, rantai bola melintasi jalur melengkung berliku, dan ledakan berantai Match-3 spektakuler.",
-    assetFile: "/assets/aistudio/modul_16_62e4b7ab.html",
+    assetFile: "./assets/aistudio/modul_16_62e4b7ab.html",
     accentColor: "from-rose-500 to-pink-500",
     badgeBg: "bg-rose-50 text-rose-700 border-rose-200",
     iconName: "Compass",
@@ -506,7 +506,7 @@ export const MODULES_DATA: ModuleItem[] = [
       "Kontrol ramah layar sentuh HP dengan tombol Lompat dan Kemudi kiri/kanan"
     ],
     projectResult: "Platformer Super Mario Bros lengkap dengan dunia scrolling dinamis, musuh Goomba yang bisa diinjak, koin berkilau, dan tiang bendera penyelesaian level.",
-    assetFile: "/assets/aistudio/modul_17_06e92351.html",
+    assetFile: "./assets/aistudio/modul_17_06e92351.html",
     accentColor: "from-rose-500 to-pink-500",
     badgeBg: "bg-rose-50 text-rose-700 border-rose-200",
     iconName: "ShieldAlert",
@@ -535,7 +535,7 @@ export const MODULES_DATA: ModuleItem[] = [
       "Format waktu digital mm:ss menggunakan padStart(2, '0')"
     ],
     projectResult: "Game petualangan dungeon Prince of Persia J2ME dengan tebing gantung, panjat dinding, jebakan duri tajam, dan countdown timer menegangkan.",
-    assetFile: "/assets/aistudio/modul_18_7cf7f1c1.html",
+    assetFile: "./assets/aistudio/modul_18_7cf7f1c1.html",
     accentColor: "from-rose-500 to-pink-500",
     badgeBg: "bg-rose-50 text-rose-700 border-rose-200",
     iconName: "Award",
@@ -564,7 +564,7 @@ export const MODULES_DATA: ModuleItem[] = [
       "Interaktivitas pemindahan titik target secara dinamis dengan klik mouse"
     ],
     projectResult: "Simulasi AI Labirin Cerdas di mana bot otonom secara instan menghitung, menampilkan, dan melangkah pada rute terpendek menuju target saat rintangan dinding digeser.",
-    assetFile: "/assets/aistudio/modul_19.html",
+    assetFile: "./assets/aistudio/modul_19.html",
     accentColor: "from-indigo-600 to-blue-600",
     badgeBg: "bg-indigo-50 text-indigo-700 border-indigo-200",
     iconName: "Bot",
@@ -593,7 +593,7 @@ export const MODULES_DATA: ModuleItem[] = [
       "Pengaturan variasi kecepatan dan sudut semburan menggunakan Math.cos dan Math.sin"
     ],
     projectResult: "Engine Sistem Partikel interaktif dengan 3 preset efek spektakuler: Ledakan Kembang Api, Api Menyala, dan Percikan Listrik Cyberpunk yang meledak mengikuti klik mouse.",
-    assetFile: "/assets/aistudio/modul_20.html",
+    assetFile: "./assets/aistudio/modul_20.html",
     accentColor: "from-amber-500 to-rose-500",
     badgeBg: "bg-amber-50 text-amber-800 border-amber-200",
     iconName: "Sparkles",
@@ -622,7 +622,7 @@ export const MODULES_DATA: ModuleItem[] = [
       "Pengumpulan koin kristal di udara saat berayun di atas duri jurang"
     ],
     projectResult: "Game aksi platformer Bionic Grapple Hook di mana pemain menembakkan tali pengait ke langit-langit, berayun menyeberangi jurang duri, dan mendarat mulus di platform finish.",
-    assetFile: "/assets/aistudio/modul_21.html",
+    assetFile: "./assets/aistudio/modul_21.html",
     accentColor: "from-teal-600 to-emerald-600",
     badgeBg: "bg-teal-50 text-teal-700 border-teal-200",
     iconName: "Anchor",
@@ -651,7 +651,7 @@ export const MODULES_DATA: ModuleItem[] = [
       "Peta batas keputusan (decision boundary) di kanvas menggunakan grid sampling"
     ],
     projectResult: "Aplikasi Visual KNN Classifier di mana siswa dapat menambahkan titik data latih di kanvas, mengatur nilai K slider, dan melihat AI memprediksi serta mengklasifikasi titik data baru seketika.",
-    assetFile: "/assets/aistudio/modul_22.html",
+    assetFile: "./assets/aistudio/modul_22.html",
     accentColor: "from-blue-600 to-indigo-600",
     badgeBg: "bg-blue-50 text-blue-700 border-blue-200",
     iconName: "Brain",
@@ -680,7 +680,7 @@ export const MODULES_DATA: ModuleItem[] = [
       "Mekanisme auto-restart generasi saat seluruh 50 agen menabrak pipa"
     ],
     projectResult: "Simulasi AI Neuro-Evolution di mana 50 agen burung belajar terbang melompati pipa secara otomatis, berevolusi dari generasi ke generasi hingga menjadi agen tak terkalahkan.",
-    assetFile: "/assets/aistudio/modul_23.html",
+    assetFile: "./assets/aistudio/modul_23.html",
     accentColor: "from-purple-600 to-pink-600",
     badgeBg: "bg-purple-50 text-purple-700 border-purple-200",
     iconName: "Dna",
@@ -709,7 +709,7 @@ export const MODULES_DATA: ModuleItem[] = [
       "Arena pertempuran 2 pemain (Lokal / Sim Network) dengan rintangan blok pelindung"
     ],
     projectResult: "Game Cyber Tank 2D Battle Arena dua pemain lengkap dengan indikator latency/ping simulator, radar minimap, efek ledakan peluru, dan sinkronisasi paket koordinat.",
-    assetFile: "/assets/aistudio/modul_24.html",
+    assetFile: "./assets/aistudio/modul_24.html",
     accentColor: "from-cyan-600 to-emerald-600",
     badgeBg: "bg-cyan-50 text-cyan-700 border-cyan-200",
     iconName: "Radio",

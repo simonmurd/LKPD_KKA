@@ -29,7 +29,7 @@ export function generateModulesTSV(): string {
     m.smkSummary.replace(/[\t\n\r]/g, " "),
     m.codingLogic.join(" | ").replace(/[\t\n\r]/g, " "),
     m.projectResult.replace(/[\t\n\r]/g, " "),
-    `${window.location.origin}${m.assetFile}`
+    new URL(m.assetFile, window.location.href).href
   ]);
 
   return [headers.join("\t"), ...rows.map((r) => r.join("\t"))].join("\n");
@@ -110,7 +110,7 @@ export function buildSyncPayload(action: "sync_all" | "sync_modules" | "sync_que
         intisari: m.smkSummary,
         logika: m.codingLogic.join("; "),
         hasil: m.projectResult,
-        link: `${window.location.origin}${m.assetFile}`
+        link: new URL(m.assetFile, window.location.href).href
       })),
       Bank_Soal: BANK_SOAL_DATA.map((q) => ({
         no: q.id,

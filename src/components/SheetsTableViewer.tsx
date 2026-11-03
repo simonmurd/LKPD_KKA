@@ -48,7 +48,7 @@ export const SheetsTableViewer: React.FC = () => {
       const rows = MODULES_DATA.map((m) => [
         m.id, m.code, m.title, m.groupLabel, m.domainCategory,
         m.focus, m.smkSummary, m.codingLogic.join(" | "), m.projectResult,
-        `${window.location.origin}${m.assetFile}`
+        new URL(m.assetFile, window.location.href).href
       ]);
       const csv = generateCSV(headers, rows);
       downloadFile(csv, "Modul_Materi_KKA_SMK.csv");
