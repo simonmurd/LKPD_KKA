@@ -48,6 +48,22 @@ export const InteractiveRunner: React.FC<InteractiveRunnerProps> = ({
 
   const STORAGE_KEY = `kka_modul_code_${selectedId}`;
 
+  // Sync when initialModuleId changes from props
+  useEffect(() => {
+    if (initialModuleId && initialModuleId !== selectedId) {
+      setSelectedId(initialModuleId);
+    }
+  }, [initialModuleId]);
+
+  // Clean up blob URL on unmount to avoid memory leak
+  useEffect(() => {
+    return () => {
+      if (previewBlobUrl) {
+        URL.revokeObjectURL(previewBlobUrl);
+      }
+    };
+  }, [previewBlobUrl]);
+
   // Load code from localStorage or fallback to default
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);

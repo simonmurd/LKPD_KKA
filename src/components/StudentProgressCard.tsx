@@ -99,10 +99,10 @@ export const StudentProgressCard: React.FC<StudentProgressCardProps> = ({
           </span>
         </div>
 
-        {/* Skor Kuis */}
+        {/* Skor Ujian CBT */}
         <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-sm space-y-2">
           <div className="flex items-center justify-between text-xs text-slate-500">
-            <span className="font-semibold uppercase tracking-wider">Pencapaian Kuis</span>
+            <span className="font-semibold uppercase tracking-wider">Nilai Ujian CBT</span>
             <Trophy className="w-4 h-4 text-amber-500" />
           </div>
           <div className="text-3xl font-extrabold text-slate-900 font-mono">
@@ -115,7 +115,7 @@ export const StudentProgressCard: React.FC<StudentProgressCardProps> = ({
             onClick={onGoToQuiz}
             className="text-[11px] text-indigo-600 hover:underline font-bold flex items-center gap-1"
           >
-            <span>Buka Kuis Mandiri</span>
+            <span>Buka Ujian CBT (40 PG + Essay)</span>
             <ArrowRight className="w-3 h-3" />
           </button>
         </div>

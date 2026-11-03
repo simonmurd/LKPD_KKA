@@ -170,8 +170,8 @@ export const TeacherMonitoringPanel: React.FC = () => {
 
         <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-sm">
           <div className="text-xs text-slate-500 uppercase font-semibold">Kurikulum KKA</div>
-          <div className="text-2xl font-bold font-mono text-violet-600 mt-1">18 Modul</div>
-          <div className="text-[11px] text-slate-400 mt-0.5">360 Tugas & 54 Soal</div>
+          <div className="text-2xl font-bold font-mono text-violet-600 mt-1">24 Modul</div>
+          <div className="text-[11px] text-slate-400 mt-0.5">480 Tugas & 960 Soal CBT + 240 Essay</div>
         </div>
       </div>
 
@@ -234,7 +234,7 @@ export const TeacherMonitoringPanel: React.FC = () => {
                 <th className="p-3.5 w-24 text-center">Kelas</th>
                 <th className="p-3.5 w-64">Sekolah</th>
                 <th className="p-3.5 w-40 text-center">Modul Selesai</th>
-                <th className="p-3.5 w-32 text-center">Skor Kuis</th>
+                <th className="p-3.5 w-36 text-center">Nilai CBT (KKM 75)</th>
                 <th className="p-3.5 w-36 text-center">Status</th>
               </tr>
             </thead>

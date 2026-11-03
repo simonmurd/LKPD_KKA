@@ -1,4 +1,6 @@
 import express, { Request, Response } from 'express';
+import http from 'http';
+import { WebSocketServer, WebSocket } from 'ws';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -23,6 +25,191 @@ const ai = new GoogleGenAI({
     },
   },
 });
+
+// ================= REAL-TIME PRESENCE & LIVE CHAT STATE =================
+
+export interface UserPresence {
+  id: string; // student ID or teacher username
+  name: string;
+  role: 'SISWA' | 'GURU';
+  school?: string;
+  className?: string;
+  noAbsen?: string;
+  currentModuleId?: number;
+  currentModuleName?: string;
+  currentTab?: string;
+  status: 'online' | 'coding' | 'exam' | 'idle';
+  loginTime: string;
+  lastActive: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  senderId: string;
+  senderName: string;
+  senderRole: 'SISWA' | 'GURU';
+  senderClass?: string;
+  recipientId?: string; // 'all' for public room, or specific student/teacher ID
+  recipientName?: string;
+  content: string;
+  timestamp: string;
+  type: 'public' | 'direct' | 'broadcast';
+}
+
+// In-memory state
+const onlineUsers = new Map<string, UserPresence>();
+const socketUserMap = new Map<WebSocket, string>();
+
+const chatMessages: ChatMessage[] = [
+  {
+    id: 'msg-init-1',
+    senderId: 'guru-simon',
+    senderName: 'Simon Murd (Guru Mapel)',
+    senderRole: 'GURU',
+    senderClass: 'Pengampu KKA',
+    recipientId: 'all',
+    content: 'Selamat datang di Ruang Live Chat KKA SMK. Seluruh aktivitas koding dan asesmen terpantau secara real-time. Jika ada kesulitan atau pertanyaan mengenai modul dan ujian CBT, silakan tanyakan langsung di sini!',
+    timestamp: new Date().toISOString(),
+    type: 'broadcast'
+  }
+];
+
+let globalWss: WebSocketServer | null = null;
+
+function broadcastPresence() {
+  if (!globalWss) return;
+  const usersList = Array.from(onlineUsers.values());
+  const payload = JSON.stringify({
+    type: 'presence:update',
+    users: usersList,
+    onlineCount: usersList.length,
+    timestamp: new Date().toISOString()
+  });
+
+  globalWss.clients.forEach((client) => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(payload);
+    }
+  });
+}
+
+function broadcastChatMessage(msg: ChatMessage) {
+  if (!globalWss) return;
+  const payload = JSON.stringify({
+    type: 'chat:new',
+    message: msg
+  });
+
+  globalWss.clients.forEach((client) => {
+    if (client.readyState === WebSocket.OPEN) {
+      const clientUserId = socketUserMap.get(client);
+      // Send if public/broadcast, or if client is sender, or if client is recipient, or if client is teacher
+      if (
+        msg.recipientId === 'all' ||
+        msg.type === 'broadcast' ||
+        clientUserId === msg.senderId ||
+        clientUserId === msg.recipientId ||
+        clientUserId?.startsWith('guru')
+      ) {
+        client.send(payload);
+      }
+    }
+  });
+}
+
+// ================= REST API ROUTES FOR LIVE PRESENCE & CHAT =================
+
+// 1. Get Live Presence
+app.get('/api/live/presence', (_req: Request, res: Response) => {
+  return res.json({
+    users: Array.from(onlineUsers.values()),
+    onlineCount: onlineUsers.size,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// 2. Post Heartbeat / Update Presence
+app.post('/api/live/presence', (req: Request, res: Response) => {
+  const user = req.body as UserPresence;
+  if (!user || !user.id) {
+    return res.status(400).json({ error: 'Data identitas user tidak valid.' });
+  }
+
+  const existing = onlineUsers.get(user.id);
+  const updatedUser: UserPresence = {
+    ...user,
+    loginTime: existing?.loginTime || user.loginTime || new Date().toISOString(),
+    lastActive: new Date().toISOString()
+  };
+
+  onlineUsers.set(user.id, updatedUser);
+  broadcastPresence();
+
+  return res.json({ success: true, user: updatedUser });
+});
+
+// 3. User Logout / Offline announcement
+app.post('/api/live/logout', (req: Request, res: Response) => {
+  const { userId } = req.body;
+  if (userId && onlineUsers.has(userId)) {
+    onlineUsers.delete(userId);
+    broadcastPresence();
+  }
+  return res.json({ success: true });
+});
+
+// 4. Get Chat Messages
+app.get('/api/live/chat', (req: Request, res: Response) => {
+  const { userId, role } = req.query;
+  
+  if (role === 'GURU') {
+    // Teachers see all messages
+    return res.json({ messages: chatMessages });
+  }
+
+  // Students see public/broadcast messages and messages specifically for or from them
+  const filtered = chatMessages.filter(
+    (m) =>
+      m.recipientId === 'all' ||
+      m.type === 'broadcast' ||
+      m.senderId === userId ||
+      m.recipientId === userId
+  );
+
+  return res.json({ messages: filtered });
+});
+
+// 5. Post New Chat Message
+app.post('/api/live/chat', (req: Request, res: Response) => {
+  const { senderId, senderName, senderRole, senderClass, recipientId, recipientName, content, type } = req.body;
+
+  if (!content || !content.trim() || !senderId || !senderName) {
+    return res.status(400).json({ error: 'Konten pesan atau pengirim tidak valid.' });
+  }
+
+  const newMsg: ChatMessage = {
+    id: `msg-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+    senderId,
+    senderName,
+    senderRole: senderRole || 'SISWA',
+    senderClass,
+    recipientId: recipientId || 'all',
+    recipientName,
+    content: content.trim(),
+    timestamp: new Date().toISOString(),
+    type: type || (recipientId && recipientId !== 'all' ? 'direct' : 'public')
+  };
+
+  chatMessages.push(newMsg);
+  if (chatMessages.length > 300) {
+    chatMessages.shift();
+  }
+
+  broadcastChatMessage(newMsg);
+  return res.json({ success: true, message: newMsg });
+});
+
+// ================= TEACHER AI ASSISTANT ROUTES =================
 
 // Teacher AI Assistant Chatbot API Endpoint
 app.post('/api/teacher-chat', async (req: Request, res: Response) => {
@@ -132,8 +319,96 @@ async function startServer() {
     });
   }
 
-  app.listen(port, '0.0.0.0', () => {
-    console.log(`Server DevCore KKA running at http://0.0.0.0:${port}`);
+  const server = http.createServer(app);
+
+  // Initialize WebSocketServer attached to the HTTP server
+  const wss = new WebSocketServer({ server, path: '/ws' });
+  globalWss = wss;
+
+  wss.on('connection', (ws: WebSocket) => {
+    // Send immediate initial sync
+    const initPayload = JSON.stringify({
+      type: 'init:sync',
+      users: Array.from(onlineUsers.values()),
+      onlineCount: onlineUsers.size,
+      recentMessages: chatMessages.slice(-50),
+      timestamp: new Date().toISOString()
+    });
+    ws.send(initPayload);
+
+    ws.on('message', (data: string) => {
+      try {
+        const payload = JSON.parse(data.toString());
+
+        if (payload.type === 'auth:login') {
+          const user = payload.user as UserPresence;
+          if (user && user.id) {
+            socketUserMap.set(ws, user.id);
+            onlineUsers.set(user.id, {
+              ...user,
+              loginTime: user.loginTime || new Date().toISOString(),
+              lastActive: new Date().toISOString()
+            });
+            broadcastPresence();
+          }
+        } else if (payload.type === 'presence:status') {
+          const userId = socketUserMap.get(ws) || payload.userId;
+          if (userId && onlineUsers.has(userId)) {
+            const current = onlineUsers.get(userId)!;
+            onlineUsers.set(userId, {
+              ...current,
+              currentModuleId: payload.currentModuleId ?? current.currentModuleId,
+              currentModuleName: payload.currentModuleName ?? current.currentModuleName,
+              currentTab: payload.currentTab ?? current.currentTab,
+              status: payload.status ?? current.status,
+              lastActive: new Date().toISOString()
+            });
+            broadcastPresence();
+          }
+        } else if (payload.type === 'chat:send') {
+          const msg = payload.message as ChatMessage;
+          if (msg && msg.content && msg.content.trim()) {
+            const newMsg: ChatMessage = {
+              ...msg,
+              id: `msg-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+              timestamp: new Date().toISOString()
+            };
+            chatMessages.push(newMsg);
+            if (chatMessages.length > 300) chatMessages.shift();
+            broadcastChatMessage(newMsg);
+          }
+        }
+      } catch (err) {
+        console.error('WebSocket message parsing error:', err);
+      }
+    });
+
+    ws.on('close', () => {
+      const userId = socketUserMap.get(ws);
+      if (userId) {
+        socketUserMap.delete(ws);
+        // Only remove if this was the last socket for this user
+        let hasOtherSocket = false;
+        for (const [sock, uId] of socketUserMap.entries()) {
+          if (uId === userId && sock.readyState === WebSocket.OPEN) {
+            hasOtherSocket = true;
+            break;
+          }
+        }
+        if (!hasOtherSocket) {
+          onlineUsers.delete(userId);
+          broadcastPresence();
+        }
+      }
+    });
+
+    ws.on('error', (err) => {
+      console.error('WebSocket connection error:', err);
+    });
+  });
+
+  server.listen(port, '0.0.0.0', () => {
+    console.log(`Server DevCore KKA with Live WebSockets running at http://0.0.0.0:${port}`);
   });
 }
 

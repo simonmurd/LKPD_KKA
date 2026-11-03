@@ -3,9 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Bot, Sparkles } from 'lucide-react';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { RealtimeProvider, useRealtime } from './context/RealtimeContext';
 import { Navbar, NavTab } from './components/Navbar';
 import { LoginPortal } from './components/LoginPortal';
 import { ModuleList } from './components/ModuleList';
@@ -17,14 +18,33 @@ import { QuizPractice } from './components/QuizPractice';
 import { StudentProgressCard } from './components/StudentProgressCard';
 import { TeacherMonitoringPanel } from './components/TeacherMonitoringPanel';
 import { TeacherAiAssistant } from './components/TeacherAiAssistant';
-import { ModuleItem } from './data/modulesData';
+import { LiveChatCenter } from './components/LiveChatCenter';
+import { FloatingLiveChatWidget } from './components/FloatingLiveChatWidget';
+import { MODULES_DATA, ModuleItem } from './data/modulesData';
 
 function MainAppContent() {
   const { role, currentStudent, teacherUser, recordModulePractice } = useAuth();
+  const { updateActivity } = useRealtime();
   
   const [activeTab, setActiveTab] = useState<NavTab>(role === 'GURU' ? 'teacher_monitoring' : 'syllabus');
   const [selectedModuleId, setSelectedModuleId] = useState<number>(1);
   const [modalModule, setModalModule] = useState<ModuleItem | null>(null);
+
+  // Sync real-time activity when user switches tabs or modules
+  useEffect(() => {
+    if (!role) return;
+    const currentMod = MODULES_DATA.find((m) => m.id === selectedModuleId);
+    let statusText: 'online' | 'coding' | 'exam' | 'idle' = 'online';
+    if (activeTab === 'simulator') statusText = 'coding';
+    if (activeTab === 'quiz') statusText = 'exam';
+
+    updateActivity(
+      selectedModuleId,
+      currentMod ? currentMod.shortTitle : undefined,
+      activeTab,
+      statusText
+    );
+  }, [role, activeTab, selectedModuleId, updateActivity]);
 
   // If not authenticated, render Login Portal
   if (!role) {
@@ -65,6 +85,11 @@ function MainAppContent() {
           <TeacherMonitoringPanel />
         )}
 
+        {/* Real-Time Live Chat & Monitoring Siswa Login */}
+        {activeTab === 'live_chat' && (
+          <LiveChatCenter />
+        )}
+
         {/* SISWA ONLY: Lembar Kemajuan Belajar */}
         {role === 'SISWA' && activeTab === 'student_progress' && (
           <StudentProgressCard 
@@ -79,7 +104,7 @@ function MainAppContent() {
           />
         )}
 
-        {/* Common: Silabus 18 Modul */}
+        {/* Common: Silabus 24 Modul */}
         {activeTab === 'syllabus' && (
           <ModuleList 
             onSelectModule={(mod) => setModalModule(mod)}
@@ -95,7 +120,7 @@ function MainAppContent() {
           />
         )}
 
-        {/* Common: Kuis Mandiri */}
+        {/* Common: Ujian CBT 40 PG & Essay */}
         {activeTab === 'quiz' && (
           <QuizPractice />
         )}
@@ -117,21 +142,26 @@ function MainAppContent() {
 
       </main>
 
+      {/* Floating Quick Live Chat Launcher for Quick Consultations */}
+      {activeTab !== 'live_chat' && (
+        <FloatingLiveChatWidget />
+      )}
+
       {/* GURU ONLY: Floating Quick AI Launcher */}
-      {role === 'GURU' && activeTab !== 'teacher_ai' && (
+      {role === 'GURU' && activeTab !== 'teacher_ai' && activeTab !== 'live_chat' && (
         <button
           onClick={() => {
             setActiveTab('teacher_ai');
             window.scrollTo({ top: 0, behavior: 'smooth' });
           }}
-          className="fixed bottom-6 right-6 z-40 px-4 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 flex items-center gap-2.5 transition hover:scale-105 active:scale-95 group border border-white/20"
+          className="fixed bottom-20 right-6 z-40 px-4 py-3 rounded-2xl bg-white hover:bg-slate-50 text-slate-800 font-bold text-xs shadow-lg border border-slate-200 flex items-center gap-2.5 transition hover:scale-105 active:scale-95 group"
           title="Buka Asisten Chat Bot Guru AI"
         >
-          <div className="w-6 h-6 rounded-lg bg-white/20 flex items-center justify-center">
-            <Bot className="w-4 h-4 text-white" />
+          <div className="w-6 h-6 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+            <Bot className="w-4 h-4" />
           </div>
-          <span className="font-sans">Tanya Asisten AI Guru</span>
-          <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
+          <span className="font-sans">Asisten AI Guru</span>
+          <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
         </button>
       )}
 
@@ -154,13 +184,13 @@ function MainAppContent() {
                 DevCore KKA — {role === 'GURU' ? 'Dashboard Guru (Pak Simon)' : `Dashboard Siswa (${currentStudent?.name || ''})`}
               </span>
               <p className="text-[11px] text-slate-500">
-                SMK Negeri 1 Singkawang (X & XI TJK) & SMK Mudita Singkawang (XI TJKT)
+                SMK Negeri 1 Singkawang (X &amp; XI TJK) &amp; SMK Mudita Singkawang (XI TJKT)
               </p>
             </div>
           </div>
 
           <div className="text-[11px] text-slate-500">
-            &copy; 2026 Kurikulum Koding & Kecerdasan Artifisial SMK. All rights reserved.
+            &copy; 2026 Kurikulum Koding &amp; Kecerdasan Artifisial SMK. All rights reserved.
           </div>
         </div>
       </footer>
@@ -172,7 +202,9 @@ function MainAppContent() {
 export default function App() {
   return (
     <AuthProvider>
-      <MainAppContent />
+      <RealtimeProvider>
+        <MainAppContent />
+      </RealtimeProvider>
     </AuthProvider>
   );
 }

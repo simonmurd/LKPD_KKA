@@ -1,5 +1,6 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useRealtime } from '../context/RealtimeContext';
 import { 
   BookOpen, 
   Code2, 
@@ -10,13 +11,15 @@ import {
   LogOut,
   Users,
   Trophy,
-  Bot
+  Bot,
+  MessageSquare
 } from 'lucide-react';
 
 export type NavTab = 
   | 'syllabus' 
   | 'simulator' 
   | 'quiz' 
+  | 'live_chat'
   | 'student_progress' 
   | 'teacher_monitoring' 
   | 'teacher_ai'
@@ -31,6 +34,7 @@ interface NavbarProps {
 
 export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
   const { role, currentStudent, teacherUser, logout } = useAuth();
+  const { onlineStudents, unreadCount } = useRealtime();
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/90 shadow-sm">
@@ -126,7 +130,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
               <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
             </button>
 
-            {/* Common: Kuis Mandiri */}
+            {/* Common: Ujian CBT 40 PG & Essay */}
             <button
               onClick={() => setActiveTab('quiz')}
               className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all ${
@@ -135,8 +139,34 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
                   : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
               }`}
             >
-              <GraduationCap className="w-4 h-4 text-slate-500" />
-              <span>Kuis Mandiri (72)</span>
+              <GraduationCap className="w-4 h-4 text-indigo-600" />
+              <span>Ujian CBT &amp; Essay</span>
+              <span className="text-[9px] bg-indigo-100 text-indigo-700 font-bold px-1.5 py-0.5 rounded-full font-mono">
+                40 PG / 10 Essay
+              </span>
+            </button>
+
+            {/* Common: Live Chat & Pemantauan Kehadiran */}
+            <button
+              onClick={() => setActiveTab('live_chat')}
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all ${
+                activeTab === 'live_chat'
+                  ? 'bg-white text-indigo-700 shadow-sm font-bold'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+              }`}
+            >
+              <MessageSquare className="w-4 h-4 text-emerald-600" />
+              <span>{role === 'GURU' ? 'Live Chat & Pantau' : 'Live Chat Guru'}</span>
+              {role === 'GURU' ? (
+                <span className="text-[9px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded-full font-mono flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  {onlineStudents.length} Online
+                </span>
+              ) : unreadCount > 0 ? (
+                <span className="text-[9px] bg-rose-500 text-white font-bold px-1.5 py-0.5 rounded-full font-mono">
+                  {unreadCount}
+                </span>
+              ) : null}
             </button>
 
             {/* SISWA ONLY: Progres Belajar Saya */}
@@ -282,7 +312,22 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
               activeTab === 'quiz' ? 'bg-indigo-600 text-white font-bold shadow-sm' : 'text-slate-600 hover:bg-slate-100'
             }`}
           >
-            Kuis (72)
+            CBT (40 PG + Essay)
+          </button>
+
+          <button
+            onClick={() => setActiveTab('live_chat')}
+            className={`px-3 py-1.5 rounded-lg font-medium whitespace-nowrap transition flex items-center gap-1 ${
+              activeTab === 'live_chat' ? 'bg-indigo-600 text-white font-bold shadow-sm' : 'text-slate-600 hover:bg-slate-100'
+            }`}
+          >
+            <MessageSquare className="w-3 h-3 text-emerald-500" />
+            <span>Live Chat</span>
+            {role === 'GURU' && onlineStudents.length > 0 && (
+              <span className="text-[9px] bg-emerald-500 text-white px-1 rounded-full font-mono">
+                {onlineStudents.length}
+              </span>
+            )}
           </button>
 
           {role === 'SISWA' && (

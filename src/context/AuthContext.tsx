@@ -126,6 +126,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = () => {
+    const currentId = currentStudent?.id || (teacherUser ? 'guru-simon' : null);
+    if (currentId) {
+      fetch('/api/live/logout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: currentId }),
+      }).catch(() => {});
+    }
     saveSession(null, null, null);
   };
 

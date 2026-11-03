@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>KKA DevCore - Redirecting...</title>
+    <script>
+      // Single Page Apps for GitHub Pages
+      // Redirects 404 routes back to index.html preserving path, query, and hash
+      var pathSegmentsToKeep = 0;
+      var l = window.location;
+      var repoName = l.pathname.split('/')[1];
+      // If deployed at username.github.io/repo-name/, keep 1 segment
+      if (l.hostname.endsWith('github.io') && repoName) {
+        pathSegmentsToKeep = 1;
+      }
+      l.replace(
+        l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
+        l.pathname.split('/').slice(0, 1 + pathSegmentsToKeep).join('/') + '/?/' +
+        l.pathname.slice(1).split('/').slice(pathSegmentsToKeep).join('/').replace(/&/g, '~and~') +
+        (l.search ? '&' : '') +
+        l.search.slice(1).replace(/&/g, '~and~') +
+        l.hash
+      );
+    </script>
+  </head>
+  <body>
+    <p style="font-family: sans-serif; text-align: center; margin-top: 40px; color: #64748b;">
+      Memuat KKA DevCore...
+    </p>
+  </body>
+</html>
