@@ -101,6 +101,7 @@ function MainAppContent() {
               setActiveTab('quiz');
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
+            onLaunchModule={handleLaunchSimulator}
           />
         )}
 

@@ -18,8 +18,16 @@ import { useRealtime } from '../context/RealtimeContext';
 import { STUDENTS_DATA, SCHOOL_OPTIONS, CLASS_OPTIONS, Student } from '../data/studentsData';
 import { MODULES_DATA } from '../data/modulesData';
 import { generateCSV, downloadFile } from '../services/sheetsSyncService';
-import { subscribeToExamResults, FirestoreExamResult } from '../firebase';
+import { 
+  subscribeToExamResults, 
+  FirestoreExamResult, 
+  subscribeToAssignments, 
+  saveAssignmentToFirestore, 
+  subscribeToSubmissions, 
+  gradeSubmissionInFirestore 
+} from '../firebase';
 import { StudentReportCardModal } from './StudentReportCardModal';
+import { Assignment, StudentSubmission, INITIAL_ASSIGNMENTS } from '../data/assignmentsData';
 import { 
   Search, 
   Download, 
@@ -39,10 +47,19 @@ import {
   FileSpreadsheet,
   AlertTriangle,
   Flame,
-  BarChart2
+  BarChart2,
+  FileCheck,
+  Plus,
+  Zap,
+  Sparkles,
+  Save,
+  X,
+  Calendar,
+  MessageSquare,
+  ChevronRight
 } from 'lucide-react';
 
-export type TeacherDashboardTab = 'leger' | 'matrix' | 'live_exams' | 'presence';
+export type TeacherDashboardTab = 'leger' | 'assignments' | 'matrix' | 'live_exams' | 'presence';
 
 export const TeacherMonitoringPanel: React.FC = () => {
   const { studentProgressMap } = useAuth();
@@ -50,18 +67,52 @@ export const TeacherMonitoringPanel: React.FC = () => {
   
   const [activeTab, setActiveTab] = useState<TeacherDashboardTab>('leger');
   const [recentExams, setRecentExams] = useState<FirestoreExamResult[]>([]);
+  const [assignments, setAssignments] = useState<Assignment[]>(INITIAL_ASSIGNMENTS);
+  const [submissions, setSubmissions] = useState<StudentSubmission[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterSchool, setFilterSchool] = useState<string>('SEMUA SEKOLAH');
   const [filterClass, setFilterClass] = useState<string>('SEMUA KELAS');
+  const [filterAssignmentCode, setFilterAssignmentCode] = useState<string>('SEMUA TUGAS');
   const [copiedTSV, setCopiedTSV] = useState(false);
   const [selectedStudentForReport, setSelectedStudentForReport] = useState<Student | null>(null);
 
-  // Subscribe to real-time exam results from Cloud Firestore
+  // New assignment modal form state
+  const [showCreateTaskModal, setShowCreateTaskModal] = useState(false);
+  const [newTaskTitle, setNewTaskTitle] = useState('');
+  const [newTaskModuleId, setNewTaskModuleId] = useState(1);
+  const [newTaskDueDate, setNewTaskDueDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 7);
+    return d.toISOString().split('T')[0];
+  });
+  const [newTaskDescription, setNewTaskDescription] = useState('');
+  const [newTaskCriteria, setNewTaskCriteria] = useState('');
+  const [isCreatingTask, setIsCreatingTask] = useState(false);
+
+  // Grading states per submission
+  const [gradeInputMap, setGradeInputMap] = useState<Record<string, { score: number; feedback: string }>>({});
+  const [isSavingGradeMap, setIsSavingGradeMap] = useState<Record<string, boolean>>({});
+  const [actionToast, setActionToast] = useState<string | null>(null);
+
+  // Subscribe to real-time exam results, assignments, and submissions from Cloud Firestore
   useEffect(() => {
-    const unsub = subscribeToExamResults((results) => {
+    const unsubExams = subscribeToExamResults((results) => {
       setRecentExams(results);
     });
-    return () => unsub();
+
+    const unsubAssign = subscribeToAssignments((list) => {
+      setAssignments(list);
+    });
+
+    const unsubSubs = subscribeToSubmissions((list) => {
+      setSubmissions(list);
+    });
+
+    return () => {
+      unsubExams();
+      unsubAssign();
+      unsubSubs();
+    };
   }, []);
 
   // Filter students based on school, class, and search query
@@ -227,6 +278,91 @@ export const TeacherMonitoringPanel: React.FC = () => {
     window.print();
   };
 
+  // Hitung jumlah pengumpulan yang belum dinilai
+  const pendingGradingCount = useMemo(() => {
+    return submissions.filter(s => s.status === 'submitted' || !s.score).length;
+  }, [submissions]);
+
+  // Filter Submissions berdasarkan Sekolah, Kelas, Tugas, dan Pencarian
+  const filteredSubmissions = useMemo(() => {
+    return submissions.filter(sub => {
+      const matchSchool =
+        filterSchool === 'SEMUA SEKOLAH' ||
+        STUDENTS_DATA.some(s => s.id === sub.studentId && s.school.toLowerCase() === filterSchool.toLowerCase());
+      const matchClass =
+        filterClass === 'SEMUA KELAS' ||
+        (sub.studentClass && sub.studentClass.toLowerCase() === filterClass.toLowerCase());
+      const matchAssignment =
+        filterAssignmentCode === 'SEMUA TUGAS' ||
+        sub.assignmentId === filterAssignmentCode;
+      const q = searchQuery.toLowerCase().trim();
+      const matchQuery =
+        !q ||
+        sub.studentName.toLowerCase().includes(q) ||
+        (sub.studentAbsen && sub.studentAbsen.includes(q)) ||
+        (sub.studentClass && sub.studentClass.toLowerCase().includes(q));
+
+      return matchSchool && matchClass && matchAssignment && matchQuery;
+    });
+  }, [submissions, filterSchool, filterClass, filterAssignmentCode, searchQuery]);
+
+  // Guru membuat tugas baru dan menyimpan ke Firestore
+  const handleCreateNewAssignment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTaskTitle.trim()) return;
+
+    setIsCreatingTask(true);
+    const mod = MODULES_DATA.find((m) => m.id === Number(newTaskModuleId));
+    const nextCode = `TUGAS-0${assignments.length + 1}`;
+    const newId = `tugas-${Date.now().toString().slice(-6)}`;
+
+    const newAssignment: Assignment = {
+      id: newId,
+      code: nextCode,
+      title: newTaskTitle.trim(),
+      description: newTaskDescription.trim() || `Silakan buka dan praktikkan modul simulasi ${mod?.code || ''}. Modifikasi parameter kode kanvas 2D dan kumpulkan hasil pengerjaan Anda.`,
+      moduleId: Number(newTaskModuleId),
+      moduleCode: mod?.code || `MODUL-${String(newTaskModuleId).padStart(2, '0')}`,
+      assignedDate: new Date().toISOString().split('T')[0],
+      dueDate: newTaskDueDate,
+      targetCriteria: newTaskCriteria.trim() || 'Kode berjalan lancar tanpa error konsol, penerapan konsep tepat, dan tugas dikumpulkan tepat waktu.',
+      maxScore: 100
+    };
+
+    try {
+      await saveAssignmentToFirestore(newAssignment);
+      setShowCreateTaskModal(false);
+      setNewTaskTitle('');
+      setNewTaskDescription('');
+      setNewTaskCriteria('');
+      setActionToast(`Tugas baru "${newAssignment.title}" berhasil disimpan dan dibagikan ke seluruh siswa!`);
+      setTimeout(() => setActionToast(null), 4000);
+    } catch (err) {
+      console.error('Failed to create assignment:', err);
+    } finally {
+      setIsCreatingTask(false);
+    }
+  };
+
+  // Guru menyimpan nilai dan umpan balik tugas siswa ke Firestore
+  const handleSaveGrade = async (submissionId: string) => {
+    const currentGrade = gradeInputMap[submissionId];
+    const sub = submissions.find(s => s.id === submissionId);
+    const score = currentGrade?.score !== undefined ? currentGrade.score : (sub?.score || 85);
+    const feedback = currentGrade?.feedback !== undefined ? currentGrade.feedback : (sub?.teacherFeedback || 'Telah dinilai oleh Guru Simon Murd, S.Kom');
+
+    setIsSavingGradeMap(prev => ({ ...prev, [submissionId]: true }));
+    try {
+      await gradeSubmissionInFirestore(submissionId, score, feedback);
+      setActionToast(`Nilai (${score}) untuk ${sub?.studentName || 'siswa'} berhasil disimpan ke Cloud Firestore!`);
+      setTimeout(() => setActionToast(null), 3500);
+    } catch (err) {
+      console.error('Failed to save grade:', err);
+    } finally {
+      setIsSavingGradeMap(prev => ({ ...prev, [submissionId]: false }));
+    }
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
       
@@ -335,6 +471,23 @@ export const TeacherMonitoringPanel: React.FC = () => {
         </button>
 
         <button
+          onClick={() => setActiveTab('assignments')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${
+            activeTab === 'assignments'
+              ? 'bg-white text-indigo-700 shadow-sm'
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <FileCheck className="w-4 h-4 text-emerald-600" />
+          <span>Kelola &amp; Nilai Tugas</span>
+          {submissions.length > 0 && (
+            <span className="px-1.5 py-0.2 bg-emerald-100 text-emerald-800 text-[10px] font-mono font-bold rounded-full">
+              {submissions.length} Kiriman
+            </span>
+          )}
+        </button>
+
+        <button
           onClick={() => setActiveTab('matrix')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${
             activeTab === 'matrix'
@@ -377,8 +530,8 @@ export const TeacherMonitoringPanel: React.FC = () => {
         </button>
       </div>
 
-      {/* Filter and Search Bar (shared across leger & matrix) */}
-      {(activeTab === 'leger' || activeTab === 'matrix' || activeTab === 'presence') && (
+      {/* Filter and Search Bar (shared across leger, matrix, presence, assignments) */}
+      {(activeTab === 'leger' || activeTab === 'matrix' || activeTab === 'presence' || activeTab === 'assignments') && (
         <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 p-4 rounded-2xl bg-white border border-slate-200/90 shadow-sm print:hidden">
           
           <div className="flex flex-wrap items-center gap-2">
@@ -409,6 +562,23 @@ export const TeacherMonitoringPanel: React.FC = () => {
                 ))}
               </select>
             </div>
+
+            {/* Assignment Filter (Visible in assignments tab) */}
+            {activeTab === 'assignments' && (
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-slate-500 font-semibold">Tugas:</span>
+                <select
+                  value={filterAssignmentCode}
+                  onChange={(e) => setFilterAssignmentCode(e.target.value)}
+                  className="px-2.5 py-1.5 rounded-lg bg-indigo-50/70 border border-indigo-200 text-xs text-indigo-900 focus:outline-none focus:border-indigo-500 font-medium max-w-[200px] truncate"
+                >
+                  <option value="SEMUA TUGAS">Semua Tugas ({assignments.length})</option>
+                  {assignments.map(a => (
+                    <option key={a.id} value={a.id}>{a.code}: {a.title.slice(0, 24)}...</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
 
           {/* Search */}
@@ -423,6 +593,255 @@ export const TeacherMonitoringPanel: React.FC = () => {
             />
           </div>
 
+        </div>
+      )}
+
+      {/* ================= TAB BARU: KELOLA & NILAI TUGAS SISWA ================= */}
+      {activeTab === 'assignments' && (
+        <div className="space-y-6">
+          
+          {/* Header Action & Summary */}
+          <div className="p-6 rounded-3xl bg-white border border-slate-200/90 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-mono font-bold flex items-center gap-1">
+                  <FileCheck className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Sistem Penugasan &amp; Penilaian Kecepatan (Speed Scoring)</span>
+                </span>
+                <span className="text-xs text-slate-500 font-mono">
+                  Cloud Firestore Live Sync
+                </span>
+              </div>
+              <h3 className="text-xl font-extrabold text-slate-900 tracking-tight">
+                Rekap Penugasan &amp; Penilaian Tugas Praktik
+              </h3>
+              <p className="text-xs text-slate-500 max-w-2xl mt-1 leading-relaxed">
+                Guru Simon dapat memberikan tugas baru (misal: penugasan simulasi Modul 1 sampai 24). Siswa yang mengumpulkan lebih cepat mendapatkan rekomendasi bonus kecepatan otomatis (+10 poin untuk &ge;24 jam lebih awal). Guru dapat meninjau kode, memberikan nilai akhir, dan umpan balik yang langsung tampil di dashboard siswa.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2.5 shrink-0">
+              <button
+                onClick={() => setShowCreateTaskModal(true)}
+                className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center gap-2 shadow-sm shadow-indigo-600/20 transition cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                <span>+ Berikan Tugas Baru</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Quick Metrics for Assignments */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+            <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-sm">
+              <div className="text-[11px] text-slate-500 uppercase font-semibold font-mono">Total Tugas Aktif</div>
+              <div className="text-2xl font-bold font-mono text-slate-900 mt-1">{assignments.length} Tugas</div>
+              <div className="text-[11px] text-slate-400 mt-0.5">Terkoneksi ke Siswa</div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-sm">
+              <div className="text-[11px] text-slate-500 uppercase font-semibold font-mono">Total Pengumpulan</div>
+              <div className="text-2xl font-bold font-mono text-indigo-600 mt-1">{submissions.length} Kiriman</div>
+              <div className="text-[11px] text-slate-400 mt-0.5">Dari {STUDENTS_DATA.length} Siswa</div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-sm">
+              <div className="text-[11px] text-slate-500 uppercase font-semibold font-mono">Sudah Dinilai</div>
+              <div className="text-2xl font-bold font-mono text-emerald-600 mt-1">
+                {submissions.filter(s => s.status === 'graded').length} Siswa
+              </div>
+              <div className="text-[11px] text-slate-400 mt-0.5">Nilai Tersimpan</div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-sm">
+              <div className="text-[11px] text-slate-500 uppercase font-semibold font-mono">Menunggu Penilaian</div>
+              <div className="text-2xl font-bold font-mono text-amber-600 mt-1">
+                {pendingGradingCount} Siswa
+              </div>
+              <div className="text-[11px] text-slate-400 mt-0.5">Perlu Dinilai Guru</div>
+            </div>
+          </div>
+
+          {/* Table of Submissions & Grading */}
+          <div className="rounded-2xl bg-white border border-slate-200/90 shadow-sm overflow-hidden">
+            <div className="p-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h4 className="text-sm font-bold text-slate-900 font-mono flex items-center gap-2">
+                  <FileCheck className="w-4 h-4 text-indigo-600" />
+                  <span>Daftar Pengumpulan &amp; Form Penilaian Guru</span>
+                </h4>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Menampilkan kiriman tugas siswa. Nilai yang disimpan otomatis mengupdate Nilai di Tabel 1 Dashboard Siswa &amp; Buku Leger.
+                </p>
+              </div>
+              <div className="text-xs text-slate-500 font-mono">
+                Menampilkan {filteredSubmissions.length} pengumpulan
+              </div>
+            </div>
+
+            {filteredSubmissions.length === 0 ? (
+              <div className="p-12 text-center text-slate-500 space-y-3">
+                <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 mx-auto flex items-center justify-center">
+                  <FileCheck className="w-6 h-6" />
+                </div>
+                <div className="text-sm font-bold text-slate-700">Belum ada pengumpulan tugas untuk filter ini</div>
+                <p className="text-xs text-slate-400 max-w-md mx-auto">
+                  Siswa dapat mengerjakan modul simulasi dari Dashboard Siswa lalu mengklik tombol "Kirim Tugas". Tugas yang terkirim akan langsung muncul di sini secara real-time.
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto scrollbar-thin">
+                <table className="w-full text-left text-xs text-slate-700 border-collapse">
+                  <thead className="bg-slate-50 text-[11px] font-bold font-mono text-slate-700 uppercase tracking-wider border-b border-slate-200">
+                    <tr>
+                      <th className="p-3.5 text-center w-12">No</th>
+                      <th className="p-3.5 w-16 text-center">Absen</th>
+                      <th className="p-3.5 w-52">Nama Siswa &amp; Kelas</th>
+                      <th className="p-3.5 w-44">Tugas &amp; Modul</th>
+                      <th className="p-3.5 w-48">Waktu &amp; Kecepatan</th>
+                      <th className="p-3.5 w-56">Catatan Siswa</th>
+                      <th className="p-3.5 w-60">Penilaian Guru (0-100)</th>
+                      <th className="p-3.5 w-32 text-center">Aksi Simpan</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {filteredSubmissions.map((sub, idx) => {
+                      const assign = assignments.find(a => a.id === sub.assignmentId);
+                      const currentInput = gradeInputMap[sub.id] || {
+                        score: sub.score !== undefined ? sub.score : 85,
+                        feedback: sub.teacherFeedback || ''
+                      };
+                      const isSaving = isSavingGradeMap[sub.id] || false;
+                      const isGraded = sub.status === 'graded';
+
+                      return (
+                        <tr key={sub.id} className="hover:bg-slate-50 transition">
+                          <td className="p-3.5 text-center font-mono font-bold text-slate-400">{idx + 1}</td>
+                          <td className="p-3.5 text-center font-mono font-bold text-indigo-600">{sub.studentAbsen || '-'}</td>
+                          <td className="p-3.5">
+                            <div className="font-bold text-slate-900">{sub.studentName}</div>
+                            <div className="text-[11px] text-slate-500 font-mono mt-0.5">{sub.studentClass}</div>
+                          </td>
+                          <td className="p-3.5">
+                            <div className="font-bold text-slate-800">{assign?.code || 'TUGAS'}: {assign?.title.slice(0, 24)}...</div>
+                            <span className="inline-block mt-0.5 px-2 py-0.2 rounded bg-cyan-50 text-cyan-700 border border-cyan-200 text-[10px] font-mono font-bold">
+                              {assign?.moduleCode || 'MODUL'}
+                            </span>
+                          </td>
+                          <td className="p-3.5">
+                            <div className="font-mono text-[11px] text-slate-600 flex items-center gap-1">
+                              <Clock className="w-3 h-3 text-slate-400" />
+                              <span>{new Date(sub.submittedAt).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' })}</span>
+                            </div>
+                            <div className="mt-1">
+                              {sub.speedCategory?.includes('Sangat Cepat') ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
+                                  <Zap className="w-3 h-3 text-emerald-600" />
+                                  <span>{sub.speedCategory}</span>
+                                </span>
+                              ) : sub.speedCategory?.includes('Tepat Waktu') ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 text-[10px] font-semibold">
+                                  <Clock className="w-3 h-3 text-indigo-600" />
+                                  <span>{sub.speedCategory}</span>
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px]">
+                                  <span>{sub.speedCategory || 'Reguler'}</span>
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="p-3.5">
+                            <div className="text-[11px] text-slate-700 bg-slate-50 p-2 rounded-lg border border-slate-200 max-h-20 overflow-y-auto leading-relaxed">
+                              {sub.notes || 'Siswa mengumpulkan tanpa catatan tambahan.'}
+                            </div>
+                          </td>
+                          <td className="p-3.5">
+                            <div className="space-y-1.5">
+                              <div className="flex items-center gap-2">
+                                <span className="text-[11px] font-semibold text-slate-600">Nilai:</span>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  max="100"
+                                  value={currentInput.score}
+                                  onChange={(e) => {
+                                    const val = Math.min(100, Math.max(0, Number(e.target.value)));
+                                    setGradeInputMap(prev => ({
+                                      ...prev,
+                                      [sub.id]: {
+                                        ...currentInput,
+                                        score: val
+                                      }
+                                    }));
+                                  }}
+                                  className="w-16 px-2 py-1 bg-white border border-slate-300 rounded-lg text-xs font-mono font-bold text-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-center"
+                                />
+                                <div className="flex items-center gap-1">
+                                  {[100, 95, 90, 85, 75].map(preset => (
+                                    <button
+                                      key={preset}
+                                      type="button"
+                                      onClick={() => {
+                                        setGradeInputMap(prev => ({
+                                          ...prev,
+                                          [sub.id]: {
+                                            ...currentInput,
+                                            score: preset
+                                          }
+                                        }));
+                                      }}
+                                      className="px-1.5 py-0.5 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 rounded text-[10px] font-mono text-slate-600 transition cursor-pointer"
+                                    >
+                                      {preset}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                              <input
+                                type="text"
+                                placeholder="Catatan/Umpan balik Guru..."
+                                value={currentInput.feedback}
+                                onChange={(e) => {
+                                  setGradeInputMap(prev => ({
+                                    ...prev,
+                                    [sub.id]: {
+                                      ...currentInput,
+                                      feedback: e.target.value
+                                    }
+                                  }));
+                                }}
+                                className="w-full px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-[11px] text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                              />
+                            </div>
+                          </td>
+                          <td className="p-3.5 text-center">
+                            <button
+                              onClick={() => handleSaveGrade(sub.id)}
+                              disabled={isSaving}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition shadow-xs w-full cursor-pointer ${
+                                isGraded
+                                  ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200'
+                                  : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20'
+                              }`}
+                            >
+                              <Save className="w-3.5 h-3.5" />
+                              <span>{isSaving ? 'Menyimpan...' : (isGraded ? 'Update' : 'Beri Nilai')}</span>
+                            </button>
+                            {isGraded && (
+                              <span className="inline-block mt-1 text-[10px] font-mono font-bold text-emerald-600">
+                                &check; Tersimpan
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -839,6 +1258,132 @@ export const TeacherMonitoringPanel: React.FC = () => {
           progress={studentProgressMap[selectedStudentForReport.id]}
           onClose={() => setSelectedStudentForReport(null)}
         />
+      )}
+
+      {/* Modal Berikan Tugas Baru oleh Guru Simon */}
+      {showCreateTaskModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 sm:p-7 space-y-5 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-indigo-50 border border-indigo-200 text-indigo-700 flex items-center justify-center">
+                  <FileCheck className="w-5 h-5 text-indigo-600" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 text-base">Berikan Tugas Praktik Baru</h3>
+                  <p className="text-xs text-slate-500 font-mono">Penugasan Modul KKA SMK</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowCreateTaskModal(false)}
+                className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateNewAssignment} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Judul Tugas Praktikum *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Contoh: Praktik 6: Logika Gerak & Simulasi Partikel"
+                  value={newTaskTitle}
+                  onChange={(e) => setNewTaskTitle(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-medium"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Target Modul Simulasi *
+                  </label>
+                  <select
+                    value={newTaskModuleId}
+                    onChange={(e) => setNewTaskModuleId(Number(e.target.value))}
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-medium"
+                  >
+                    {MODULES_DATA.map((mod) => (
+                      <option key={mod.id} value={mod.id}>
+                        {mod.code}: {mod.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Batas Waktu (Deadline) *
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="date"
+                      required
+                      value={newTaskDueDate}
+                      onChange={(e) => setNewTaskDueDate(e.target.value)}
+                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-medium"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Petunjuk &amp; Deskripsi Tugas
+                </label>
+                <textarea
+                  rows={3}
+                  placeholder="Tuliskan petunjuk apa yang harus dikerjakan siswa di Lab Koding (misal: jalankan modul, ubah variabel kecepatan, dan amati hasilnya)..."
+                  value={newTaskDescription}
+                  onChange={(e) => setNewTaskDescription(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-medium leading-relaxed"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Kriteria Penilaian &amp; Capaian Kompetensi
+                </label>
+                <input
+                  type="text"
+                  placeholder="Contoh: Kode kanvas berjalan lancar, 60 FPS, dan pengumpulan tepat waktu."
+                  value={newTaskCriteria}
+                  onChange={(e) => setNewTaskCriteria(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-medium"
+                />
+              </div>
+
+              <div className="p-3 rounded-2xl bg-amber-50 border border-amber-200/80 text-[11px] text-amber-900 leading-relaxed flex items-start gap-2">
+                <Sparkles className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-bold">Penilaian Kecepatan Otomatis:</span> Siswa yang mengumpulkan tugas lebih dari 24 jam sebelum batas waktu akan otomatis mendapatkan rekomendasi nilai bonus kecepatan (+10 poin) saat masuk ke rekapitulasi nilai Guru.
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateTaskModal(false)}
+                  className="px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isCreatingTask}
+                  className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-600/20 flex items-center gap-2 transition cursor-pointer disabled:opacity-50"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>{isCreatingTask ? 'Menyimpan...' : 'Publikasikan Tugas ke Siswa'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
 
     </div>

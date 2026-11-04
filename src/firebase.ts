@@ -24,6 +24,7 @@ import {
   Timestamp 
 } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
+import { Assignment, StudentSubmission, INITIAL_ASSIGNMENTS } from './data/assignmentsData';
 
 // Initialize Firebase App
 export const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
@@ -257,5 +258,127 @@ export function subscribeToPresences(
     console.warn('Firestore presence snapshot listener fallback:', err);
   });
 }
+
+// ================= ASSIGNMENT & SUBMISSION SERVICES =================
+
+/**
+ * Simpan / Buat tugas baru oleh Guru ke Cloud Firestore
+ */
+export async function saveAssignmentToFirestore(assignment: Assignment): Promise<void> {
+  try {
+    await setDoc(doc(db, 'assignments', assignment.id), {
+      ...assignment,
+      updatedAt: Timestamp.now()
+    }, { merge: true });
+  } catch (err) {
+    console.warn('Firestore save assignment error:', err);
+  }
+}
+
+/**
+ * Listen daftar tugas aktif yang diberikan Guru dari Firestore
+ */
+export function subscribeToAssignments(
+  onUpdate: (assignments: Assignment[]) => void
+): () => void {
+  const q = query(collection(db, 'assignments'));
+
+  return onSnapshot(q, (snapshot) => {
+    if (snapshot.empty) {
+      // Jika di Firestore belum ada, gunakan initial assignments
+      onUpdate(INITIAL_ASSIGNMENTS);
+      return;
+    }
+    const list = snapshot.docs.map(d => d.data() as Assignment);
+    onUpdate(list.length > 0 ? list : INITIAL_ASSIGNMENTS);
+  }, (err) => {
+    console.warn('Firestore assignments snapshot fallback:', err);
+    onUpdate(INITIAL_ASSIGNMENTS);
+  });
+}
+
+/**
+ * Siswa mengirim tugas yang sudah dikerjakan ke Firestore
+ */
+export async function submitAssignmentToFirestore(submission: StudentSubmission): Promise<void> {
+  try {
+    await setDoc(doc(db, 'submissions', submission.id), {
+      ...submission,
+      createdAt: Timestamp.now(),
+      updatedAt: Timestamp.now()
+    }, { merge: true });
+  } catch (err) {
+    console.error('Firestore submit assignment error:', err);
+    throw err;
+  }
+}
+
+/**
+ * Guru memberikan nilai dan umpan balik pada tugas siswa
+ */
+export async function gradeSubmissionInFirestore(
+  submissionId: string,
+  score: number,
+  feedback?: string
+): Promise<void> {
+  try {
+    let grade: 'A' | 'B' | 'C' | 'D' = 'D';
+    if (score >= 90) grade = 'A';
+    else if (score >= 80) grade = 'B';
+    else if (score >= 75) grade = 'C';
+
+    await setDoc(doc(db, 'submissions', submissionId), {
+      score,
+      grade,
+      status: 'graded',
+      teacherFeedback: feedback || 'Telah dinilai oleh Guru Pengampu',
+      gradedAt: new Date().toISOString(),
+      updatedAt: Timestamp.now()
+    }, { merge: true });
+  } catch (err) {
+    console.error('Firestore grade submission error:', err);
+    throw err;
+  }
+}
+
+/**
+ * Listen seluruh pengumpulan tugas siswa untuk Dashboard Guru
+ */
+export function subscribeToSubmissions(
+  onUpdate: (submissions: StudentSubmission[]) => void
+): () => void {
+  const q = query(collection(db, 'submissions'), limit(500));
+
+  return onSnapshot(q, (snapshot) => {
+    const list = snapshot.docs.map(d => ({
+      id: d.id,
+      ...d.data()
+    })) as unknown as StudentSubmission[];
+    onUpdate(list);
+  }, (err) => {
+    console.warn('Firestore submissions snapshot error:', err);
+  });
+}
+
+/**
+ * Listen pengumpulan tugas milik siswa tertentu untuk Dashboard Siswa
+ */
+export function subscribeToStudentSubmissions(
+  studentId: string,
+  onUpdate: (submissions: StudentSubmission[]) => void
+): () => void {
+  const q = query(collection(db, 'submissions'), where('studentId', '==', studentId));
+
+  return onSnapshot(q, (snapshot) => {
+    const list = snapshot.docs.map(d => ({
+      id: d.id,
+      ...d.data()
+    })) as unknown as StudentSubmission[];
+    onUpdate(list);
+  }, (err) => {
+    console.warn('Firestore student submissions snapshot error:', err);
+  });
+}
+
 
 

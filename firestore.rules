@@ -40,5 +40,18 @@ service cloud.firestore {
       allow write: if request.resource.data.id != null 
                     && request.resource.data.name != null;
     }
+
+    // Teacher Assignments
+    match /assignments/{assignmentId} {
+      allow read: if true;
+      allow write: if request.resource.data.title != null;
+    }
+
+    // Student Submissions & Grades
+    match /submissions/{subId} {
+      allow read: if true;
+      allow write: if request.resource.data.studentId != null 
+                    && request.resource.data.assignmentId != null;
+    }
   }
 }
