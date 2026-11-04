@@ -1,0 +1,97 @@
+{
+  "entities": {
+    "StudentProfile": {
+      "title": "StudentProfile",
+      "description": "Profil siswa SMK peserta pembelajaran KKA",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "school": { "type": "string" },
+        "className": { "type": "string" },
+        "noAbsen": { "type": "string" },
+        "role": { "type": "string", "enum": ["SISWA"] },
+        "lastActive": { "type": "string" },
+        "completedModules": { "type": "array" }
+      },
+      "required": ["id", "name", "school", "className", "role"]
+    },
+    "ExamResult": {
+      "title": "ExamResult",
+      "description": "Hasil pengerjaan ujian CBT dan Essay per modul",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "studentId": { "type": "string" },
+        "studentName": { "type": "string" },
+        "studentClass": { "type": "string" },
+        "moduleId": { "type": "number" },
+        "moduleCode": { "type": "string" },
+        "mcScore": { "type": "number" },
+        "correctCount": { "type": "number" },
+        "totalQuestions": { "type": "number" },
+        "essayAnswers": { "type": "object" },
+        "finalScore": { "type": "number" },
+        "isPassed": { "type": "boolean" },
+        "submittedAt": { "type": "string" }
+      },
+      "required": ["studentId", "studentName", "studentClass", "moduleId", "moduleCode", "mcScore", "submittedAt"]
+    },
+    "ChatMessage": {
+      "title": "ChatMessage",
+      "description": "Pesan live chat antara guru dan siswa",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "senderId": { "type": "string" },
+        "senderName": { "type": "string" },
+        "senderRole": { "type": "string", "enum": ["SISWA", "GURU"] },
+        "senderClass": { "type": "string" },
+        "recipientId": { "type": "string" },
+        "recipientName": { "type": "string" },
+        "content": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "type": { "type": "string", "enum": ["public", "direct", "broadcast"] }
+      },
+      "required": ["senderId", "senderName", "senderRole", "content", "timestamp", "type"]
+    },
+    "Presence": {
+      "title": "Presence",
+      "description": "Status kehadiran dan modul aktif siswa atau guru",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "role": { "type": "string", "enum": ["SISWA", "GURU"] },
+        "school": { "type": "string" },
+        "className": { "type": "string" },
+        "noAbsen": { "type": "string" },
+        "currentModuleId": { "type": "number" },
+        "currentModuleName": { "type": "string" },
+        "currentTab": { "type": "string" },
+        "status": { "type": "string", "enum": ["online", "coding", "exam", "idle"] },
+        "loginTime": { "type": "string" },
+        "lastActive": { "type": "string" }
+      },
+      "required": ["id", "name", "role", "lastActive", "status"]
+    }
+  },
+  "firestore": {
+    "/students/{studentId}": {
+      "schema": "StudentProfile",
+      "description": "Dokumen profil data belajar siswa"
+    },
+    "/exam_results/{resultId}": {
+      "schema": "ExamResult",
+      "description": "Hasil asesmen CBT dan Essay siswa"
+    },
+    "/chat_messages/{messageId}": {
+      "schema": "ChatMessage",
+      "description": "Pesan interaksi live chat siswa dan guru"
+    },
+    "/presences/{presenceId}": {
+      "schema": "Presence",
+      "description": "Status presensi online waktu-nyata"
+    }
+  }
+}

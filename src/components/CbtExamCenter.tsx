@@ -20,6 +20,7 @@ import {
   CbtQuestion, 
   EssayQuestion 
 } from '../data/cbtData';
+import { saveExamResultToFirestore } from '../firebase';
 import { 
   GraduationCap, 
   Clock, 
@@ -164,6 +165,21 @@ export const CbtExamCenter: React.FC = () => {
 
     const finalScore = Math.round((correct / cbtQuestions.length) * 100);
     recordQuizScore(finalScore, 100);
+
+    // Simpan otomatis ke Cloud Firestore database
+    saveExamResultToFirestore({
+      studentId: currentStudent ? currentStudent.id : 'guru-simon',
+      studentName: currentStudent ? currentStudent.name : 'Simon Murd (Guru)',
+      studentClass: currentStudent ? currentStudent.className : 'Pengampu KKA',
+      moduleId: selectedModuleId,
+      moduleCode: isComprehensiveExam ? "KOMPREHENSIF" : (MODULES_DATA.find(m => m.id === selectedModuleId)?.code || `MODUL-${selectedModuleId}`),
+      mcScore: finalScore,
+      correctCount: correct,
+      totalQuestions: cbtQuestions.length,
+      finalScore: finalScore,
+      isPassed: finalScore >= 75,
+      submittedAt: new Date().toISOString()
+    }).catch((err) => console.warn('Firestore exam save fallback:', err));
   };
 
   // Kalkulasi Hasil CBT

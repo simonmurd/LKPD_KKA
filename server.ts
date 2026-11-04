@@ -12,13 +12,13 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
 app.use(express.json({ limit: '10mb' }));
 
 // Shared Gemini AI client with required User-Agent
 const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
+  apiKey: process.env.GEMINI_API_KEY || 'AIza-dummy-key-for-init',
   httpOptions: {
     headers: {
       'User-Agent': 'aistudio-build',
@@ -251,6 +251,12 @@ Pedoman Gaya Bahasa:
       lastItem.parts[0].text = contextPrefix + lastItem.parts[0].text;
     }
 
+    if (!process.env.GEMINI_API_KEY) {
+      return res.json({
+        reply: 'Halo Pak Simon! Kunci API Gemini belum disetel pada server. Anda tetap dapat menggunakan seluruh 24 modul koding, CBT Exam Center, dan rekap nilai secara offline/penuh. Untuk mengaktifkan obrolan AI ini, pasang variabel GEMINI_API_KEY di environment.'
+      });
+    }
+
     const response = await ai.models.generateContent({
       model: 'gemini-3.8-flash',
       contents: contents,
@@ -284,6 +290,12 @@ Formatkan hasilnya dalam bentuk rapi:
 5. Cuplikan Kode Solusi (jika ada)
 6. Kaitan dengan Kompetensi SMK (TJKT/RPL)`;
 
+    if (!process.env.GEMINI_API_KEY) {
+      return res.json({
+        result: `Contoh Soal Latihan (Mode Standar):\n1. Pertanyaan: Perhatikan kode berikut pada Modul ${moduleId}...\n2. Kunci: B\n3. Pembahasan: Logika komputasional memerlukan penataan fungsi secara modular.`
+      });
+    }
+
     const response = await ai.models.generateContent({
       model: 'gemini-3.8-flash',
       contents: prompt,
@@ -308,7 +320,10 @@ async function startServer() {
   if (!isProd) {
     const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
-      server: { middlewareMode: true },
+      server: { 
+        middlewareMode: true,
+        hmr: process.env.DISABLE_HMR === 'true' ? false : undefined,
+      },
       appType: 'spa',
     });
     app.use(vite.middlewares);
@@ -321,9 +336,21 @@ async function startServer() {
 
   const server = http.createServer(app);
 
+  server.on('error', (err: any) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`Port ${port} is already in use. Please check running processes.`);
+    } else {
+      console.error('HTTP server error:', err);
+    }
+  });
+
   // Initialize WebSocketServer attached to the HTTP server
   const wss = new WebSocketServer({ server, path: '/ws' });
   globalWss = wss;
+
+  wss.on('error', (err) => {
+    console.error('WebSocketServer instance error:', err);
+  });
 
   wss.on('connection', (ws: WebSocket) => {
     // Send immediate initial sync

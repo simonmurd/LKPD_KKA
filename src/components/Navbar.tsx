@@ -83,7 +83,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
                   }`}
                 >
                   <Users className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
-                  <span>Monitoring (106)</span>
+                  <span>Leger &amp; Monitoring</span>
                 </button>
 
                 <button

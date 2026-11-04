@@ -10,6 +10,12 @@
 
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from './AuthContext';
+import { 
+  updatePresenceInFirestore, 
+  subscribeToPresences, 
+  sendChatMessageToFirestore, 
+  subscribeToChatMessages 
+} from '../firebase';
 
 export interface UserPresence {
   id: string;
@@ -223,12 +229,55 @@ export const RealtimeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       // BroadcastChannel optional fallback
     }
 
-    // Set connected to true for static GitHub Pages presence
+    // Real-Time Sync via Cloud Firestore
+    let unsubFirestorePresence: (() => void) | null = null;
+    let unsubFirestoreChat: (() => void) | null = null;
+    try {
+      updatePresenceInFirestore({
+        ...currentUser,
+        ...latestActivityRef.current
+      }).catch(() => {});
+
+      unsubFirestorePresence = subscribeToPresences((presences) => {
+        if (!isMounted) return;
+        setOnlineUsers((prev) => {
+          // Merge Firestore presences with current active users
+          const map = new Map<string, UserPresence>();
+          presences.forEach(p => map.set(p.id, p));
+          prev.forEach(p => {
+            if (!map.has(p.id)) map.set(p.id, p);
+          });
+          return Array.from(map.values());
+        });
+      });
+
+      unsubFirestoreChat = subscribeToChatMessages((firestoreMsgs) => {
+        if (!isMounted) return;
+        setMessages((prev) => {
+          const map = new Map<string, ChatMessage>();
+          prev.forEach(m => map.set(m.id, m));
+          firestoreMsgs.forEach(m => {
+            if (m.id) map.set(m.id, m as ChatMessage);
+          });
+          return Array.from(map.values()).sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+        });
+      });
+    } catch (err) {
+      console.warn('Firestore real-time listeners optional fallback:', err);
+    }
+
+    // Set connected to true for real-time presence
     setIsConnected(true);
 
     // Regular HTTP heartbeat & polling fallback (runs every 6 seconds)
     heartbeatIntervalRef.current = setInterval(async () => {
       if (!isMounted || !currentUser) return;
+
+      // Update Firestore presence heartbeat
+      updatePresenceInFirestore({
+        ...currentUser,
+        ...latestActivityRef.current
+      }).catch(() => {});
 
       // Broadcast heartbeat cross-tab
       if (broadcastChannel) {
@@ -280,6 +329,8 @@ export const RealtimeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           broadcastChannel.close();
         } catch {}
       }
+      if (unsubFirestorePresence) unsubFirestorePresence();
+      if (unsubFirestoreChat) unsubFirestoreChat();
       if (socketRef.current) {
         socketRef.current.close();
         socketRef.current = null;
@@ -322,6 +373,16 @@ export const RealtimeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
       socketRef.current.send(JSON.stringify(payload));
     }
+
+    // Update Cloud Firestore presence
+    updatePresenceInFirestore({
+      ...currentUser,
+      currentModuleId,
+      currentModuleName,
+      currentTab,
+      status,
+      lastActive: new Date().toISOString()
+    }).catch(() => {});
 
     // Also update server via REST
     fetch('/api/live/presence', {
@@ -379,6 +440,19 @@ export const RealtimeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         message: msgPayload
       }));
     }
+
+    // Save to Cloud Firestore
+    sendChatMessageToFirestore({
+      senderId: currentUser.id,
+      senderName: currentUser.name,
+      senderRole: currentUser.role,
+      senderClass: currentUser.className,
+      recipientId,
+      recipientName,
+      content: content.trim(),
+      timestamp: msgPayload.timestamp,
+      type
+    }).catch((err) => console.warn('Firestore chat save error:', err));
 
     // Also POST via HTTP to guarantee persistence
     try {

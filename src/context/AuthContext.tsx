@@ -1,5 +1,9 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Student } from '../data/studentsData';
+import { 
+  saveStudentProgressToFirestore, 
+  subscribeToAllStudentProgress 
+} from '../firebase';
 
 export type UserRole = 'GURU' | 'SISWA' | null;
 
@@ -74,6 +78,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return {};
   });
 
+  // Real-Time Listener: Sinkronisasi seluruh nilai dan modul siswa dari Cloud Firestore
+  useEffect(() => {
+    const unsubscribe = subscribeToAllStudentProgress((firestoreMap) => {
+      setStudentProgressMap((prev) => {
+        const merged = { ...prev };
+        for (const [id, data] of Object.entries(firestoreMap)) {
+          if (data && data.studentId) {
+            merged[id] = {
+              studentId: data.studentId,
+              studentName: data.studentName || merged[id]?.studentName || '',
+              school: data.school || merged[id]?.school || '',
+              className: data.className || merged[id]?.className || '',
+              noAbsen: data.noAbsen || merged[id]?.noAbsen || '',
+              practicedModules: Array.isArray(data.practicedModules) ? data.practicedModules : (merged[id]?.practicedModules || []),
+              quizScore: typeof data.quizScore === 'number' ? Math.max(data.quizScore, merged[id]?.quizScore || 0) : (merged[id]?.quizScore || 0),
+              quizTotal: data.quizTotal || merged[id]?.quizTotal || 100,
+              lastActive: data.lastActive || merged[id]?.lastActive || new Date().toISOString(),
+            };
+          }
+        }
+        localStorage.setItem(PROGRESS_STORAGE_KEY, JSON.stringify(merged));
+        return merged;
+      });
+    });
+
+    return () => unsubscribe();
+  }, []);
+
   const saveSession = (newRole: UserRole, student: Student | null, teacher: { username: string; name: string } | null) => {
     setRole(newRole);
     setCurrentStudent(student);
@@ -91,21 +123,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Inisialisasi progress siswa jika belum ada
     setStudentProgressMap((prev) => {
       const existing = prev[student.id];
+      const newProg: StudentProgress = {
+        studentId: student.id,
+        studentName: student.name,
+        school: student.school,
+        className: student.className,
+        noAbsen: student.noAbsen,
+        practicedModules: existing ? existing.practicedModules : [1],
+        quizScore: existing ? existing.quizScore : 0,
+        quizTotal: existing ? existing.quizTotal : 0,
+        lastActive: new Date().toISOString(),
+      };
       const updated = {
         ...prev,
-        [student.id]: {
-          studentId: student.id,
-          studentName: student.name,
-          school: student.school,
-          className: student.className,
-          noAbsen: student.noAbsen,
-          practicedModules: existing ? existing.practicedModules : [1],
-          quizScore: existing ? existing.quizScore : 0,
-          quizTotal: existing ? existing.quizTotal : 0,
-          lastActive: new Date().toISOString(),
-        },
+        [student.id]: newProg,
       };
       localStorage.setItem(PROGRESS_STORAGE_KEY, JSON.stringify(updated));
+
+      // Simpan langsung ke Cloud Firestore
+      saveStudentProgressToFirestore(newProg).catch(() => {});
+
       return updated;
     });
   };
@@ -156,15 +193,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const setMods = new Set(current.practicedModules);
       setMods.add(moduleId);
 
+      const newProg: StudentProgress = {
+        ...current,
+        practicedModules: Array.from(setMods).sort((a, b) => a - b),
+        lastActive: new Date().toISOString(),
+      };
+
       const updated = {
         ...prev,
-        [currentStudent.id]: {
-          ...current,
-          practicedModules: Array.from(setMods).sort((a, b) => a - b),
-          lastActive: new Date().toISOString(),
-        },
+        [currentStudent.id]: newProg,
       };
       localStorage.setItem(PROGRESS_STORAGE_KEY, JSON.stringify(updated));
+
+      // Simpan langsung ke Cloud Firestore
+      saveStudentProgressToFirestore(newProg).catch(() => {});
+
       return updated;
     });
   };
@@ -185,16 +228,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         lastActive: new Date().toISOString(),
       };
 
+      const newProg: StudentProgress = {
+        ...current,
+        quizScore: Math.max(current.quizScore, score),
+        quizTotal: total,
+        lastActive: new Date().toISOString(),
+      };
+
       const updated = {
         ...prev,
-        [currentStudent.id]: {
-          ...current,
-          quizScore: Math.max(current.quizScore, score),
-          quizTotal: total,
-          lastActive: new Date().toISOString(),
-        },
+        [currentStudent.id]: newProg,
       };
       localStorage.setItem(PROGRESS_STORAGE_KEY, JSON.stringify(updated));
+
+      // Simpan langsung ke Cloud Firestore
+      saveStudentProgressToFirestore(newProg).catch(() => {});
+
       return updated;
     });
   };
