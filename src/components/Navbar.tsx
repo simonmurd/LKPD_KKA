@@ -1,4 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { 
+  subscribeToAssignments, 
+  subscribeToStudentSubmissions, 
+  subscribeToSubmissions 
+} from '../firebase';
 import { useAuth } from '../context/AuthContext';
 import { useRealtime } from '../context/RealtimeContext';
 import { 
@@ -12,7 +17,8 @@ import {
   Users,
   Trophy,
   Bot,
-  MessageSquare
+  MessageSquare,
+  FileCheck
 } from 'lucide-react';
 
 export type NavTab = 
@@ -35,6 +41,37 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
   const { role, currentStudent, teacherUser, logout } = useAuth();
   const { onlineStudents, unreadCount } = useRealtime();
+
+  const [pendingTasksCount, setPendingTasksCount] = useState<number>(0);
+  const [pendingGradingCount, setPendingGradingCount] = useState<number>(0);
+
+  useEffect(() => {
+    if (role === 'SISWA' && currentStudent) {
+      let activeAssigns: any[] = [];
+      const unsubA = subscribeToAssignments((list) => {
+        activeAssigns = list.filter(
+          (a) => !a.targetClass || a.targetClass === 'SEMUA KELAS' || a.targetClass === currentStudent.className
+        );
+      });
+      const unsubS = subscribeToStudentSubmissions(currentStudent.id, (subs) => {
+        const completedIds = new Set(
+          subs.filter((s) => s.status !== 'needs_revision').map((s) => s.assignmentId)
+        );
+        const pending = activeAssigns.filter((a) => !completedIds.has(a.id)).length;
+        setPendingTasksCount(pending);
+      });
+      return () => {
+        unsubA();
+        unsubS();
+      };
+    } else if (role === 'GURU') {
+      const unsubSubs = subscribeToSubmissions((subs) => {
+        const count = subs.filter((s) => s.status === 'submitted' || !s.score).length;
+        setPendingGradingCount(count);
+      });
+      return () => unsubSubs();
+    }
+  }, [role, currentStudent]);
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/90 shadow-sm">
@@ -84,6 +121,11 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
                 >
                   <Users className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
                   <span>Leger &amp; Monitoring</span>
+                  {pendingGradingCount > 0 && (
+                    <span className="text-[9px] bg-amber-500 text-white font-bold px-1.5 py-0.2 rounded-full font-mono animate-pulse">
+                      {pendingGradingCount} Tugas
+                    </span>
+                  )}
                 </button>
 
                 <button
@@ -166,7 +208,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
               ) : null}
             </button>
 
-            {/* SISWA ONLY: Progres Belajar Saya */}
+            {/* SISWA ONLY: Tugas & Progres Belajar Siswa */}
             {role === 'SISWA' && (
               <button
                 onClick={() => setActiveTab('student_progress')}
@@ -176,8 +218,17 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
                     : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
                 }`}
               >
-                <Trophy className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                <span>Progres Saya</span>
+                <FileCheck className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                <span>Tugas &amp; Progres</span>
+                {pendingTasksCount > 0 ? (
+                  <span className="text-[9px] bg-rose-500 text-white font-bold px-1.5 py-0.5 rounded-full font-mono animate-pulse">
+                    {pendingTasksCount} Belum
+                  </span>
+                ) : (
+                  <span className="text-[9px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.2 rounded-full font-mono">
+                    ✓ Tuntas
+                  </span>
+                )}
               </button>
             )}
 
@@ -329,11 +380,16 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
           {role === 'SISWA' && (
             <button
               onClick={() => setActiveTab('student_progress')}
-              className={`px-3 py-1.5 rounded-lg font-medium whitespace-nowrap transition ${
+              className={`px-3 py-1.5 rounded-lg font-medium whitespace-nowrap transition flex items-center gap-1.5 ${
                 activeTab === 'student_progress' ? 'bg-indigo-600 text-white font-bold shadow-sm' : 'text-slate-600 hover:bg-slate-100'
               }`}
             >
-              Progres Saya
+              <span>Tugas &amp; Progres</span>
+              {pendingTasksCount > 0 && (
+                <span className="text-[9px] bg-rose-500 text-white px-1.5 py-0.2 rounded-full font-mono">
+                  {pendingTasksCount}
+                </span>
+              )}
             </button>
           )}
 

@@ -44,7 +44,8 @@ service cloud.firestore {
     // Teacher Assignments
     match /assignments/{assignmentId} {
       allow read: if true;
-      allow write: if request.resource.data.title != null;
+      allow create, update: if request.resource.data.title != null;
+      allow delete: if true;
     }
 
     // Student Submissions & Grades

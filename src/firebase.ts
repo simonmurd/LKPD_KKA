@@ -21,6 +21,7 @@ import {
   limit, 
   getDocs,
   where,
+  deleteDoc,
   Timestamp 
 } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
@@ -276,6 +277,18 @@ export async function saveAssignmentToFirestore(assignment: Assignment): Promise
 }
 
 /**
+ * Hapus tugas yang diberikan Guru dari Cloud Firestore
+ */
+export async function deleteAssignmentFromFirestore(assignmentId: string): Promise<void> {
+  try {
+    await deleteDoc(doc(db, 'assignments', assignmentId));
+  } catch (err) {
+    console.error('Firestore delete assignment error:', err);
+    throw err;
+  }
+}
+
+/**
  * Listen daftar tugas aktif yang diberikan Guru dari Firestore
  */
 export function subscribeToAssignments(
@@ -337,6 +350,25 @@ export async function gradeSubmissionInFirestore(
     }, { merge: true });
   } catch (err) {
     console.error('Firestore grade submission error:', err);
+    throw err;
+  }
+}
+
+/**
+ * Guru meminta siswa merevisi / mengulang kodingan tugas
+ */
+export async function requestRevisionInFirestore(
+  submissionId: string,
+  teacherNotes: string
+): Promise<void> {
+  try {
+    await setDoc(doc(db, 'submissions', submissionId), {
+      status: 'needs_revision',
+      teacherFeedback: teacherNotes || 'Perlu perbaikan kode praktikum. Silakan cek error kanvas dan kirim ulang.',
+      updatedAt: Timestamp.now()
+    }, { merge: true });
+  } catch (err) {
+    console.error('Firestore request revision error:', err);
     throw err;
   }
 }

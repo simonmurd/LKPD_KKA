@@ -74,6 +74,49 @@
         "lastActive": { "type": "string" }
       },
       "required": ["id", "name", "role", "lastActive", "status"]
+    },
+    "Assignment": {
+      "title": "Assignment",
+      "description": "Tugas koding dan CBT yang diberikan Guru untuk siswa",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "code": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "taskType": { "type": "string", "enum": ["coding", "cbt"] },
+        "moduleScope": { "type": "string", "enum": ["single", "all"] },
+        "moduleId": { "type": "number" },
+        "moduleCode": { "type": "string" },
+        "assignedDate": { "type": "string" },
+        "dueDate": { "type": "string" },
+        "targetCriteria": { "type": "string" },
+        "maxScore": { "type": "number" },
+        "targetClass": { "type": "string" }
+      },
+      "required": ["id", "code", "title", "dueDate"]
+    },
+    "StudentSubmission": {
+      "title": "StudentSubmission",
+      "description": "Hasil kodingan dan pengumpulan tugas siswa",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "assignmentId": { "type": "string" },
+        "studentId": { "type": "string" },
+        "studentName": { "type": "string" },
+        "studentClass": { "type": "string" },
+        "studentAbsen": { "type": "string" },
+        "submittedAt": { "type": "string" },
+        "notes": { "type": "string" },
+        "submittedCode": { "type": "string" },
+        "status": { "type": "string", "enum": ["submitted", "graded", "needs_revision"] },
+        "score": { "type": "number" },
+        "grade": { "type": "string" },
+        "teacherFeedback": { "type": "string" },
+        "speedCategory": { "type": "string" }
+      },
+      "required": ["id", "assignmentId", "studentId", "status", "submittedAt"]
     }
   },
   "firestore": {
@@ -92,6 +135,14 @@
     "/presences/{presenceId}": {
       "schema": "Presence",
       "description": "Status presensi online waktu-nyata"
+    },
+    "/assignments/{assignmentId}": {
+      "schema": "Assignment",
+      "description": "Daftar tugas resmi dari Guru Pengampu"
+    },
+    "/submissions/{submissionId}": {
+      "schema": "StudentSubmission",
+      "description": "Pengumpulan tugas dan penilaian siswa"
     }
   }
 }

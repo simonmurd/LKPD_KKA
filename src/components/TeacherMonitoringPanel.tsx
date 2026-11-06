@@ -23,8 +23,11 @@ import {
   FirestoreExamResult, 
   subscribeToAssignments, 
   saveAssignmentToFirestore, 
+  deleteAssignmentFromFirestore,
   subscribeToSubmissions, 
-  gradeSubmissionInFirestore 
+  gradeSubmissionInFirestore,
+  requestRevisionInFirestore,
+  sendChatMessageToFirestore
 } from '../firebase';
 import { StudentReportCardModal } from './StudentReportCardModal';
 import { Assignment, StudentSubmission, INITIAL_ASSIGNMENTS } from '../data/assignmentsData';
@@ -56,7 +59,12 @@ import {
   X,
   Calendar,
   MessageSquare,
-  ChevronRight
+  ChevronRight,
+  Code2,
+  Pencil,
+  Trash2,
+  Layers,
+  FileText
 } from 'lucide-react';
 
 export type TeacherDashboardTab = 'leger' | 'assignments' | 'matrix' | 'live_exams' | 'presence';
@@ -76,9 +84,13 @@ export const TeacherMonitoringPanel: React.FC = () => {
   const [copiedTSV, setCopiedTSV] = useState(false);
   const [selectedStudentForReport, setSelectedStudentForReport] = useState<Student | null>(null);
 
-  // New assignment modal form state
+  // Assignment modal form state (Create & Edit)
   const [showCreateTaskModal, setShowCreateTaskModal] = useState(false);
+  const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null);
+  const [taskToDelete, setTaskToDelete] = useState<Assignment | null>(null);
   const [newTaskTitle, setNewTaskTitle] = useState('');
+  const [newTaskType, setNewTaskType] = useState<'coding' | 'cbt'>('coding');
+  const [newTaskModuleScope, setNewTaskModuleScope] = useState<'single' | 'all'>('single');
   const [newTaskModuleId, setNewTaskModuleId] = useState(1);
   const [newTaskDueDate, setNewTaskDueDate] = useState(() => {
     const d = new Date();
@@ -87,7 +99,15 @@ export const TeacherMonitoringPanel: React.FC = () => {
   });
   const [newTaskDescription, setNewTaskDescription] = useState('');
   const [newTaskCriteria, setNewTaskCriteria] = useState('');
+  const [newTaskTargetClass, setNewTaskTargetClass] = useState('SEMUA KELAS');
+  const [broadcastToChat, setBroadcastToChat] = useState(true);
   const [isCreatingTask, setIsCreatingTask] = useState(false);
+
+  // Student code viewer & revision states
+  const [viewingStudentCode, setViewingStudentCode] = useState<{ studentName: string; assignmentCode: string; code: string } | null>(null);
+  const [revisionModalSub, setRevisionModalSub] = useState<StudentSubmission | null>(null);
+  const [revisionNotesInput, setRevisionNotesInput] = useState('');
+  const [isRequestingRevision, setIsRequestingRevision] = useState(false);
 
   // Grading states per submission
   const [gradeInputMap, setGradeInputMap] = useState<Record<string, { score: number; feedback: string }>>({});
@@ -306,41 +326,148 @@ export const TeacherMonitoringPanel: React.FC = () => {
     });
   }, [submissions, filterSchool, filterClass, filterAssignmentCode, searchQuery]);
 
-  // Guru membuat tugas baru dan menyimpan ke Firestore
-  const handleCreateNewAssignment = async (e: React.FormEvent) => {
+  // Buka modal pembuatan tugas baru
+  const handleOpenCreateTaskModal = () => {
+    setEditingAssignment(null);
+    setNewTaskType('coding');
+    setNewTaskModuleScope('single');
+    setNewTaskModuleId(1);
+    setNewTaskTitle('');
+    setNewTaskDescription('');
+    setNewTaskCriteria('');
+    setNewTaskTargetClass('SEMUA KELAS');
+    const d = new Date();
+    d.setDate(d.getDate() + 7);
+    setNewTaskDueDate(d.toISOString().split('T')[0]);
+    setShowCreateTaskModal(true);
+  };
+
+  // Buka modal ubah / edit tugas yang sudah ada
+  const handleOpenEditTaskModal = (task: Assignment) => {
+    setEditingAssignment(task);
+    setNewTaskType(task.taskType || 'coding');
+    setNewTaskModuleScope(task.moduleScope || (task.moduleId === 0 ? 'all' : 'single'));
+    setNewTaskModuleId(task.moduleId || 1);
+    setNewTaskTitle(task.title);
+    setNewTaskDescription(task.description);
+    setNewTaskCriteria(task.targetCriteria || '');
+    setNewTaskTargetClass(task.targetClass || 'SEMUA KELAS');
+    setNewTaskDueDate(task.dueDate);
+    setShowCreateTaskModal(true);
+  };
+
+  // Guru menyimpan tugas (baik baru maupun ubah tugas lama) ke Firestore
+  const handleSaveAssignment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTaskTitle.trim()) return;
 
     setIsCreatingTask(true);
     const mod = MODULES_DATA.find((m) => m.id === Number(newTaskModuleId));
-    const nextCode = `TUGAS-0${assignments.length + 1}`;
-    const newId = `tugas-${Date.now().toString().slice(-6)}`;
+    const isSingle = newTaskModuleScope === 'single';
 
-    const newAssignment: Assignment = {
-      id: newId,
-      code: nextCode,
-      title: newTaskTitle.trim(),
-      description: newTaskDescription.trim() || `Silakan buka dan praktikkan modul simulasi ${mod?.code || ''}. Modifikasi parameter kode kanvas 2D dan kumpulkan hasil pengerjaan Anda.`,
-      moduleId: Number(newTaskModuleId),
-      moduleCode: mod?.code || `MODUL-${String(newTaskModuleId).padStart(2, '0')}`,
-      assignedDate: new Date().toISOString().split('T')[0],
-      dueDate: newTaskDueDate,
-      targetCriteria: newTaskCriteria.trim() || 'Kode berjalan lancar tanpa error konsol, penerapan konsep tepat, dan tugas dikumpulkan tepat waktu.',
-      maxScore: 100
-    };
+    const assignedModuleId = isSingle ? Number(newTaskModuleId) : 0;
+    const assignedModuleCode = isSingle 
+      ? (mod?.code || `MODUL-${String(newTaskModuleId).padStart(2, '0')}`) 
+      : 'SEMUA-MODUL';
 
+    if (editingAssignment) {
+      // MODE EDIT TUGAS LAMA
+      const updatedAssignment: Assignment = {
+        ...editingAssignment,
+        title: newTaskTitle.trim(),
+        taskType: newTaskType,
+        moduleScope: newTaskModuleScope,
+        moduleId: assignedModuleId,
+        moduleCode: assignedModuleCode,
+        dueDate: newTaskDueDate,
+        description: newTaskDescription.trim(),
+        targetCriteria: newTaskCriteria.trim() || 'Penyelesaian tugas sesuai kriteria dan ketuntasan tepat waktu.',
+        targetClass: newTaskTargetClass
+      };
+
+      try {
+        await saveAssignmentToFirestore(updatedAssignment);
+        setAssignments(prev => prev.map(a => a.id === updatedAssignment.id ? updatedAssignment : a));
+        setShowCreateTaskModal(false);
+        setEditingAssignment(null);
+        setActionToast(`Tugas "${updatedAssignment.code}" berhasil diperbarui!`);
+        setTimeout(() => setActionToast(null), 3500);
+      } catch (err) {
+        console.error('Failed to update assignment:', err);
+      } finally {
+        setIsCreatingTask(false);
+      }
+    } else {
+      // MODE BUAT TUGAS BARU
+      const nextCode = `TUGAS-0${assignments.length + 1}`;
+      const newId = `tugas-${Date.now().toString().slice(-6)}`;
+
+      const newAssignment: Assignment = {
+        id: newId,
+        code: nextCode,
+        title: newTaskTitle.trim(),
+        taskType: newTaskType,
+        moduleScope: newTaskModuleScope,
+        description: newTaskDescription.trim() || (
+          newTaskType === 'cbt'
+            ? (newTaskModuleScope === 'all'
+                ? 'Kerjakan 40 soal ujian CBT komprehensif mencakup materi 24 Modul KKA SMK.'
+                : `Kerjakan soal kuis CBT khusus untuk Modul ${assignedModuleId} (${mod?.title || ''}) untuk menguji pemahaman Anda.`)
+            : `Buka Lab Koding ${assignedModuleCode}. Jalankan kode simulasi dan kumpulkan snapshot kode Anda ke Pak Simon.`
+        ),
+        moduleId: assignedModuleId,
+        moduleCode: assignedModuleCode,
+        assignedDate: new Date().toISOString().split('T')[0],
+        dueDate: newTaskDueDate,
+        targetCriteria: newTaskCriteria.trim() || 'Pemahaman materi konsep KKA, pengerjaan tuntas, dan tepat waktu.',
+        maxScore: 100,
+        targetClass: newTaskTargetClass
+      };
+
+      try {
+        await saveAssignmentToFirestore(newAssignment);
+        setAssignments(prev => [newAssignment, ...prev.filter(a => a.id !== newAssignment.id)]);
+
+        if (broadcastToChat) {
+          try {
+            await sendChatMessageToFirestore({
+              id: `broadcast-${Date.now()}`,
+              senderId: 'guru-simon',
+              senderName: 'Simon Murd (Guru Mapel)',
+              senderRole: 'GURU',
+              senderClass: 'Pengampu KKA',
+              recipientId: 'all',
+              content: `📢 PENGUMUMAN TUGAS BARU: ${nextCode} - "${newAssignment.title}" (${newAssignment.moduleCode}) [${newTaskType === 'cbt' ? '📝 CBT' : '💻 Lab Koding'}] telah diterbitkan untuk ${newTaskTargetClass}. Batas pengumpulan: ${new Date(newTaskDueDate).toLocaleDateString('id-ID')}.`,
+              timestamp: new Date().toISOString(),
+              type: 'broadcast'
+            });
+          } catch (chatErr) {
+            console.warn('Failed to broadcast task to chat:', chatErr);
+          }
+        }
+
+        setShowCreateTaskModal(false);
+        setActionToast(`Tugas baru "${newAssignment.title}" berhasil disimpan dan diterbitkan ke siswa!`);
+        setTimeout(() => setActionToast(null), 4000);
+      } catch (err) {
+        console.error('Failed to create assignment:', err);
+      } finally {
+        setIsCreatingTask(false);
+      }
+    }
+  };
+
+  // Guru menghapus tugas dari Firestore
+  const handleConfirmDeleteAssignment = async () => {
+    if (!taskToDelete) return;
     try {
-      await saveAssignmentToFirestore(newAssignment);
-      setShowCreateTaskModal(false);
-      setNewTaskTitle('');
-      setNewTaskDescription('');
-      setNewTaskCriteria('');
-      setActionToast(`Tugas baru "${newAssignment.title}" berhasil disimpan dan dibagikan ke seluruh siswa!`);
-      setTimeout(() => setActionToast(null), 4000);
+      await deleteAssignmentFromFirestore(taskToDelete.id);
+      setAssignments(prev => prev.filter(a => a.id !== taskToDelete.id));
+      setActionToast(`Tugas "${taskToDelete.code}: ${taskToDelete.title}" berhasil dihapus.`);
+      setTaskToDelete(null);
+      setTimeout(() => setActionToast(null), 3500);
     } catch (err) {
-      console.error('Failed to create assignment:', err);
-    } finally {
-      setIsCreatingTask(false);
+      console.error('Failed to delete assignment:', err);
     }
   };
 
@@ -360,6 +487,22 @@ export const TeacherMonitoringPanel: React.FC = () => {
       console.error('Failed to save grade:', err);
     } finally {
       setIsSavingGradeMap(prev => ({ ...prev, [submissionId]: false }));
+    }
+  };
+
+  // Guru meminta siswa merevisi / mengulang pengerjaan kode
+  const handleRequestRevision = async (submissionId: string, notes: string) => {
+    setIsRequestingRevision(true);
+    try {
+      await requestRevisionInFirestore(submissionId, notes);
+      setRevisionModalSub(null);
+      setRevisionNotesInput('');
+      setActionToast('Permintaan revisi kode berhasil dikirim ke siswa!');
+      setTimeout(() => setActionToast(null), 3500);
+    } catch (err) {
+      console.error('Failed to request revision:', err);
+    } finally {
+      setIsRequestingRevision(false);
     }
   };
 
@@ -622,7 +765,7 @@ export const TeacherMonitoringPanel: React.FC = () => {
 
             <div className="flex items-center gap-2.5 shrink-0">
               <button
-                onClick={() => setShowCreateTaskModal(true)}
+                onClick={handleOpenCreateTaskModal}
                 className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center gap-2 shadow-sm shadow-indigo-600/20 transition cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
@@ -659,6 +802,129 @@ export const TeacherMonitoringPanel: React.FC = () => {
                 {pendingGradingCount} Siswa
               </div>
               <div className="text-[11px] text-slate-400 mt-0.5">Perlu Dinilai Guru</div>
+            </div>
+          </div>
+
+          {/* ================= PANEL DAFTAR TUGAS AKTIF GURU (MONITORING & EDIT TUGAS) ================= */}
+          <div className="rounded-2xl bg-white border border-slate-200/90 shadow-sm overflow-hidden">
+            <div className="p-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h4 className="text-sm font-bold text-slate-900 font-mono flex items-center gap-2">
+                  <Layers className="w-4 h-4 text-indigo-600" />
+                  <span>Daftar Tugas Aktif Guru (Kelola, Pantau &amp; Ubah Tugas)</span>
+                </h4>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Seluruh penugasan praktikum dan ujian CBT yang telah Anda terbitkan. Anda dapat mengubah detail tugas, deadline, atau menghapus tugas sewaktu-waktu.
+                </p>
+              </div>
+              <button
+                onClick={handleOpenCreateTaskModal}
+                className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition self-start sm:self-auto cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                <span>+ Buat Tugas Baru</span>
+              </button>
+            </div>
+
+            <div className="overflow-x-auto scrollbar-thin">
+              <table className="w-full text-left text-xs text-slate-700 border-collapse">
+                <thead className="bg-slate-50 text-[11px] font-bold font-mono text-slate-700 uppercase tracking-wider border-b border-slate-200">
+                  <tr>
+                    <th className="p-3.5 text-center w-12">No</th>
+                    <th className="p-3.5 w-24">Kode</th>
+                    <th className="p-3.5 w-64">Judul Tugas &amp; Deskripsi</th>
+                    <th className="p-3.5 w-44">Tipe &amp; Cakupan Modul</th>
+                    <th className="p-3.5 w-32">Target Rombel</th>
+                    <th className="p-3.5 w-32">Tenggat Waktu</th>
+                    <th className="p-3.5 w-36 text-center">Progres Terkumpul</th>
+                    <th className="p-3.5 w-28 text-center">Aksi Guru</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {assignments.map((task, idx) => {
+                    const taskSubs = submissions.filter(s => s.assignmentId === task.id);
+                    const gradedCount = taskSubs.filter(s => s.status === 'graded').length;
+                    const targetTotal = task.targetClass === 'X TJK' ? 33 : task.targetClass === 'XI TJK' ? 35 : task.targetClass === 'XI TJKT' ? 38 : 106;
+                    const isOverdue = new Date(task.dueDate + 'T23:59:59') < new Date();
+
+                    return (
+                      <tr key={task.id} className="hover:bg-slate-50 transition">
+                        <td className="p-3.5 text-center font-mono font-bold text-slate-400">{idx + 1}</td>
+                        <td className="p-3.5">
+                          <span className="font-mono font-bold text-indigo-600">{task.code}</span>
+                        </td>
+                        <td className="p-3.5">
+                          <div className="font-bold text-slate-900">{task.title}</div>
+                          <div className="text-[11px] text-slate-500 mt-0.5 line-clamp-2 leading-relaxed">{task.description}</div>
+                        </td>
+                        <td className="p-3.5">
+                          <div className="space-y-1">
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold ${
+                              task.taskType === 'cbt'
+                                ? 'bg-amber-50 text-amber-800 border border-amber-200'
+                                : 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                            }`}>
+                              {task.taskType === 'cbt' ? '📝 Kuis CBT' : '💻 Praktik Koding'}
+                            </span>
+                            <div className="text-[10px] font-mono text-slate-600">
+                              {task.moduleScope === 'all' ? '📚 Seluruh 24 Modul' : `🎯 ${task.moduleCode}`}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="p-3.5">
+                          <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-mono text-[10px] font-semibold border border-slate-200">
+                            {task.targetClass || 'SEMUA KELAS'}
+                          </span>
+                        </td>
+                        <td className="p-3.5 font-mono text-[11px]">
+                          <div className="flex items-center gap-1 text-slate-700 font-medium">
+                            <Calendar className="w-3 h-3 text-slate-400" />
+                            <span>{new Date(task.dueDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                          </div>
+                          <span className={`text-[10px] font-bold ${isOverdue ? 'text-rose-600' : 'text-emerald-600'}`}>
+                            {isOverdue ? 'Tenggat Terlewat' : 'Aktif'}
+                          </span>
+                        </td>
+                        <td className="p-3.5 text-center">
+                          <div className="space-y-1">
+                            <div className="text-xs font-mono font-bold text-slate-800">
+                              {taskSubs.length} <span className="text-[10px] text-slate-400 font-normal">/ {targetTotal} Siswa</span>
+                            </div>
+                            <div className="w-24 mx-auto bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                              <div 
+                                className="bg-emerald-500 h-full rounded-full transition-all"
+                                style={{ width: `${Math.min(100, Math.round((taskSubs.length / targetTotal) * 100))}%` }}
+                              />
+                            </div>
+                            <div className="text-[9px] text-slate-500 font-mono">
+                              {gradedCount} dinilai
+                            </div>
+                          </div>
+                        </td>
+                        <td className="p-3.5 text-center">
+                          <div className="flex items-center justify-center gap-1.5">
+                            <button
+                              onClick={() => handleOpenEditTaskModal(task)}
+                              className="px-2 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 transition border border-indigo-200 flex items-center gap-1 font-semibold text-[11px]"
+                              title="Ubah / Edit Tugas Ini"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                              <span>Ubah</span>
+                            </button>
+                            <button
+                              onClick={() => setTaskToDelete(task)}
+                              className="p-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 transition border border-rose-200"
+                              title="Hapus Tugas Ini"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           </div>
 
@@ -752,9 +1018,22 @@ export const TeacherMonitoringPanel: React.FC = () => {
                             </div>
                           </td>
                           <td className="p-3.5">
-                            <div className="text-[11px] text-slate-700 bg-slate-50 p-2 rounded-lg border border-slate-200 max-h-20 overflow-y-auto leading-relaxed">
+                            <div className="text-[11px] text-slate-700 bg-slate-50 p-2 rounded-lg border border-slate-200 max-h-24 overflow-y-auto leading-relaxed">
                               {sub.notes || 'Siswa mengumpulkan tanpa catatan tambahan.'}
                             </div>
+                            {sub.submittedCode && (
+                              <button
+                                onClick={() => setViewingStudentCode({
+                                  studentName: sub.studentName,
+                                  assignmentCode: assign?.code || 'TUGAS',
+                                  code: sub.submittedCode!
+                                })}
+                                className="mt-1 px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-mono text-[10px] font-bold flex items-center gap-1.5 border border-indigo-200 transition cursor-pointer"
+                              >
+                                <Code2 className="w-3 h-3 text-indigo-600" />
+                                <span>Lihat Kode ({sub.submittedCode.length} karakter)</span>
+                              </button>
+                            )}
                           </td>
                           <td className="p-3.5">
                             <div className="space-y-1.5">
@@ -828,9 +1107,27 @@ export const TeacherMonitoringPanel: React.FC = () => {
                               <Save className="w-3.5 h-3.5" />
                               <span>{isSaving ? 'Menyimpan...' : (isGraded ? 'Update' : 'Beri Nilai')}</span>
                             </button>
+
+                            <button
+                              onClick={() => {
+                                setRevisionModalSub(sub);
+                                setRevisionNotesInput(sub.teacherFeedback || 'Perlu perbaikan kode praktikum. Silakan periksa kembali dan kumpulkan ulang.');
+                              }}
+                              className="mt-1 px-2 py-1 rounded-lg text-[10px] font-bold bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 flex items-center justify-center gap-1 w-full transition cursor-pointer"
+                              title="Minta siswa untuk memperbaiki kode (Remedial)"
+                            >
+                              <AlertTriangle className="w-3 h-3 text-amber-600" />
+                              <span>Minta Revisi</span>
+                            </button>
+
                             {isGraded && (
                               <span className="inline-block mt-1 text-[10px] font-mono font-bold text-emerald-600">
                                 &check; Tersimpan
+                              </span>
+                            )}
+                            {sub.status === 'needs_revision' && (
+                              <span className="inline-block mt-1 text-[9px] font-mono font-bold text-amber-600">
+                                ⚠️ Perlu Revisi Siswa
                               </span>
                             )}
                           </td>
@@ -1260,102 +1557,250 @@ export const TeacherMonitoringPanel: React.FC = () => {
         />
       )}
 
-      {/* Modal Berikan Tugas Baru oleh Guru Simon */}
+      {/* Modal Berikan / Ubah Tugas oleh Guru Simon */}
       {showCreateTaskModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 sm:p-7 space-y-5 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2.5">
                 <div className="w-10 h-10 rounded-2xl bg-indigo-50 border border-indigo-200 text-indigo-700 flex items-center justify-center">
-                  <FileCheck className="w-5 h-5 text-indigo-600" />
+                  {editingAssignment ? (
+                    <Pencil className="w-5 h-5 text-indigo-600" />
+                  ) : (
+                    <FileCheck className="w-5 h-5 text-indigo-600" />
+                  )}
                 </div>
                 <div>
-                  <h3 className="font-bold text-slate-900 text-base">Berikan Tugas Praktik Baru</h3>
-                  <p className="text-xs text-slate-500 font-mono">Penugasan Modul KKA SMK</p>
+                  <h3 className="font-bold text-slate-900 text-base">
+                    {editingAssignment ? `Ubah / Edit Tugas: ${editingAssignment.code}` : 'Berikan Tugas Praktik / CBT Baru'}
+                  </h3>
+                  <p className="text-xs text-slate-500 font-mono">
+                    {editingAssignment ? 'Perbarui detail dan tenggat tugas aktif' : 'Penugasan Modul KKA SMK untuk Siswa'}
+                  </p>
                 </div>
               </div>
               <button
-                onClick={() => setShowCreateTaskModal(false)}
+                onClick={() => {
+                  setShowCreateTaskModal(false);
+                  setEditingAssignment(null);
+                }}
                 className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateNewAssignment} className="space-y-4">
+            <form onSubmit={handleSaveAssignment} className="space-y-4">
+              {/* Judul Tugas */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Judul Tugas Praktikum *
+                  Judul Tugas *
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="Contoh: Praktik 6: Logika Gerak & Simulasi Partikel"
+                  placeholder="Contoh: Praktik 2: Efisiensi Kode Modular atau Kuis CBT Modul 2"
                   value={newTaskTitle}
                   onChange={(e) => setNewTaskTitle(e.target.value)}
                   className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-medium"
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Target Modul Simulasi *
-                  </label>
-                  <select
-                    value={newTaskModuleId}
-                    onChange={(e) => setNewTaskModuleId(Number(e.target.value))}
-                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-medium"
+              {/* Tipe Tugas: Praktik Koding vs Ujian CBT */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  Jenis Tugas / Asesmen *
+                </label>
+                <div className="grid grid-cols-2 gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNewTaskType('coding');
+                      if (!newTaskTitle || newTaskTitle.startsWith('Kuis CBT')) {
+                        const mod = MODULES_DATA.find(m => m.id === newTaskModuleId);
+                        setNewTaskTitle(`Praktik ${newTaskModuleId}: ${mod?.title || ''}`);
+                      }
+                    }}
+                    className={`p-3 rounded-2xl border text-left transition flex items-center gap-2.5 cursor-pointer ${
+                      newTaskType === 'coding'
+                        ? 'bg-indigo-50 border-indigo-300 text-indigo-900 ring-2 ring-indigo-500/20'
+                        : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                    }`}
                   >
-                    {MODULES_DATA.map((mod) => (
-                      <option key={mod.id} value={mod.id}>
-                        {mod.code}: {mod.title}
-                      </option>
-                    ))}
-                  </select>
+                    <Code2 className={`w-4 h-4 ${newTaskType === 'coding' ? 'text-indigo-600' : 'text-slate-400'}`} />
+                    <div>
+                      <div className="text-xs font-bold">Praktik Koding</div>
+                      <div className="text-[10px] text-slate-500">Lab &amp; Kanvas Interaktif</div>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNewTaskType('cbt');
+                      if (!newTaskTitle || newTaskTitle.startsWith('Praktik')) {
+                        const mod = MODULES_DATA.find(m => m.id === newTaskModuleId);
+                        setNewTaskTitle(newTaskModuleScope === 'all' 
+                          ? 'Ujian CBT Komprehensif: Seluruh 24 Modul KKA' 
+                          : `Kuis CBT: Modul ${newTaskModuleId} - ${mod?.title || ''}`);
+                      }
+                    }}
+                    className={`p-3 rounded-2xl border text-left transition flex items-center gap-2.5 cursor-pointer ${
+                      newTaskType === 'cbt'
+                        ? 'bg-amber-50 border-amber-300 text-amber-900 ring-2 ring-amber-500/20'
+                        : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                    }`}
+                  >
+                    <FileText className={`w-4 h-4 ${newTaskType === 'cbt' ? 'text-amber-600' : 'text-slate-400'}`} />
+                    <div>
+                      <div className="text-xs font-bold">Ujian / Kuis CBT</div>
+                      <div className="text-[10px] text-slate-500">Soal Pilihan Ganda &amp; Nilai</div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              {/* Cakupan Modul: Per Part / Modul Tertentu vs Seluruh Modul */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  Cakupan Modul Pembelajaran *
+                </label>
+                <div className="grid grid-cols-2 gap-2.5 mb-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setNewTaskModuleScope('single')}
+                    className={`p-2.5 rounded-xl border text-left text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+                      newTaskModuleScope === 'single'
+                        ? 'bg-indigo-50 border-indigo-300 text-indigo-900'
+                        : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                    }`}
+                  >
+                    <span className="w-2 h-2 rounded-full bg-indigo-600"></span>
+                    <span>Per Part / Modul Tertentu</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNewTaskModuleScope('all');
+                      if (newTaskType === 'cbt') {
+                        setNewTaskTitle('Ujian CBT Komprehensif: Seluruh 24 Modul KKA');
+                      }
+                    }}
+                    className={`p-2.5 rounded-xl border text-left text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+                      newTaskModuleScope === 'all'
+                        ? 'bg-indigo-50 border-indigo-300 text-indigo-900'
+                        : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                    }`}
+                  >
+                    <span className="w-2 h-2 rounded-full bg-indigo-600"></span>
+                    <span>Seluruh Modul (1-24)</span>
+                  </button>
                 </div>
 
+                {newTaskModuleScope === 'single' && (
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                      Pilih Modul Spesifik:
+                    </label>
+                    <select
+                      value={newTaskModuleId}
+                      onChange={(e) => {
+                        const mId = Number(e.target.value);
+                        setNewTaskModuleId(mId);
+                        const m = MODULES_DATA.find(x => x.id === mId);
+                        if (!editingAssignment) {
+                          if (newTaskType === 'cbt') {
+                            setNewTaskTitle(`Kuis CBT: Modul ${mId} - ${m?.title || ''}`);
+                          } else {
+                            setNewTaskTitle(`Praktik ${mId}: ${m?.title || ''}`);
+                          }
+                        }
+                      }}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-medium font-mono"
+                    >
+                      {MODULES_DATA.map((mod) => (
+                        <option key={mod.id} value={mod.id}>
+                          {mod.code}: {mod.title}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+
+              {/* Deadline & Target Rombel */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
                     Batas Waktu (Deadline) *
                   </label>
-                  <div className="relative">
-                    <input
-                      type="date"
-                      required
-                      value={newTaskDueDate}
-                      onChange={(e) => setNewTaskDueDate(e.target.value)}
-                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-medium"
-                    />
-                  </div>
+                  <input
+                    type="date"
+                    required
+                    value={newTaskDueDate}
+                    onChange={(e) => setNewTaskDueDate(e.target.value)}
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-medium"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Target Rombel / Kelas Siswa *
+                  </label>
+                  <select
+                    value={newTaskTargetClass}
+                    onChange={(e) => setNewTaskTargetClass(e.target.value)}
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-medium font-mono"
+                  >
+                    <option value="SEMUA KELAS">Semua Kelas (106 Siswa: X TJK, XI TJK, XI TJKT)</option>
+                    <option value="X TJK">X TJK (SMK Negeri 1 Singkawang - 33 Siswa)</option>
+                    <option value="XI TJK">XI TJK (SMK Negeri 1 Singkawang - 35 Siswa)</option>
+                    <option value="XI TJKT">XI TJKT (SMK Mudita Singkawang - 38 Siswa)</option>
+                  </select>
                 </div>
               </div>
 
+              {/* Deskripsi & Petunjuk Tugas */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
                   Petunjuk &amp; Deskripsi Tugas
                 </label>
                 <textarea
                   rows={3}
-                  placeholder="Tuliskan petunjuk apa yang harus dikerjakan siswa di Lab Koding (misal: jalankan modul, ubah variabel kecepatan, dan amati hasilnya)..."
+                  placeholder="Tuliskan petunjuk pengerjaan (misal: jalankan koding kanvas, perhatikan variabel kecepatan, atau selesaikan kuis CBT hingga selesai)..."
                   value={newTaskDescription}
                   onChange={(e) => setNewTaskDescription(e.target.value)}
                   className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-medium leading-relaxed"
                 />
               </div>
 
+              {/* Kriteria Penilaian */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
                   Kriteria Penilaian &amp; Capaian Kompetensi
                 </label>
                 <input
                   type="text"
-                  placeholder="Contoh: Kode kanvas berjalan lancar, 60 FPS, dan pengumpulan tepat waktu."
+                  placeholder="Contoh: Kode kanvas berjalan lancar tanpa error, atau skor CBT mencapai &ge; 75."
                   value={newTaskCriteria}
                   onChange={(e) => setNewTaskCriteria(e.target.value)}
                   className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-medium"
                 />
               </div>
+
+              {/* Siarkan ke Live Chat (hanya pada pembuatan baru) */}
+              {!editingAssignment && (
+                <label className="flex items-center gap-2.5 text-xs font-semibold text-slate-700 cursor-pointer p-3 bg-indigo-50/70 rounded-xl border border-indigo-200/80">
+                  <input
+                    type="checkbox"
+                    checked={broadcastToChat}
+                    onChange={(e) => setBroadcastToChat(e.target.checked)}
+                    className="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
+                  />
+                  <span>📢 Siarkan Pengumuman Tugas Otomatis ke Ruang Live Chat</span>
+                </label>
+              )}
 
               <div className="p-3 rounded-2xl bg-amber-50 border border-amber-200/80 text-[11px] text-amber-900 leading-relaxed flex items-start gap-2">
                 <Sparkles className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
@@ -1367,7 +1812,10 @@ export const TeacherMonitoringPanel: React.FC = () => {
               <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={() => setShowCreateTaskModal(false)}
+                  onClick={() => {
+                    setShowCreateTaskModal(false);
+                    setEditingAssignment(null);
+                  }}
                   className="px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer"
                 >
                   Batal
@@ -1377,11 +1825,162 @@ export const TeacherMonitoringPanel: React.FC = () => {
                   disabled={isCreatingTask}
                   className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-600/20 flex items-center gap-2 transition cursor-pointer disabled:opacity-50"
                 >
-                  <Plus className="w-4 h-4" />
-                  <span>{isCreatingTask ? 'Menyimpan...' : 'Publikasikan Tugas ke Siswa'}</span>
+                  {editingAssignment ? (
+                    <>
+                      <Save className="w-4 h-4" />
+                      <span>{isCreatingTask ? 'Menyimpan...' : 'Simpan Perubahan Tugas'}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-4 h-4" />
+                      <span>{isCreatingTask ? 'Menerbitkan...' : 'Publikasikan Tugas ke Siswa'}</span>
+                    </>
+                  )}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Konfirmasi Hapus Tugas */}
+      {taskToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-md w-full p-6 space-y-4 animate-in zoom-in-95 duration-200">
+            <div className="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center mx-auto">
+              <Trash2 className="w-6 h-6" />
+            </div>
+
+            <div className="text-center space-y-1">
+              <h3 className="font-bold text-slate-900 text-base">Hapus Tugas Ini?</h3>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Apakah Anda yakin ingin menghapus tugas <strong className="text-slate-800 font-mono">{taskToDelete.code}</strong> - <strong className="text-slate-800">"{taskToDelete.title}"</strong>?
+              </p>
+              <p className="text-[11px] text-rose-600 bg-rose-50 p-2.5 rounded-xl border border-rose-200 font-medium">
+                Tugas akan dihapus dari Cloud Firestore dan tidak lagi muncul di dashboard siswa.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-center gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setTaskToDelete(null)}
+                className="px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteAssignment}
+                className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md shadow-rose-600/20 transition cursor-pointer flex items-center gap-1.5"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>Ya, Hapus Tugas</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Lihat Kode Siswa Langsung */}
+      {viewingStudentCode && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-2xl w-full p-6 space-y-4 animate-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-700 flex items-center justify-center">
+                  <Code2 className="w-5 h-5 text-indigo-600" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 text-base">Kodingan Siswa: {viewingStudentCode.studentName}</h3>
+                  <p className="text-xs text-slate-500 font-mono">{viewingStudentCode.assignmentCode} &bull; Kode Kanvas Terkumpul</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setViewingStudentCode(null)}
+                className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-hidden flex flex-col">
+              <div className="flex items-center justify-between text-xs text-slate-500 mb-2 font-mono">
+                <span>Bahasa: JavaScript / HTML5 Canvas 2D</span>
+                <span>{viewingStudentCode.code.length} Karakter</span>
+              </div>
+              <div className="flex-1 p-4 bg-slate-900 text-emerald-400 font-mono text-xs rounded-2xl overflow-y-auto border border-slate-800 leading-relaxed scrollbar-thin">
+                <pre>{viewingStudentCode.code}</pre>
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-2 border-t border-slate-100 shrink-0">
+              <button
+                onClick={() => setViewingStudentCode(null)}
+                className="px-5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition"
+              >
+                Tutup Pratinjau
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Minta Revisi Kode Siswa (Remedial) */}
+      {revisionModalSub && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-md w-full p-6 space-y-4 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 flex items-center justify-center">
+                  <AlertTriangle className="w-5 h-5 text-amber-600" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 text-sm">Minta Revisi Kode Siswa</h3>
+                  <p className="text-xs text-slate-500 font-mono">{revisionModalSub.studentName} ({revisionModalSub.studentClass})</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setRevisionModalSub(null)}
+                className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="text-xs text-slate-600 leading-relaxed">
+              Siswa akan menerima pemberitahuan status <strong>"Perlu Revisi"</strong> di dashboard mereka dan diizinkan memperbaiki kodingan di Lab Koding untuk dikumpulkan kembali.
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                Catatan / Petunjuk Perbaikan dari Guru:
+              </label>
+              <textarea
+                rows={3}
+                value={revisionNotesInput}
+                onChange={(e) => setRevisionNotesInput(e.target.value)}
+                placeholder="Misal: Perbaiki perulangan for-loop objek agar tidak tumpang tindih..."
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 font-medium"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100">
+              <button
+                onClick={() => setRevisionModalSub(null)}
+                className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition"
+              >
+                Batal
+              </button>
+              <button
+                onClick={() => handleRequestRevision(revisionModalSub.id, revisionNotesInput)}
+                disabled={isRequestingRevision}
+                className="px-5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-md shadow-amber-600/20 flex items-center gap-1.5 transition disabled:opacity-50"
+              >
+                <AlertTriangle className="w-3.5 h-3.5" />
+                <span>{isRequestingRevision ? 'Mengirim...' : 'Kirim Permintaan Revisi'}</span>
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -1,6 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MODULES_DATA, ModuleItem } from '../data/modulesData';
 import { MODULES_INITIAL_CODES, MODULES_TASKS } from '../data/modulesCodeData';
+import { useAuth } from '../context/AuthContext';
+import { Assignment, StudentSubmission } from '../data/assignmentsData';
+import { 
+  subscribeToAssignments, 
+  subscribeToStudentSubmissions, 
+  submitAssignmentToFirestore 
+} from '../firebase';
 import { 
   Play, 
   RotateCcw, 
@@ -17,7 +24,14 @@ import {
   Save,
   Check,
   Search,
-  BookOpen
+  BookOpen,
+  Send,
+  FileCheck,
+  AlertCircle,
+  Clock,
+  Calendar,
+  Zap,
+  X
 } from 'lucide-react';
 
 export type RunnerViewMode = 'split' | 'code_only' | 'game_only';
@@ -38,6 +52,97 @@ export const InteractiveRunner: React.FC<InteractiveRunnerProps> = ({
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
   const [showTaskList, setShowTaskList] = useState<boolean>(false);
   const [taskSearch, setTaskSearch] = useState<string>('');
+
+  const { role, currentStudent } = useAuth();
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [submissions, setSubmissions] = useState<StudentSubmission[]>([]);
+  const [isSubmitModalOpen, setIsSubmitModalOpen] = useState<boolean>(false);
+  const [submissionNotes, setSubmissionNotes] = useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [taskNotification, setTaskNotification] = useState<string | null>(null);
+
+  // Subscribe to assignments & student's submissions from Cloud Firestore
+  useEffect(() => {
+    const unsubA = subscribeToAssignments((list) => {
+      setAssignments(list);
+    });
+    let unsubS = () => {};
+    if (role === 'SISWA' && currentStudent) {
+      unsubS = subscribeToStudentSubmissions(currentStudent.id, (subs) => {
+        setSubmissions(subs);
+      });
+    }
+    return () => {
+      unsubA();
+      unsubS();
+    };
+  }, [role, currentStudent]);
+
+  // Cek apakah modul ini sedang ditugaskan oleh Guru Simon (khusus tipe coding atau umum)
+  const activeAssignment = assignments.find((a) => {
+    if (a.taskType === 'cbt') return false;
+    if (a.moduleScope !== 'all' && a.moduleId !== selectedId) return false;
+    if (currentStudent && a.targetClass && a.targetClass !== 'SEMUA KELAS') {
+      return a.targetClass === currentStudent.className;
+    }
+    return true;
+  });
+
+  const existingSubmission = activeAssignment && currentStudent
+    ? submissions.find((s) => s.assignmentId === activeAssignment.id)
+    : undefined;
+
+  const handleSubmitCodeAssignment = async () => {
+    if (!activeAssignment || !currentStudent) return;
+    setIsSubmitting(true);
+    const now = new Date();
+    const dueDate = new Date(activeAssignment.dueDate + 'T23:59:59');
+
+    const isEarly = now < dueDate;
+    const diffHours = (dueDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+
+    let speedCategory = 'Tepat Waktu';
+    let baseScore = 85;
+
+    if (diffHours >= 24) {
+      speedCategory = 'Sangat Cepat (+10 Bonus)';
+      baseScore = 95;
+    } else if (isEarly) {
+      speedCategory = 'Tepat Waktu (+5 Bonus)';
+      baseScore = 90;
+    } else {
+      speedCategory = 'Terlambat';
+      baseScore = 75;
+    }
+
+    const sub: StudentSubmission = {
+      id: `sub-${activeAssignment.id}-${currentStudent.id}`,
+      assignmentId: activeAssignment.id,
+      studentId: currentStudent.id,
+      studentName: currentStudent.name,
+      studentClass: currentStudent.className,
+      studentAbsen: currentStudent.noAbsen,
+      submittedAt: now.toISOString(),
+      notes: submissionNotes.trim() || `Tugas ${activeAssignment.code} dikumpulkan langsung dari Lab Koding.`,
+      submittedCode: code,
+      status: 'submitted',
+      score: baseScore,
+      grade: baseScore >= 90 ? 'A' : (baseScore >= 80 ? 'B' : 'C'),
+      speedCategory,
+      teacherFeedback: `Tugas & kodingan kanvas diterima via Lab Koding. Kecepatan: ${speedCategory}.`
+    };
+
+    try {
+      await submitAssignmentToFirestore(sub);
+      setIsSubmitModalOpen(false);
+      setTaskNotification(`Kode ${activeAssignment.code} berhasil dikumpulkan ke Guru Simon! Centang di Tabel 2 telah aktif ✓`);
+      setTimeout(() => setTaskNotification(null), 5000);
+    } catch (err) {
+      console.error('Failed to submit assignment from runner:', err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const previewContainerRef = useRef<HTMLDivElement>(null);
@@ -276,6 +381,114 @@ export const InteractiveRunner: React.FC<InteractiveRunnerProps> = ({
 
       </div>
 
+      {/* Toast Notification from Submitting Task */}
+      {taskNotification && (
+        <div className="p-4 rounded-2xl bg-emerald-600 text-white shadow-lg flex items-center justify-between text-xs font-semibold animate-in slide-in-from-top-2 duration-300">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-200" />
+            <span>{taskNotification}</span>
+          </div>
+          <button onClick={() => setTaskNotification(null)} className="p-1 hover:bg-emerald-700 rounded-lg">
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
+      {/* BANNER TUGAS RESMI DARI GURU (PAK SIMON MURD, S.KOM) */}
+      {activeAssignment && (
+        <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-indigo-50/90 via-white to-amber-50/70 border border-indigo-200/90 shadow-sm space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-sm shadow-indigo-600/30">
+                <FileCheck className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-bold font-mono text-indigo-700 bg-indigo-100/80 px-2 py-0.5 rounded-md border border-indigo-200">
+                    {activeAssignment.code}
+                  </span>
+                  <span className="text-[11px] font-semibold text-slate-500 font-mono">
+                    Tugas Guru &bull; Pak Simon Murd, S.Kom
+                  </span>
+                  {activeAssignment.targetClass && activeAssignment.targetClass !== 'SEMUA KELAS' && (
+                    <span className="text-[10px] font-mono bg-violet-100 text-violet-800 font-bold px-2 py-0.5 rounded-full">
+                      Khusus {activeAssignment.targetClass}
+                    </span>
+                  )}
+                </div>
+                <h3 className="text-sm sm:text-base font-extrabold text-slate-900 mt-0.5">
+                  {activeAssignment.title}
+                </h3>
+              </div>
+            </div>
+
+            {/* Status & Deadline Badge */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-1 text-[11px] font-mono text-slate-600 bg-white px-2.5 py-1 rounded-lg border border-slate-200">
+                <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                <span>Batas: {new Date(activeAssignment.dueDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}</span>
+              </div>
+
+              {existingSubmission?.status === 'graded' ? (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold font-mono">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Nilai: {existingSubmission.score} ({existingSubmission.grade})</span>
+                </span>
+              ) : existingSubmission?.status === 'needs_revision' ? (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold font-mono">
+                  <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
+                  <span>Perlu Revisi</span>
+                </span>
+              ) : existingSubmission ? (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-semibold font-mono">
+                  <Check className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Sudah Terkirim (✓)</span>
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 text-xs font-semibold font-mono">
+                  <Clock className="w-3.5 h-3.5 text-rose-500" />
+                  <span>Belum Dikirim</span>
+                </span>
+              )}
+
+              {role === 'SISWA' && (
+                <button
+                  onClick={() => {
+                    setSubmissionNotes(existingSubmission?.notes || `Sudah menyelesaikan dan mencoba simulasi ${activeAssignment.code}, Pak.`);
+                    setIsSubmitModalOpen(true);
+                  }}
+                  className={`px-3.5 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition shadow-sm cursor-pointer ${
+                    existingSubmission
+                      ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-600/20'
+                      : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/30'
+                  }`}
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  <span>{existingSubmission ? 'Kirim Ulang Kode' : 'Kumpulkan Kode Ini'}</span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="text-xs text-slate-600 bg-white/80 p-3 rounded-xl border border-indigo-100 leading-relaxed">
+            <span className="font-bold text-slate-800">Petunjuk Tugas: </span>
+            {activeAssignment.description}
+            {activeAssignment.targetCriteria && (
+              <div className="mt-1 text-[11px] text-slate-500">
+                <span className="font-semibold text-slate-700">Kriteria Penilaian: </span>
+                {activeAssignment.targetCriteria}
+              </div>
+            )}
+            {existingSubmission?.teacherFeedback && (
+              <div className="mt-2 p-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-xs font-medium">
+                <span className="font-bold">Umpan Balik Guru Simon: </span>
+                {existingSubmission.teacherFeedback}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Main Content Workspace: STRICTLY 2 PARTS (KODING DENGAN 20 TUGAS & HASIL) */}
       <div className={`grid gap-5 ${
         viewMode === 'split' ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'
@@ -334,6 +547,21 @@ export const InteractiveRunner: React.FC<InteractiveRunnerProps> = ({
                   <Play className="w-3.5 h-3.5 fill-white" />
                   <span>Jalankan Kode</span>
                 </button>
+
+                {/* Tombol Kumpulkan Kode ke Guru Simon */}
+                {role === 'SISWA' && activeAssignment && (
+                  <button
+                    onClick={() => {
+                      setSubmissionNotes(existingSubmission?.notes || `Sudah menyelesaikan dan mencoba simulasi ${activeAssignment.code}, Pak.`);
+                      setIsSubmitModalOpen(true);
+                    }}
+                    className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-sm shadow-emerald-600/30 cursor-pointer"
+                    title="Kumpulkan kodingan kanvas saat ini ke Guru Simon"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    <span>{existingSubmission ? 'Kirim Ulang' : 'Kumpul Tugas'}</span>
+                  </button>
+                )}
               </div>
             </div>
 
@@ -487,6 +715,88 @@ export const InteractiveRunner: React.FC<InteractiveRunnerProps> = ({
         )}
 
       </div>
+
+      {/* Modal Kumpulkan Tugas Langsung dari Lab Koding */}
+      {isSubmitModalOpen && activeAssignment && currentStudent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 space-y-4 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center">
+                  <Send className="w-5 h-5 text-emerald-600" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 text-base">Kumpulkan Kode Praktikum</h3>
+                  <p className="text-xs text-slate-500 font-mono">{activeAssignment.code} &bull; {activeAssignment.moduleCode}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsSubmitModalOpen(false)}
+                className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 text-xs space-y-1">
+              <div className="font-bold text-slate-900">{activeAssignment.title}</div>
+              <div className="text-slate-500 leading-relaxed">{activeAssignment.description}</div>
+            </div>
+
+            {/* Code Snapshot Preview */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                Cuplikan Kode Kanvas yang Akan Terlampir:
+              </label>
+              <div className="p-3 bg-slate-900 text-emerald-400 font-mono text-[11px] rounded-xl max-h-36 overflow-y-auto border border-slate-800 leading-relaxed">
+                <pre>{code.slice(0, 500)}...</pre>
+              </div>
+              <p className="text-[10px] text-slate-400 mt-1 font-mono">
+                Total {code.length} karakter kode di editor akan otomatis terlampir ke akun Guru Simon.
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                Catatan / Bukti Pengerjaan Siswa (Opsional):
+              </label>
+              <textarea
+                rows={2}
+                placeholder="Misal: Sudah memodifikasi loop objek dan mengubah warna kanvas..."
+                value={submissionNotes}
+                onChange={(e) => setSubmissionNotes(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium leading-relaxed"
+              />
+            </div>
+
+            <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-900 leading-relaxed flex items-start gap-2">
+              <Zap className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <div>
+                <span className="font-bold">Penilaian Kecepatan Otomatis:</span> Dikirim sebelum batas waktu ({new Date(activeAssignment.dueDate).toLocaleDateString('id-ID')}) otomatis mendapatkan rekomendasi bonus kecepatan!
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setIsSubmitModalOpen(false)}
+                className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleSubmitCodeAssignment}
+                disabled={isSubmitting}
+                className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-600/20 flex items-center gap-2 transition cursor-pointer disabled:opacity-50"
+              >
+                <Send className="w-4 h-4" />
+                <span>{isSubmitting ? 'Mengirim...' : 'Kirim Sekarang ke Pak Simon'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

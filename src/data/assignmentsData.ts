@@ -11,12 +11,15 @@ export interface Assignment {
   code: string;
   title: string;
   description: string;
+  taskType?: 'coding' | 'cbt'; // 'coding' = Praktik Koding Lab, 'cbt' = Ujian CBT / Kuis Modul
+  moduleScope?: 'single' | 'all'; // 'single' = Per Modul / Part Tertentu, 'all' = Seluruh Modul (1-24)
   moduleId: number;
   moduleCode: string;
   assignedDate: string;
   dueDate: string;
   targetCriteria: string;
   maxScore: number;
+  targetClass?: string; // 'SEMUA KELAS' | 'X TJK' | 'XI TJK' | 'XI TJKT'
 }
 
 export interface StudentSubmission {
@@ -28,7 +31,8 @@ export interface StudentSubmission {
   studentAbsen?: string;
   submittedAt: string;
   notes?: string;
-  status: 'submitted' | 'graded';
+  submittedCode?: string; // Kodingan siswa yang dikirim langsung dari Lab Koding
+  status: 'submitted' | 'graded' | 'needs_revision';
   score?: number;
   grade?: 'A' | 'B' | 'C' | 'D';
   teacherFeedback?: string;
