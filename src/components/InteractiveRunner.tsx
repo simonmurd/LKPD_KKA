@@ -3,6 +3,7 @@ import { MODULES_DATA, ModuleItem } from '../data/modulesData';
 import { MODULES_INITIAL_CODES, MODULES_TASKS } from '../data/modulesCodeData';
 import { useAuth } from '../context/AuthContext';
 import { Assignment, StudentSubmission } from '../data/assignmentsData';
+import { processAiGradingAndSaveToLeger, AiEvaluationResult } from '../services/aiGradingService';
 import { 
   subscribeToAssignments, 
   subscribeToStudentSubmissions, 
@@ -60,6 +61,7 @@ export const InteractiveRunner: React.FC<InteractiveRunnerProps> = ({
   const [submissionNotes, setSubmissionNotes] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [taskNotification, setTaskNotification] = useState<string | null>(null);
+  const [aiGradingResult, setAiGradingResult] = useState<{ evaluation: AiEvaluationResult; taskCode: string; taskTitle: string } | null>(null);
 
   // Subscribe to assignments & student's submissions from Cloud Firestore
   useEffect(() => {
@@ -96,47 +98,23 @@ export const InteractiveRunner: React.FC<InteractiveRunnerProps> = ({
     if (!activeAssignment || !currentStudent) return;
     setIsSubmitting(true);
     const now = new Date();
-    const dueDate = new Date(activeAssignment.dueDate + 'T23:59:59');
-
-    const isEarly = now < dueDate;
-    const diffHours = (dueDate.getTime() - now.getTime()) / (1000 * 60 * 60);
-
-    let speedCategory = 'Tepat Waktu';
-    let baseScore = 85;
-
-    if (diffHours >= 24) {
-      speedCategory = 'Sangat Cepat (+10 Bonus)';
-      baseScore = 95;
-    } else if (isEarly) {
-      speedCategory = 'Tepat Waktu (+5 Bonus)';
-      baseScore = 90;
-    } else {
-      speedCategory = 'Terlambat';
-      baseScore = 75;
-    }
-
-    const sub: StudentSubmission = {
-      id: `sub-${activeAssignment.id}-${currentStudent.id}`,
-      assignmentId: activeAssignment.id,
-      studentId: currentStudent.id,
-      studentName: currentStudent.name,
-      studentClass: currentStudent.className,
-      studentAbsen: currentStudent.noAbsen,
-      submittedAt: now.toISOString(),
-      notes: submissionNotes.trim() || `Tugas ${activeAssignment.code} dikumpulkan langsung dari Lab Koding.`,
-      submittedCode: code,
-      status: 'submitted',
-      score: baseScore,
-      grade: baseScore >= 90 ? 'A' : (baseScore >= 80 ? 'B' : 'C'),
-      speedCategory,
-      teacherFeedback: `Tugas & kodingan kanvas diterima via Lab Koding. Kecepatan: ${speedCategory}.`
-    };
 
     try {
-      await submitAssignmentToFirestore(sub);
+      const { evaluation } = await processAiGradingAndSaveToLeger(
+        activeAssignment,
+        currentStudent,
+        code,
+        submissionNotes,
+        now.toISOString()
+      );
       setIsSubmitModalOpen(false);
-      setTaskNotification(`Kode ${activeAssignment.code} berhasil dikumpulkan ke Guru Simon! Centang di Tabel 2 telah aktif ✓`);
-      setTimeout(() => setTaskNotification(null), 5000);
+      setAiGradingResult({
+        evaluation,
+        taskCode: activeAssignment.code,
+        taskTitle: activeAssignment.title
+      });
+      setTaskNotification(`🤖 Tugas ${activeAssignment.code} dinilai otomatis oleh AI (Skor: ${evaluation.score}, Predikat: ${evaluation.grade}) dan otomatis masuk ke Kolom Tugas ${evaluation.taskIndex + 1} Buku Leger!`);
+      setTimeout(() => setTaskNotification(null), 8000);
     } catch (err) {
       console.error('Failed to submit assignment from runner:', err);
     } finally {
@@ -408,7 +386,7 @@ export const InteractiveRunner: React.FC<InteractiveRunnerProps> = ({
                     {activeAssignment.code}
                   </span>
                   <span className="text-[11px] font-semibold text-slate-500 font-mono">
-                    Tugas Guru &bull; Pak Simon Murd, S.Kom
+                    Tugas Guru &bull; Pak Simon Murdani Yusuf, S.ST
                   </span>
                   {activeAssignment.targetClass && activeAssignment.targetClass !== 'SEMUA KELAS' && (
                     <span className="text-[10px] font-mono bg-violet-100 text-violet-800 font-bold px-2 py-0.5 rounded-full">
@@ -792,6 +770,67 @@ export const InteractiveRunner: React.FC<InteractiveRunnerProps> = ({
               >
                 <Send className="w-4 h-4" />
                 <span>{isSubmitting ? 'Mengirim...' : 'Kirim Sekarang ke Pak Simon'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Hasil Penilaian Otomatis AI */}
+      {aiGradingResult && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 font-sans text-left">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2 text-indigo-600 font-mono font-bold text-xs">
+                <Sparkles className="w-4 h-4 text-amber-500" />
+                <span>ASESOR AI OTOMATIS KKA SMK</span>
+              </div>
+              <button
+                onClick={() => setAiGradingResult(null)}
+                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="text-center py-2">
+              <div className="w-16 h-16 mx-auto rounded-2xl bg-indigo-50 border-2 border-indigo-200 flex flex-col items-center justify-center shadow-inner">
+                <span className="text-2xl font-black font-mono text-indigo-700">
+                  {aiGradingResult.evaluation.score}
+                </span>
+                <span className="text-[10px] font-bold text-slate-400 uppercase">/ 100</span>
+              </div>
+              <div className="mt-2 text-sm font-bold text-slate-900">
+                Predikat: <span className="text-indigo-600 font-extrabold">{aiGradingResult.evaluation.grade}</span> &bull; {aiGradingResult.evaluation.speedBonus}
+              </div>
+              <p className="text-xs text-slate-500 mt-0.5">
+                {aiGradingResult.taskCode}: {aiGradingResult.taskTitle}
+              </p>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-700 space-y-1.5">
+              <div className="font-bold text-slate-900 flex items-center gap-1.5 font-mono text-[11px]">
+                <span>🤖 Catatan Evaluasi AI:</span>
+              </div>
+              <p className="leading-relaxed text-slate-600">
+                {aiGradingResult.evaluation.feedback}
+              </p>
+            </div>
+
+            <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <div className="text-[11px] leading-tight">
+                <strong>Otomatis Tercatat:</strong> Nilai {aiGradingResult.evaluation.score} telah masuk ke <strong>Kolom Tugas {aiGradingResult.evaluation.taskIndex + 1}</strong> pada Buku Leger Guru &amp; Tabel Ceklis Anda!
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-1">
+              <button
+                type="button"
+                onClick={() => setAiGradingResult(null)}
+                className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md transition cursor-pointer"
+              >
+                Tutup &amp; Lanjutkan Belajar
               </button>
             </div>
           </div>

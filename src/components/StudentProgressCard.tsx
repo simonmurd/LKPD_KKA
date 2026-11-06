@@ -14,6 +14,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { MODULES_DATA } from '../data/modulesData';
 import { Assignment, StudentSubmission, INITIAL_ASSIGNMENTS } from '../data/assignmentsData';
+import { StudentChecklistTable } from './StudentChecklistTable';
+import { processAiGradingAndSaveToLeger, AiEvaluationResult } from '../services/aiGradingService';
 import { 
   subscribeToAssignments, 
   subscribeToStudentSubmissions, 
@@ -58,6 +60,8 @@ export const StudentProgressCard: React.FC<StudentProgressCardProps> = ({
   const [isSending, setIsSending] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
   const [viewingSubmittedCode, setViewingSubmittedCode] = useState<{ title: string; code: string } | null>(null);
+  const [table2Mode, setTable2Mode] = useState<'spreadsheet' | 'detail'>('spreadsheet');
+  const [aiGradingResult, setAiGradingResult] = useState<{ evaluation: AiEvaluationResult; taskCode: string; taskTitle: string } | null>(null);
 
   // Subscribe to assignments & student's submissions from Cloud Firestore
   useEffect(() => {
@@ -160,47 +164,26 @@ export const StudentProgressCard: React.FC<StudentProgressCardProps> = ({
 
     setIsSending(true);
     const now = new Date();
-    const dueDate = new Date(submittingAssignment.dueDate + 'T23:59:59');
-
-    // Kalkulasi Penilaian Kecepatan Otomatis
-    const isEarly = now < dueDate;
-    const diffHours = (dueDate.getTime() - now.getTime()) / (1000 * 60 * 60);
-
-    let speedCategory = 'Tepat Waktu';
-    let baseScore = 85;
-
-    if (diffHours >= 24) {
-      speedCategory = 'Sangat Cepat (+10 Bonus)';
-      baseScore = 95;
-    } else if (isEarly) {
-      speedCategory = 'Tepat Waktu (+5 Bonus)';
-      baseScore = 90;
-    } else {
-      speedCategory = 'Terlambat';
-      baseScore = 75;
-    }
-
-    const newSub: StudentSubmission = {
-      id: `sub-${submittingAssignment.id}-${currentStudent.id}`,
-      assignmentId: submittingAssignment.id,
-      studentId: currentStudent.id,
-      studentName: currentStudent.name,
-      studentClass: currentStudent.className,
-      studentAbsen: currentStudent.noAbsen,
-      submittedAt: now.toISOString(),
-      notes: studentNotes.trim(),
-      status: 'submitted',
-      score: baseScore,
-      grade: baseScore >= 90 ? 'A' : (baseScore >= 80 ? 'B' : 'C'),
-      speedCategory,
-      teacherFeedback: `Tugas diterima. Kecepatan pengumpulan: ${speedCategory}.`
-    };
 
     try {
-      await submitAssignmentToFirestore(newSub);
+      // 1. Asesor AI menilai tugas secara otomatis
+      // 2. Nilai otomatis langsung dimasukkan ke Kolom Tugas di Buku Leger Siswa!
+      const { evaluation } = await processAiGradingAndSaveToLeger(
+        submittingAssignment,
+        currentStudent,
+        '',
+        studentNotes,
+        now.toISOString()
+      );
+
       setSubmittingAssignment(null);
-      setNotification(`Tugas "${submittingAssignment.title}" berhasil dikirim ke Guru Simon! Centang status diperbarui.`);
-      setTimeout(() => setNotification(null), 4000);
+      setAiGradingResult({
+        evaluation,
+        taskCode: submittingAssignment.code,
+        taskTitle: submittingAssignment.title
+      });
+      setNotification(`🤖 Tugas ${submittingAssignment.code} dinilai otomatis oleh AI (Skor: ${evaluation.score}, Predikat: ${evaluation.grade}) dan otomatis masuk ke Kolom Tugas ${evaluation.taskIndex + 1} Buku Leger!`);
+      setTimeout(() => setNotification(null), 8000);
     } catch (err) {
       console.error('Failed to submit assignment:', err);
     } finally {
@@ -339,7 +322,7 @@ export const StudentProgressCard: React.FC<StudentProgressCardProps> = ({
               <span>Tabel 1: Tugas &amp; Simulasi yang Diberikan Guru (Status &amp; Nilai)</span>
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
-              Daftar tugas praktikum yang ditugaskan oleh Guru Pengampu (Simon Murd, S.Kom) beserta tenggat waktu dan nilai akhir.
+              Daftar tugas praktikum yang ditugaskan oleh Guru Pengampu (Simon Murdani Yusuf, S.ST) beserta tenggat waktu dan nilai akhir.
             </p>
           </div>
           <span className="text-xs text-indigo-700 bg-indigo-50 border border-indigo-200 font-mono font-bold px-3 py-1 rounded-full w-fit">
@@ -523,29 +506,67 @@ export const StudentProgressCard: React.FC<StudentProgressCardProps> = ({
         </div>
       </div>
 
-      {/* ================= TABEL 2: CEKLIS KETUNTASAN TUGAS (HANYA BERISI CENTANG SAJA) ================= */}
-      <div className="rounded-3xl bg-white border border-slate-200/90 shadow-sm overflow-hidden">
-        <div className="p-5 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      {/* ================= TABEL 2: LEMBAR CEKLIS KETUNTASAN SISWA (SESUAI GAMBAR 1) ================= */}
+      <div className="space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1">
           <div>
             <h3 className="text-sm font-bold text-slate-900 font-mono flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-              <span>Tabel 2: Lembar Ceklis Tugas Siswa (Hanya Ada Centang Saja)</span>
+              <span>Tabel 2: Lembar Ceklis Tugas Siswa (Ceklis Ketuntasan &amp; Nilai Akhir)</span>
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
-              Tabel ceklis mandiri: tugas yang sudah selesai Anda kerjakan dan kirim ke Guru Simon akan otomatis bertanda centang hijau (✓).
+              Format resmi rekapitulasi ceklis tugas siswa (Gambar 1). Centang (✓) menandakan tugas selesai dikerjakan.
             </p>
           </div>
-          <div className="flex items-center gap-3 text-xs font-mono">
-            <span className="flex items-center gap-1.5 text-emerald-700 font-bold">
-              <span className="w-5 h-5 rounded-md bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-black border border-emerald-300">&check;</span>
-              <span>Sudah Selesai</span>
-            </span>
-            <span className="flex items-center gap-1.5 text-slate-400">
-              <span className="w-5 h-5 rounded-md bg-slate-100 text-slate-400 flex items-center justify-center text-xs">&ndash;</span>
-              <span>Belum Selesai</span>
-            </span>
+
+          <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200">
+            <button
+              onClick={() => setTable2Mode('spreadsheet')}
+              className={`px-3 py-1 rounded-lg text-xs font-bold transition font-mono ${
+                table2Mode === 'spreadsheet'
+                  ? 'bg-white text-indigo-700 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              📋 Format Tabel Ceklis (Gambar 1)
+            </button>
+            <button
+              onClick={() => setTable2Mode('detail')}
+              className={`px-3 py-1 rounded-lg text-xs font-bold transition font-mono ${
+                table2Mode === 'detail'
+                  ? 'bg-white text-indigo-700 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              📝 Rincian Tugas Saya
+            </button>
           </div>
         </div>
+
+        {table2Mode === 'spreadsheet' ? (
+          <StudentChecklistTable />
+        ) : (
+          <div className="rounded-3xl bg-white border border-slate-200/90 shadow-sm overflow-hidden">
+            <div className="p-5 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h4 className="text-xs font-bold text-slate-800 font-mono">
+                  Rincian Ceklis Status per Tugas ({currentStudent.name})
+                </h4>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Setiap tugas yang Anda kirimkan ke Pak Simon akan langsung tercentang otomatis di sistem.
+                </p>
+              </div>
+              <div className="flex items-center gap-3 text-xs font-mono">
+                <span className="flex items-center gap-1.5 text-emerald-700 font-bold">
+                  <span className="w-5 h-5 rounded-md bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-black border border-emerald-300">&check;</span>
+                  <span>Sudah Selesai</span>
+                </span>
+                <span className="flex items-center gap-1.5 text-slate-400">
+                  <span className="w-5 h-5 rounded-md bg-slate-100 text-slate-400 flex items-center justify-center text-xs">&ndash;</span>
+                  <span>Belum Selesai</span>
+                </span>
+              </div>
+            </div>
 
         {/* Quick Checkmark Ribbon */}
         <div className="px-5 py-3 bg-slate-50/50 border-b border-slate-100 flex items-center gap-2 overflow-x-auto scrollbar-thin">
@@ -642,6 +663,8 @@ export const StudentProgressCard: React.FC<StudentProgressCardProps> = ({
           </table>
         </div>
       </div>
+    )}
+  </div>
 
       {/* Modules Checklist 24 Modul */}
       <div className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200/90 shadow-sm space-y-4">
@@ -799,6 +822,67 @@ export const StudentProgressCard: React.FC<StudentProgressCardProps> = ({
                 className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold font-sans transition"
               >
                 Tutup Kode
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Hasil Penilaian Otomatis AI Gemini */}
+      {aiGradingResult && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 font-sans text-left">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2 text-indigo-600 font-mono font-bold text-xs">
+                <Sparkles className="w-4 h-4 text-amber-500" />
+                <span>ASESOR AI OTOMATIS KKA SMK</span>
+              </div>
+              <button
+                onClick={() => setAiGradingResult(null)}
+                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="text-center py-2">
+              <div className="w-16 h-16 mx-auto rounded-2xl bg-indigo-50 border-2 border-indigo-200 flex flex-col items-center justify-center shadow-inner">
+                <span className="text-2xl font-black font-mono text-indigo-700">
+                  {aiGradingResult.evaluation.score}
+                </span>
+                <span className="text-[10px] font-bold text-slate-400 uppercase">/ 100</span>
+              </div>
+              <div className="mt-2 text-sm font-bold text-slate-900">
+                Predikat: <span className="text-indigo-600 font-extrabold">{aiGradingResult.evaluation.grade}</span> &bull; {aiGradingResult.evaluation.speedBonus}
+              </div>
+              <p className="text-xs text-slate-500 mt-0.5 font-medium">
+                {aiGradingResult.taskCode}: {aiGradingResult.taskTitle}
+              </p>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-700 space-y-1.5">
+              <div className="font-bold text-slate-900 flex items-center gap-1.5 font-mono text-[11px]">
+                <span>🤖 Catatan Evaluasi AI:</span>
+              </div>
+              <p className="leading-relaxed text-slate-600">
+                {aiGradingResult.evaluation.feedback}
+              </p>
+            </div>
+
+            <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <div className="text-[11px] leading-tight">
+                <strong>Otomatis Tercatat:</strong> Nilai <strong>{aiGradingResult.evaluation.score}</strong> telah masuk ke <strong>Kolom Tugas {aiGradingResult.evaluation.taskIndex + 1}</strong> pada Buku Leger Guru &amp; Tabel Ceklis Anda!
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-1">
+              <button
+                type="button"
+                onClick={() => setAiGradingResult(null)}
+                className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md transition cursor-pointer"
+              >
+                Tutup &amp; Lihat di Tabel Ceklis
               </button>
             </div>
           </div>

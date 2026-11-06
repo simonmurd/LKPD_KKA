@@ -20,6 +20,7 @@ export interface Assignment {
   targetCriteria: string;
   maxScore: number;
   targetClass?: string; // 'SEMUA KELAS' | 'X TJK' | 'XI TJK' | 'XI TJKT'
+  taskIndex?: number; // Kolom di Buku Leger (0 = Tugas 1, 1 = Tugas 2, dst hingga 19 = Tugas 20)
 }
 
 export interface StudentSubmission {
@@ -37,6 +38,37 @@ export interface StudentSubmission {
   grade?: 'A' | 'B' | 'C' | 'D';
   teacherFeedback?: string;
   speedCategory?: string;
+  aiEvaluation?: {
+    score: number;
+    grade: 'A' | 'B' | 'C' | 'D';
+    feedback: string;
+    speedBonus: string;
+    evaluatedAt: string;
+    criteriaBreakdown?: string;
+    isAiGraded: boolean;
+  };
+}
+
+/**
+ * Menentukan indeks kolom buku leger (0 - 19) dari kode atau judul tugas.
+ * Tugas 1 -> Kolom 0
+ * Tugas 2 -> Kolom 1
+ * Tugas 20 -> Kolom 19
+ */
+export function getAssignmentTaskIndex(codeOrTitle: string, explicitIndex?: number): number {
+  if (typeof explicitIndex === 'number' && explicitIndex >= 0 && explicitIndex < 20) {
+    return explicitIndex;
+  }
+  const match = codeOrTitle.match(/TUGAS[-_\s]*0?(\d+)/i) || 
+                codeOrTitle.match(/Tugas\s*0?(\d+)/i) || 
+                codeOrTitle.match(/Praktik\s*0?(\d+)/i);
+  if (match) {
+    const num = parseInt(match[1], 10);
+    if (!isNaN(num) && num >= 1 && num <= 20) {
+      return num - 1;
+    }
+  }
+  return 0;
 }
 
 export const INITIAL_ASSIGNMENTS: Assignment[] = [

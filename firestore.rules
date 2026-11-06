@@ -54,5 +54,10 @@ service cloud.firestore {
       allow write: if request.resource.data.studentId != null 
                     && request.resource.data.assignmentId != null;
     }
+
+    // Spreadsheet Scores Matrix (Pak Simon's Format)
+    match /spreadsheet_scores/{classId} {
+      allow read, write: if true;
+    }
   }
 }

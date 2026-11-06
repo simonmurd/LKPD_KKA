@@ -412,5 +412,53 @@ export function subscribeToStudentSubmissions(
   });
 }
 
+/**
+ * Simpan override nilai spreadsheet kelas oleh Guru
+ */
+export async function saveSpreadsheetScoreToFirestore(
+  className: string,
+  studentId: string,
+  taskIndex: number,
+  score: number
+): Promise<void> {
+  try {
+    const docId = `scores_${className.replace(/\s+/g, '_')}`;
+    await setDoc(doc(db, 'spreadsheet_scores', docId), {
+      [`${studentId}.${taskIndex}`]: score,
+      updatedAt: Timestamp.now()
+    }, { merge: true });
+  } catch (err) {
+    console.warn('Firestore save spreadsheet score error:', err);
+  }
+}
 
+/**
+ * Listen nilai spreadsheet per kelas dari Firestore
+ */
+export function subscribeToClassSpreadsheetScores(
+  className: string,
+  onUpdate: (scoresMap: Record<string, number[]>) => void
+): () => void {
+  const docId = `scores_${className.replace(/\s+/g, '_')}`;
+  return onSnapshot(doc(db, 'spreadsheet_scores', docId), (snap) => {
+    if (!snap.exists()) {
+      onUpdate({});
+      return;
+    }
+    const data = snap.data();
+    const result: Record<string, number[]> = {};
+    for (const [key, val] of Object.entries(data)) {
+      if (key.includes('.')) {
+        const [sId, tIdxStr] = key.split('.');
+        const tIdx = parseInt(tIdxStr, 10);
+        if (!result[sId]) result[sId] = [];
+        result[sId][tIdx] = Number(val);
+      }
+    }
+    onUpdate(result);
+  }, (err) => {
+    console.warn('Firestore spreadsheet scores listener fallback:', err);
+    onUpdate({});
+  });
+}
 

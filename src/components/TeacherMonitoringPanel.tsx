@@ -27,10 +27,12 @@ import {
   subscribeToSubmissions, 
   gradeSubmissionInFirestore,
   requestRevisionInFirestore,
-  sendChatMessageToFirestore
+  sendChatMessageToFirestore,
+  saveSpreadsheetScoreToFirestore
 } from '../firebase';
 import { StudentReportCardModal } from './StudentReportCardModal';
-import { Assignment, StudentSubmission, INITIAL_ASSIGNMENTS } from '../data/assignmentsData';
+import { SpreadsheetGradebookTable } from './SpreadsheetGradebookTable';
+import { Assignment, StudentSubmission, INITIAL_ASSIGNMENTS, getAssignmentTaskIndex } from '../data/assignmentsData';
 import { 
   Search, 
   Download, 
@@ -67,7 +69,7 @@ import {
   FileText
 } from 'lucide-react';
 
-export type TeacherDashboardTab = 'leger' | 'assignments' | 'matrix' | 'live_exams' | 'presence';
+export type TeacherDashboardTab = 'leger' | 'assignments' | 'live_exams' | 'presence';
 
 export const TeacherMonitoringPanel: React.FC = () => {
   const { studentProgressMap } = useAuth();
@@ -372,6 +374,7 @@ export const TeacherMonitoringPanel: React.FC = () => {
 
     if (editingAssignment) {
       // MODE EDIT TUGAS LAMA
+      const taskIndex = getAssignmentTaskIndex(editingAssignment.code, editingAssignment.taskIndex);
       const updatedAssignment: Assignment = {
         ...editingAssignment,
         title: newTaskTitle.trim(),
@@ -382,7 +385,8 @@ export const TeacherMonitoringPanel: React.FC = () => {
         dueDate: newTaskDueDate,
         description: newTaskDescription.trim(),
         targetCriteria: newTaskCriteria.trim() || 'Penyelesaian tugas sesuai kriteria dan ketuntasan tepat waktu.',
-        targetClass: newTaskTargetClass
+        targetClass: newTaskTargetClass,
+        taskIndex
       };
 
       try {
@@ -390,7 +394,7 @@ export const TeacherMonitoringPanel: React.FC = () => {
         setAssignments(prev => prev.map(a => a.id === updatedAssignment.id ? updatedAssignment : a));
         setShowCreateTaskModal(false);
         setEditingAssignment(null);
-        setActionToast(`Tugas "${updatedAssignment.code}" berhasil diperbarui!`);
+        setActionToast(`Tugas "${updatedAssignment.code}" berhasil diperbarui (Terkoneksi Kolom Tugas ${taskIndex + 1})!`);
         setTimeout(() => setActionToast(null), 3500);
       } catch (err) {
         console.error('Failed to update assignment:', err);
@@ -399,7 +403,8 @@ export const TeacherMonitoringPanel: React.FC = () => {
       }
     } else {
       // MODE BUAT TUGAS BARU
-      const nextCode = `TUGAS-0${assignments.length + 1}`;
+      const taskIdx = assignments.length < 20 ? assignments.length : 0;
+      const nextCode = `TUGAS-${String(taskIdx + 1).padStart(2, '0')}`;
       const newId = `tugas-${Date.now().toString().slice(-6)}`;
 
       const newAssignment: Assignment = {
@@ -408,6 +413,7 @@ export const TeacherMonitoringPanel: React.FC = () => {
         title: newTaskTitle.trim(),
         taskType: newTaskType,
         moduleScope: newTaskModuleScope,
+        taskIndex: taskIdx,
         description: newTaskDescription.trim() || (
           newTaskType === 'cbt'
             ? (newTaskModuleScope === 'all'
@@ -476,12 +482,20 @@ export const TeacherMonitoringPanel: React.FC = () => {
     const currentGrade = gradeInputMap[submissionId];
     const sub = submissions.find(s => s.id === submissionId);
     const score = currentGrade?.score !== undefined ? currentGrade.score : (sub?.score || 85);
-    const feedback = currentGrade?.feedback !== undefined ? currentGrade.feedback : (sub?.teacherFeedback || 'Telah dinilai oleh Guru Simon Murd, S.Kom');
+    const feedback = currentGrade?.feedback !== undefined ? currentGrade.feedback : (sub?.teacherFeedback || 'Telah dinilai oleh Guru Simon Murdani Yusuf, S.ST');
 
     setIsSavingGradeMap(prev => ({ ...prev, [submissionId]: true }));
     try {
       await gradeSubmissionInFirestore(submissionId, score, feedback);
-      setActionToast(`Nilai (${score}) untuk ${sub?.studentName || 'siswa'} berhasil disimpan ke Cloud Firestore!`);
+
+      // Sinkronkan langsung ke Kolom Tugas di Buku Leger Siswa
+      if (sub) {
+        const assign = assignments.find(a => a.id === sub.assignmentId);
+        const taskIdx = getAssignmentTaskIndex(assign?.code || 'TUGAS-01', assign?.taskIndex);
+        await saveSpreadsheetScoreToFirestore(sub.studentClass, sub.studentId, taskIdx, score);
+      }
+
+      setActionToast(`Nilai (${score}) untuk ${sub?.studentName || 'siswa'} berhasil disimpan dan diperbarui di Buku Leger!`);
       setTimeout(() => setActionToast(null), 3500);
     } catch (err) {
       console.error('Failed to save grade:', err);
@@ -516,7 +530,7 @@ export const TeacherMonitoringPanel: React.FC = () => {
             <div className="flex flex-wrap items-center gap-2 mb-3">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold font-mono">
                 <ShieldCheck className="w-3.5 h-3.5 text-amber-600" />
-                <span>Portal Administrasi Guru KKA &bull; Simon Murd, S.Kom</span>
+                <span>Portal Administrasi Guru KKA &bull; Simon Murdani Yusuf, S.ST</span>
               </div>
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold font-mono">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -631,18 +645,6 @@ export const TeacherMonitoringPanel: React.FC = () => {
         </button>
 
         <button
-          onClick={() => setActiveTab('matrix')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${
-            activeTab === 'matrix'
-              ? 'bg-white text-indigo-700 shadow-sm'
-              : 'text-slate-600 hover:text-slate-900'
-          }`}
-        >
-          <Grid3X3 className="w-4 h-4 text-cyan-600" />
-          <span>Matriks 24 Modul Koding</span>
-        </button>
-
-        <button
           onClick={() => setActiveTab('live_exams')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${
             activeTab === 'live_exams'
@@ -673,8 +675,8 @@ export const TeacherMonitoringPanel: React.FC = () => {
         </button>
       </div>
 
-      {/* Filter and Search Bar (shared across leger, matrix, presence, assignments) */}
-      {(activeTab === 'leger' || activeTab === 'matrix' || activeTab === 'presence' || activeTab === 'assignments') && (
+      {/* Filter and Search Bar (shared across presence, assignments) */}
+      {(activeTab === 'presence' || activeTab === 'assignments') && (
         <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 p-4 rounded-2xl bg-white border border-slate-200/90 shadow-sm print:hidden">
           
           <div className="flex flex-wrap items-center gap-2">
@@ -990,9 +992,20 @@ export const TeacherMonitoringPanel: React.FC = () => {
                           </td>
                           <td className="p-3.5">
                             <div className="font-bold text-slate-800">{assign?.code || 'TUGAS'}: {assign?.title.slice(0, 24)}...</div>
-                            <span className="inline-block mt-0.5 px-2 py-0.2 rounded bg-cyan-50 text-cyan-700 border border-cyan-200 text-[10px] font-mono font-bold">
-                              {assign?.moduleCode || 'MODUL'}
-                            </span>
+                            <div className="flex flex-wrap items-center gap-1 mt-1">
+                              <span className="px-2 py-0.2 rounded bg-cyan-50 text-cyan-700 border border-cyan-200 text-[10px] font-mono font-bold">
+                                {assign?.moduleCode || 'MODUL'}
+                              </span>
+                              <span className="px-1.5 py-0.2 rounded bg-indigo-50 text-indigo-700 border border-indigo-200 text-[9px] font-mono font-bold">
+                                Leger: Kolom {getAssignmentTaskIndex(assign?.code || 'TUGAS-01', assign?.taskIndex) + 1}
+                              </span>
+                              {sub.aiEvaluation?.isAiGraded && (
+                                <span className="px-1.5 py-0.2 rounded bg-purple-50 text-purple-700 border border-purple-200 text-[9px] font-mono font-bold flex items-center gap-0.5">
+                                  <Sparkles className="w-2.5 h-2.5 text-purple-600" />
+                                  <span>AI: {sub.score} ({sub.grade})</span>
+                                </span>
+                              )}
+                            </div>
                           </td>
                           <td className="p-3.5">
                             <div className="font-mono text-[11px] text-slate-600 flex items-center gap-1">
@@ -1144,246 +1157,7 @@ export const TeacherMonitoringPanel: React.FC = () => {
 
       {/* ================= TAB 1: BUKU LEGER NILAI SISWA ================= */}
       {activeTab === 'leger' && (
-        <div className="rounded-2xl bg-white border border-slate-200/90 shadow-sm overflow-hidden">
-          
-          {/* Printable Header (Visible only when printing) */}
-          <div className="hidden print:block p-6 text-center border-b-2 border-slate-900 mb-4">
-            <h1 className="text-lg font-black uppercase tracking-tight">
-              BUKU LEGER NILAI AKHIR SISWA &bull; MATA PELAJARAN KODING &amp; KECERDASAN ARTIFISIAL (KKA)
-            </h1>
-            <p className="text-xs text-slate-600 mt-0.5">
-              {filterSchool !== 'SEMUA SEKOLAH' ? filterSchool : 'SMK NEGERI 1 SINGKAWANG'} &bull; KELAS: {filterClass} &bull; TAHUN AJARAN 2026/2027
-            </p>
-            <p className="text-[10px] text-slate-500 font-mono mt-1">
-              Komposisi Penilaian: Praktik Koding Canvas 2D (40%) + Formatif CBT (30%) + Sumatif/Essay (30%) &bull; KKM: 75.00
-            </p>
-          </div>
-
-          <div className="p-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 print:hidden">
-            <div>
-              <h3 className="text-sm font-bold text-slate-900 font-mono flex items-center gap-2">
-                <TableProperties className="w-4 h-4 text-indigo-600" />
-                <span>Buku Leger Nilai Resmi Kurikulum Merdeka</span>
-              </h3>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Formula Penilaian: <span className="font-mono font-semibold text-slate-700">NA = (NPK &times; 40%) + (NFC &times; 30%) + (NSP &times; 30%)</span> &bull; KKM: <span className="font-bold text-slate-900 font-mono">75.00</span>
-              </p>
-            </div>
-            <div className="text-xs text-slate-500 font-mono">
-              Menampilkan {filteredStudents.length} siswa ({filterClass})
-            </div>
-          </div>
-
-          <div className="overflow-x-auto scrollbar-thin">
-            <table className="w-full text-left text-xs text-slate-700 border-collapse">
-              <thead className="bg-slate-50 text-[11px] font-bold font-mono text-slate-700 uppercase tracking-wider border-b border-slate-200">
-                <tr>
-                  <th className="p-3 text-center w-12">No</th>
-                  <th className="p-3 w-16 text-center">Absen</th>
-                  <th className="p-3 w-56">Nama Lengkap Siswa</th>
-                  <th className="p-3 w-20 text-center">Kelas</th>
-                  <th className="p-3 w-24 text-center bg-indigo-50/50 text-indigo-900 border-x border-slate-200">
-                    NPK (40%)
-                    <span className="block text-[9px] font-normal lowercase text-indigo-600">praktik</span>
-                  </th>
-                  <th className="p-3 w-24 text-center bg-cyan-50/50 text-cyan-900 border-r border-slate-200">
-                    NFC (30%)
-                    <span className="block text-[9px] font-normal lowercase text-cyan-600">cbt</span>
-                  </th>
-                  <th className="p-3 w-24 text-center bg-violet-50/50 text-violet-900 border-r border-slate-200">
-                    NSP (30%)
-                    <span className="block text-[9px] font-normal lowercase text-violet-600">sumatif</span>
-                  </th>
-                  <th className="p-3 w-24 text-center bg-amber-50 text-amber-950 font-bold border-r border-slate-200">
-                    Nilai Akhir
-                    <span className="block text-[9px] font-normal lowercase text-amber-700">(NA)</span>
-                  </th>
-                  <th className="p-3 w-16 text-center">Predikat</th>
-                  <th className="p-3 w-28 text-center">Status KKM</th>
-                  <th className="p-3 w-28 text-center print:hidden">Aksi Rapor</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredStudents.map((s, idx) => {
-                  const l = calculateStudentLeger(s.id);
-
-                  return (
-                    <tr key={s.id} className="hover:bg-slate-50 transition">
-                      <td className="p-3 text-center font-mono font-bold text-slate-400">{idx + 1}</td>
-                      <td className="p-3 text-center font-mono font-bold text-indigo-600">{s.noAbsen}</td>
-                      <td className="p-3 font-bold text-slate-900 whitespace-nowrap">
-                        <div>{s.name}</div>
-                        <div className="text-[10px] text-slate-400 font-normal font-mono">{s.school}</div>
-                      </td>
-                      <td className="p-3 text-center">
-                        <span className="px-2 py-0.5 rounded-md bg-slate-100 font-mono text-[11px] text-indigo-700 font-semibold border border-slate-200">
-                          {s.className}
-                        </span>
-                      </td>
-                      
-                      {/* Nilai Praktik Koding */}
-                      <td className="p-3 text-center font-mono border-x border-slate-200 bg-indigo-50/20">
-                        <span className="font-bold text-indigo-900">{l.npk}</span>
-                        <span className="block text-[10px] text-slate-400">({l.practicedCount}/24 mod)</span>
-                      </td>
-
-                      {/* Nilai Formatif CBT */}
-                      <td className="p-3 text-center font-mono border-r border-slate-200 bg-cyan-50/20 font-bold text-cyan-900">
-                        {l.nfc > 0 ? l.nfc : '-'}
-                      </td>
-
-                      {/* Nilai Sumatif */}
-                      <td className="p-3 text-center font-mono border-r border-slate-200 bg-violet-50/20 font-bold text-violet-900">
-                        {l.nsp > 0 ? l.nsp : '-'}
-                      </td>
-
-                      {/* Nilai Akhir (NA) */}
-                      <td className="p-3 text-center font-mono border-r border-slate-200 bg-amber-50/50">
-                        <span className="text-base font-extrabold text-amber-900">{l.na}</span>
-                      </td>
-
-                      {/* Predikat */}
-                      <td className="p-3 text-center font-mono font-black text-slate-800 text-sm">
-                        {l.predikat}
-                      </td>
-
-                      {/* Status KKM */}
-                      <td className="p-3 text-center whitespace-nowrap">
-                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                          l.isPassed 
-                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
-                            : 'bg-rose-50 text-rose-700 border border-rose-200'
-                        }`}>
-                          {l.isPassed ? 'TUNTAS' : 'REMEDIAL'}
-                        </span>
-                      </td>
-
-                      {/* Tombol Rapor Siswa Individual */}
-                      <td className="p-3 text-center print:hidden">
-                        <button
-                          onClick={() => setSelectedStudentForReport(s)}
-                          className="px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold text-[11px] flex items-center gap-1 mx-auto transition border border-indigo-200"
-                          title="Lihat Rapor Capaian Siswa & Cetak Kartu Nilai"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                          <span>Rapor</span>
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Printable Signature Section */}
-          <div className="hidden print:grid grid-cols-2 p-8 text-xs text-center border-t border-slate-900 mt-6">
-            <div>
-              <p>Mengetahui,</p>
-              <p className="font-bold">Kepala Sekolah SMK Negeri 1 Singkawang</p>
-              <div className="h-16"></div>
-              <p className="font-bold uppercase underline">( ............................................ )</p>
-              <p className="text-[10px] font-mono">NIP. ........................................</p>
-            </div>
-            <div>
-              <p>Singkawang, {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
-              <p className="font-bold">Guru Pengampu Koding &amp; Kecerdasan Artifisial</p>
-              <div className="h-16"></div>
-              <p className="font-bold uppercase underline">SIMON MURD, S.Kom</p>
-              <p className="text-[10px] font-mono">NIP. Guru Pengampu KKA SMK</p>
-            </div>
-          </div>
-
-          <div className="p-3.5 bg-slate-50 border-t border-slate-200 text-xs text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-2 px-4 print:hidden">
-            <div>
-              <span>Menampilkan {filteredStudents.length} siswa &bull; Data tersinkronisasi otomatis dengan Cloud Firestore</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] text-slate-400 font-mono">Standar Penilaian KKA SMK 2026</span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ================= TAB 2: MATRIKS 24 MODUL KODING ================= */}
-      {activeTab === 'matrix' && (
-        <div className="rounded-2xl bg-white border border-slate-200/90 shadow-sm overflow-hidden">
-          <div className="p-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <h3 className="text-sm font-bold text-slate-900 font-mono flex items-center gap-2">
-                <Grid3X3 className="w-4 h-4 text-cyan-600" />
-                <span>Matriks Ketuntasan 24 Modul Koding Per Siswa</span>
-              </h3>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Ceklis hijau menandakan siswa telah berhasil membuka, membaca, dan mencoba lab koding interaktif Canvas 2D.
-              </p>
-            </div>
-            <div className="flex items-center gap-3 text-xs font-mono">
-              <span className="flex items-center gap-1.5 text-emerald-700">
-                <span className="w-2.5 h-2.5 bg-emerald-500 rounded"></span> Selesai
-              </span>
-              <span className="flex items-center gap-1.5 text-slate-400">
-                <span className="w-2.5 h-2.5 bg-slate-200 rounded"></span> Belum
-              </span>
-            </div>
-          </div>
-
-          <div className="overflow-x-auto scrollbar-thin">
-            <table className="w-full text-left text-xs text-slate-700 border-collapse">
-              <thead className="bg-slate-50 text-[10px] font-bold font-mono text-slate-700 uppercase tracking-wider border-b border-slate-200">
-                <tr>
-                  <th className="p-2.5 text-center w-10 sticky left-0 bg-slate-50 z-10">No</th>
-                  <th className="p-2.5 w-12 text-center sticky left-10 bg-slate-50 z-10">Absen</th>
-                  <th className="p-2.5 w-48 sticky left-22 bg-slate-50 z-10 border-r border-slate-200">Nama Siswa</th>
-                  {MODULES_DATA.map((m) => (
-                    <th key={m.id} className="p-2 text-center w-8 min-w-[32px]" title={`${m.code}: ${m.title}`}>
-                      M{m.id}
-                    </th>
-                  ))}
-                  <th className="p-2.5 w-20 text-center sticky right-0 bg-slate-50 z-10 border-l border-slate-200">Total</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredStudents.map((s, idx) => {
-                  const prog = studentProgressMap[s.id];
-                  const practiced = new Set(prog?.practicedModules || []);
-
-                  return (
-                    <tr key={s.id} className="hover:bg-slate-50 transition">
-                      <td className="p-2.5 text-center font-mono text-slate-400 sticky left-0 bg-white">{idx + 1}</td>
-                      <td className="p-2.5 text-center font-mono font-bold text-indigo-600 sticky left-10 bg-white">{s.noAbsen}</td>
-                      <td className="p-2.5 font-bold text-slate-900 whitespace-nowrap sticky left-22 bg-white border-r border-slate-200">
-                        {s.name}
-                      </td>
-                      {MODULES_DATA.map((m) => {
-                        const isDone = practiced.has(m.id);
-                        return (
-                          <td key={m.id} className="p-1.5 text-center">
-                            {isDone ? (
-                              <span 
-                                className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-emerald-100 text-emerald-800 text-[10px] font-bold"
-                                title={`Modul ${m.id} Selesai`}
-                              >
-                                &check;
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-slate-100 text-slate-300 text-[10px]">
-                                &ndash;
-                              </span>
-                            )}
-                          </td>
-                        );
-                      })}
-                      <td className="p-2.5 text-center font-mono font-bold text-indigo-700 sticky right-0 bg-white border-l border-slate-200">
-                        {practiced.size} / 24
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <SpreadsheetGradebookTable initialClass={filterClass === 'SEMUA KELAS' ? 'X TJK' : filterClass} />
       )}
 
       {/* ================= TAB 3: LIVE LOG UJIAN CBT MASUK (FIRESTORE) ================= */}
