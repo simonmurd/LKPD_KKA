@@ -12,8 +12,6 @@ import { LoginPortal } from './components/LoginPortal';
 import { ModuleList } from './components/ModuleList';
 import { ModuleDetailModal } from './components/ModuleDetailModal';
 import { InteractiveRunner } from './components/InteractiveRunner';
-import { SheetsTableViewer } from './components/SheetsTableViewer';
-import { SheetsSyncPanel } from './components/SheetsSyncPanel';
 import { QuizPractice } from './components/QuizPractice';
 import { StudentProgressCard } from './components/StudentProgressCard';
 import { TeacherMonitoringPanel } from './components/TeacherMonitoringPanel';
@@ -56,7 +54,7 @@ function MainAppContent() {
   }
 
   // Security guard: If Siswa attempts to access admin/teacher tabs, redirect to syllabus
-  if (role === 'SISWA' && (activeTab === 'tables' || activeTab === 'sync' || activeTab === 'teacher_monitoring' || activeTab === 'teacher_ai')) {
+  if (role === 'SISWA' && (activeTab === 'teacher_monitoring' || activeTab === 'teacher_ai')) {
     setActiveTab('syllabus');
   }
 
@@ -131,16 +129,6 @@ function MainAppContent() {
           <TeacherAiAssistant />
         )}
 
-        {/* GURU ONLY: Tabel Google Sheets */}
-        {role === 'GURU' && activeTab === 'tables' && (
-          <SheetsTableViewer />
-        )}
-
-        {/* GURU ONLY: Sinkronisasi Webhook */}
-        {role === 'GURU' && activeTab === 'sync' && (
-          <SheetsSyncPanel />
-        )}
-
       </main>
 
       {/* Floating Quick Live Chat Launcher for Quick Consultations */}
@@ -185,7 +173,7 @@ function MainAppContent() {
                 DevCore KKA — {role === 'GURU' ? 'Dashboard Guru (Pak Simon)' : `Dashboard Siswa (${currentStudent?.name || ''})`}
               </span>
               <p className="text-[11px] text-slate-500">
-                SMK Negeri 1 Singkawang (X &amp; XI TJK) &amp; SMK Mudita Singkawang (XI TJKT)
+                SMK Negeri 1 Singkawang (X &amp; XI TJK) &amp; SMK Mudita Singkawang (XI &amp; XII TJKT) — 139 Siswa
               </p>
             </div>
           </div>

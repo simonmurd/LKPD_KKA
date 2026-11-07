@@ -199,7 +199,7 @@ export const SpreadsheetGradebookTable: React.FC<SpreadsheetGradebookTableProps>
           {/* Class Selector */}
           <div className="flex items-center gap-1.5 bg-slate-50 p-1.5 rounded-xl border border-slate-200">
             <span className="text-[11px] font-bold text-slate-500 font-mono pl-1">Kelas:</span>
-            {['X TJK', 'XI TJK', 'XI TJKT'].map((cls) => (
+            {['X TJK', 'XI TJK', 'XI TJKT', 'XII TJKT'].map((cls) => (
               <button
                 key={cls}
                 onClick={() => setSelectedClass(cls)}

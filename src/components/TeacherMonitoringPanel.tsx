@@ -542,7 +542,7 @@ export const TeacherMonitoringPanel: React.FC = () => {
               Buku Leger Nilai &amp; <span className="text-indigo-600">Monitoring Siswa SMK</span>
             </h2>
             <p className="text-sm text-slate-500 max-w-2xl mt-1 leading-relaxed">
-              Pusat kendali asesmen dan rekapitulasi nilai 106 siswa dari SMK Negeri 1 Singkawang dan SMK Mudita Singkawang. Menghitung otomatis Nilai Praktik Koding (40%), Formatif CBT (30%), Sumatif (30%), Nilai Akhir (NA), dan Predikat Rapor.
+              Pusat kendali asesmen dan rekapitulasi nilai 139 siswa dari SMK Negeri 1 Singkawang dan SMK Mudita Singkawang (X TJK, XI TJK, XI TJKT, dan XII TJKT). Menghitung otomatis Nilai Praktik Koding (40%), Formatif CBT (30%), Sumatif (30%), Nilai Akhir (NA), dan Predikat Rapor.
             </p>
           </div>
 
@@ -846,7 +846,7 @@ export const TeacherMonitoringPanel: React.FC = () => {
                   {assignments.map((task, idx) => {
                     const taskSubs = submissions.filter(s => s.assignmentId === task.id);
                     const gradedCount = taskSubs.filter(s => s.status === 'graded').length;
-                    const targetTotal = task.targetClass === 'X TJK' ? 33 : task.targetClass === 'XI TJK' ? 35 : task.targetClass === 'XI TJKT' ? 38 : 106;
+                    const targetTotal = task.targetClass === 'X TJK' ? 33 : task.targetClass === 'XI TJK' ? 35 : task.targetClass === 'XI TJKT' ? 38 : task.targetClass === 'XII TJKT' ? 33 : 139;
                     const isOverdue = new Date(task.dueDate + 'T23:59:59') < new Date();
 
                     return (
@@ -1527,10 +1527,11 @@ export const TeacherMonitoringPanel: React.FC = () => {
                     onChange={(e) => setNewTaskTargetClass(e.target.value)}
                     className="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-medium font-mono"
                   >
-                    <option value="SEMUA KELAS">Semua Kelas (106 Siswa: X TJK, XI TJK, XI TJKT)</option>
+                    <option value="SEMUA KELAS">Semua Kelas (139 Siswa: X TJK, XI TJK, XI TJKT, XII TJKT)</option>
                     <option value="X TJK">X TJK (SMK Negeri 1 Singkawang - 33 Siswa)</option>
                     <option value="XI TJK">XI TJK (SMK Negeri 1 Singkawang - 35 Siswa)</option>
                     <option value="XI TJKT">XI TJKT (SMK Mudita Singkawang - 38 Siswa)</option>
+                    <option value="XII TJKT">XII TJKT (SMK Mudita Singkawang - 33 Siswa)</option>
                   </select>
                 </div>
               </div>

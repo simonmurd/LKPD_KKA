@@ -26,6 +26,7 @@ import {
 } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
 import { Assignment, StudentSubmission, INITIAL_ASSIGNMENTS } from './data/assignmentsData';
+import { STUDENTS_DATA, Student } from './data/studentsData';
 
 // Initialize Firebase App
 export const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
@@ -53,6 +54,33 @@ export async function testFirestoreConnection(): Promise<boolean> {
 
 // Trigger initial ping immediately
 testFirestoreConnection();
+
+/**
+ * Sinkronisasi data 139 siswa SMK (X TJK, XI TJK, XI TJKT, XII TJKT) ke Cloud Firestore
+ */
+export async function seedStudentsToFirestore(): Promise<void> {
+  try {
+    const promises = STUDENTS_DATA.map(student => 
+      setDoc(doc(db, 'students', student.id), {
+        id: student.id,
+        name: student.name,
+        school: student.school,
+        className: student.className,
+        noAbsen: student.noAbsen,
+        role: 'SISWA',
+        displayName: student.displayName,
+        updatedAt: Timestamp.now()
+      }, { merge: true })
+    );
+    await Promise.all(promises);
+    console.log(`Berhasil sinkronisasi ${STUDENTS_DATA.length} siswa ke Cloud Firestore.`);
+  } catch (err) {
+    console.warn('Gagal sinkron siswa ke Firestore:', err);
+  }
+}
+
+// Auto-seed siswa jika diperlukan
+seedStudentsToFirestore();
 
 // ================= FIRESTORE HELPER SERVICES =================
 

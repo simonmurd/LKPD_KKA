@@ -19,7 +19,7 @@ export interface Assignment {
   dueDate: string;
   targetCriteria: string;
   maxScore: number;
-  targetClass?: string; // 'SEMUA KELAS' | 'X TJK' | 'XI TJK' | 'XI TJKT'
+  targetClass?: string; // 'SEMUA KELAS' | 'X TJK' | 'XI TJK' | 'XI TJKT' | 'XII TJKT'
   taskIndex?: number; // Kolom di Buku Leger (0 = Tugas 1, 1 = Tugas 2, dst hingga 19 = Tugas 20)
 }
 

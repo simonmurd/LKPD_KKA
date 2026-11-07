@@ -118,7 +118,42 @@ export const RAW_STUDENTS_LIST = [
   { school: "SMK MUDITA SINGKAWANG", className: "XI TJKT", noAbsen: "35", name: "WILLIAM (35)" },
   { school: "SMK MUDITA SINGKAWANG", className: "XI TJKT", noAbsen: "36", name: "WILLIAM (36)" },
   { school: "SMK MUDITA SINGKAWANG", className: "XI TJKT", noAbsen: "37", name: "WILLIAM (37)" },
-  { school: "SMK MUDITA SINGKAWANG", className: "XI TJKT", noAbsen: "38", name: "YUVENSIUS" }
+  { school: "SMK MUDITA SINGKAWANG", className: "XI TJKT", noAbsen: "38", name: "YUVENSIUS" },
+
+  // SMK MUDITA SINGKAWANG, XII TJKT
+  { school: "SMK MUDITA SINGKAWANG", className: "XII TJKT", noAbsen: "01", name: "DALVIN ANDERSON" },
+  { school: "SMK MUDITA SINGKAWANG", className: "XII TJKT", noAbsen: "02", name: "DANNIEL DAVE DAISUKE" },
+  { school: "SMK MUDITA SINGKAWANG", className: "XII TJKT", noAbsen: "03", name: "DENNY" },
+  { school: "SMK MUDITA SINGKAWANG", className: "XII TJKT", noAbsen: "04", name: "FERDI NOVENDI" },
+  { school: "SMK MUDITA SINGKAWANG", className: "XII TJKT", noAbsen: "05", name: "FLOURA" },
+  { school: "SMK MUDITA SINGKAWANG", className: "XII TJKT", noAbsen: "06", name: "HENGKY" },
+  { school: "SMK MUDITA SINGKAWANG", className: "XII TJKT", noAbsen: "07", name: "JIU PHEN" },
+  { school: "SMK MUDITA SINGKAWANG", className: "XII TJKT", noAbsen: "08", name: "JULIANA DELVI WANTRIANI" },
+  { school: "SMK MUDITA SINGKAWANG", className: "XII TJKT", noAbsen: "09", name: "JULIYANTO" },
+  { school: "SMK MUDITA SINGKAWANG", className: "XII TJKT", noAbsen: "10", name: "JUN KIUH" },
+  { school: "SMK MUDITA SINGKAWANG", className: "XII TJKT", noAbsen: "11", name: "JUN PHEN" },
+  { school: "SMK MUDITA SINGKAWANG", className: "XII TJKT", noAbsen: "12", name: "JUNIATY" },
+  { school: "SMK MUDITA SINGKAWANG", className: "XII TJKT", noAbsen: "14", name: "KELVIN TERRENCE" },
+  { school: "SMK MUDITA SINGKAWANG", className: "XII TJKT", noAbsen: "15", name: "LEONARDO" },
+  { school: "SMK MUDITA SINGKAWANG", className: "XII TJKT", noAbsen: "16", name: "LEWIS MARCO" },
+  { school: "SMK MUDITA SINGKAWANG", className: "XII TJKT", noAbsen: "17", name: "LI NA" },
+  { school: "SMK MUDITA SINGKAWANG", className: "XII TJKT", noAbsen: "18", name: "MARCO GENIUS" },
+  { school: "SMK MUDITA SINGKAWANG", className: "XII TJKT", noAbsen: "19", name: "NELSON ALVARO" },
+  { school: "SMK MUDITA SINGKAWANG", className: "XII TJKT", noAbsen: "21", name: "NOFIKA" },
+  { school: "SMK MUDITA SINGKAWANG", className: "XII TJKT", noAbsen: "22", name: "NYIAN BUN" },
+  { school: "SMK MUDITA SINGKAWANG", className: "XII TJKT", noAbsen: "23", name: "NYUN CU" },
+  { school: "SMK MUDITA SINGKAWANG", className: "XII TJKT", noAbsen: "24", name: "OKTAVIANI" },
+  { school: "SMK MUDITA SINGKAWANG", className: "XII TJKT", noAbsen: "25", name: "RENDI" },
+  { school: "SMK MUDITA SINGKAWANG", className: "XII TJKT", noAbsen: "26", name: "RICO WIJAYA" },
+  { school: "SMK MUDITA SINGKAWANG", className: "XII TJKT", noAbsen: "27", name: "SI WEN" },
+  { school: "SMK MUDITA SINGKAWANG", className: "XII TJKT", noAbsen: "28", name: "SIAU KHIM" },
+  { school: "SMK MUDITA SINGKAWANG", className: "XII TJKT", noAbsen: "29", name: "SU CHUI" },
+  { school: "SMK MUDITA SINGKAWANG", className: "XII TJKT", noAbsen: "30", name: "TRI DERMERSIA" },
+  { school: "SMK MUDITA SINGKAWANG", className: "XII TJKT", noAbsen: "31", name: "VELIYAN VINSON" },
+  { school: "SMK MUDITA SINGKAWANG", className: "XII TJKT", noAbsen: "32", name: "VICKA ANJELICA" },
+  { school: "SMK MUDITA SINGKAWANG", className: "XII TJKT", noAbsen: "33", name: "WILLIAM" },
+  { school: "SMK MUDITA SINGKAWANG", className: "XII TJKT", noAbsen: "34", name: "WILLSON HANATA" },
+  { school: "SMK MUDITA SINGKAWANG", className: "XII TJKT", noAbsen: "35", name: "WILLY VEN" }
 ];
 
 export const STUDENTS_DATA: Student[] = RAW_STUDENTS_LIST.map((item, idx) => {
@@ -143,5 +178,6 @@ export const CLASS_OPTIONS = [
   "SEMUA KELAS",
   "X TJK",
   "XI TJK",
-  "XI TJKT"
+  "XI TJKT",
+  "XII TJKT"
 ];
